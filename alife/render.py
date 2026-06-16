@@ -75,6 +75,37 @@ class Renderer:
         self.buf = np.asarray(img, dtype=float)
         return self.buf.astype(np.uint8)
 
+    def two_species_frame(self, prey_pos, prey_vel, pred_pos, pred_vel, food) -> np.ndarray:
+        """Predator–prey frame: food (green motes), prey (cyan), predators (red,
+        larger). Heading-oriented triangles with motion trails."""
+        self.buf = self.buf * self.trail + self.bg * (1.0 - self.trail)
+        img = Image.fromarray(self.buf.astype(np.uint8))
+        draw = ImageDraw.Draw(img)
+        if food.shape[0]:
+            fc = food * self.scale
+            r = max(1.0, self.size * 0.4)
+            for k in range(food.shape[0]):
+                x, y = float(fc[k, 0]), float(fc[k, 1])
+                draw.ellipse([x - r, y - r, x + r, y + r], fill=(35, 110, 50))
+        self._draw_agents(draw, prey_pos, prey_vel, (90, 220, 235), self.size)
+        self._draw_agents(draw, pred_pos, pred_vel, (240, 60, 60), self.size * 1.7)
+        self.buf = np.asarray(img, dtype=float)
+        return self.buf.astype(np.uint8)
+
+    def _draw_agents(self, draw, pos, vel, color, size) -> None:
+        if pos.shape[0] == 0:
+            return
+        c = pos * self.scale
+        sp = np.maximum(np.linalg.norm(vel, axis=1, keepdims=True), 1e-9)
+        head = vel / sp
+        perp = np.stack([-head[:, 1], head[:, 0]], axis=1)
+        tip = c + head * (size * 1.9)
+        back = c - head * (size * 1.0)
+        left = back + perp * (size * 0.85)
+        right = back - perp * (size * 0.85)
+        for k in range(pos.shape[0]):
+            draw.polygon([tuple(tip[k]), tuple(left[k]), tuple(right[k])], fill=color)
+
     def eco_frame(self, pos: np.ndarray, vel: np.ndarray, hue: np.ndarray, food: np.ndarray) -> np.ndarray:
         """Ecosystem frame: food as soft green motes, creatures as triangles whose
         hue encodes a heritable trait — so watching the color mix shift *is*

@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 3: evolved neural-network brains
+## Current state — Round 4: predator–prey co-evolution
 
-The pool has climbed three rungs, each really run and verified by eye + data:
+The pool has climbed four rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -28,9 +28,15 @@ The pool has climbed three rungs, each really run and verified by eye + data:
   A random brain sits still and eats 0; an evolved brain sweeps the whole map and
   eats 114 — pure evolved weights, no hand-coded rules.
 
+- **R4 — predator–prey co-evolution.** Two brain populations evolve at once: prey
+  forage and flee, predators hunt. Measured against the *final* evolved opponent
+  (de-confounded), both escalate over generations — predator catches 44 → 170,
+  prey survival 0.04 → 0.15 (Red-Queen oscillation). Predators even evolve a
+  circling search; prey learn to juke.
+
 > Honest note: in-situ continuous-ecosystem selection on brains proved too noisy
 > (crowding lets food be grabbed opportunistically, diluting the skill signal), so
-> R3's selection is a generational GA. The continuous ecosystem remains as the
+> R3/R4 selection is a generational GA. The continuous ecosystem remains as the
 > living-world viewer, seeded with evolved brains.
 
 ## Layout
@@ -48,12 +54,14 @@ alife/
   sensors.py   egocentric angular food/neighbor senses (R3)
   neuro.py     brain-driven ecosystem + solo foraging assay (R3)
   evolve.py    generational neuroevolution GA (R3)
+  coevo.py     predator–prey co-evolutionary GA + arms-race analysis (R4)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
   run_evolve.py    R3: GA fitness curve + behavior comparison + living world
+  run_coevo.py     R4: arms-race curves + predator/prey hunt video
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (40): emergence, lifecycle, selection, neuroevolution
+tests/         pytest (44): emergence, lifecycle, selection, neuroevolution, co-evolution
 ```
 
 ## Run it
@@ -73,5 +81,6 @@ Artifacts land in `runs/<name>/` (gitignored): mp4s, key frames, metric plots.
 - **R1 ✓** emergent flocking + metrics + headless rendering
 - **R2 ✓** genome + mutation + natural selection + energy/reproduction
 - **R3 ✓** evolved neural-network brains (foraging emerges from weights)
-- **R4** predator–prey co-evolution (an arms race)
-- **R5+** recurrent brains, speciation, spatial scaling, and a 3D ecosystem
+- **R4 ✓** predator–prey co-evolution (an arms race)
+- **R5** Lotka–Volterra population ecology (continuous two-species cycles)
+- **R6+** recurrent brains, speciation, spatial scaling, and a 3D ecosystem

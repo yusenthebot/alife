@@ -1,59 +1,56 @@
 # alife — progress
 
-## Current state (Round 3 complete — 2026-06-16)
+## Current state (Round 4 complete — 2026-06-16)
 
-Creatures now have **evolved neural-network brains**. From random networks, natural
-selection produces competent foragers — generation by generation, no backprop, no
-hand-coded rules.
+Two species now co-evolve: **predators and prey in an evolutionary arms race.**
 
 ### Stack of rounds
-- **R1** emergent Boids flocking + metrics + headless render (φ 0.08→0.92). `boids.py`, `world.py`, `metrics.py`, `render.py`, `sim.py`.
-- **R2** evolution by natural selection — genome/energy/food/reproduction/death; directional + stabilizing selection, verified by eyes+data+skeptics+6/6 replicates. `genome.py`, `ecosystem.py`.
-- **R3** neural-network brains evolved by a generational GA. `brain.py`, `sensors.py`, `neuro.py`, `evolve.py`.
+- **R1** emergent Boids flocking (φ 0.08→0.92). `boids.py`, `world.py`, `metrics.py`, `render.py`, `sim.py`.
+- **R2** natural selection — genome/energy/food/reproduction/death; directional + stabilizing selection (skeptic-verified, 6/6 replicates). `genome.py`, `ecosystem.py`.
+- **R3** evolved NN foraging brains via generational GA (fitness 4.6→84; 13–22× held-out). `brain.py`, `sensors.py`, `neuro.py`, `evolve.py`.
+- **R4** predator–prey co-evolution (arms race) via co-evolutionary GA. `coevo.py`.
 
-### R3 — what works (REAL-VERIFIED: eyes on plots/behavior + held-out generalization)
-- `brain.py` — tiny MLP (13→8 tanh→2), weights ARE the genome (~130). Batched forward, mutate, clip.
-- `sensors.py` — egocentric retina: K=6 angular sectors of nearest-food + nearest-neighbor proximity + own energy = 13 inputs, all relative to heading.
-- `neuro.py` — `NeuroEcosystem` (R2 lifecycle, brain-driven movement: turn+thrust), `solo_run` (trace one brain), `forage_assay`. Body params FIXED so only the brain evolves.
-- `evolve.py` — generational neuroevolution: batched solo fitness (food foraged) + truncation selection + elitism. `scripts/run_evolve.py`.
-- 40 tests pass.
+### R4 — what works (REAL-VERIFIED: eyes on arms-race plot + behavior frames)
+- `coevo.py` — two brain populations: prey (sense food + predators → forage & flee), predators
+  (sense prey → hunt). Shared-arena episode evaluates both; truncation+elitism selection each gen.
+  Prey fitness = food + survival; predator fitness = catches + dense **pursuit** reward (closing
+  distance) that bootstraps hunting out of the sparse catch signal.
+- `render.two_species_frame` — prey (cyan), predators (red, larger), food (green), trails.
+- `scripts/run_coevo.py` — arms-race curves + behavior video.
+- 44 tests pass.
 
-**Verified run** (`runs/r3_evolve`):
-- GA fitness: gen0 mean 4.6 → final mean 83.6 (best 101) over 45 generations — clean S-curve.
-- Behavior (solo, identical field): random brain eaten=0 align=-0.06 (sits still); evolved eaten=114 align=+0.52 (sweeps the whole map through the food). Decisive visual.
-- Held-out generalization (assay seed 9999 ≠ training seeds 1000+g), 3 seeds: evolved forages 13–22× better than random. Real skill, not memorization.
+**Verified run** (`runs/r4_coevo`, 55 generations):
+- De-confounded arms race (each species vs the FINAL evolved opponent): predator hunting
+  44→170 catches/episode; prey evasion (survival vs final predators) 0.04→0.15. Both escalate
+  over generations across 2 seeds; prey curve oscillates = Red Queen.
+- Behavior: start frame = cyan prey foraging among food + red predators hunting; predators evolve
+  a circling/patrolling search; over a 600-step rollout predators catch all prey (166→0).
 
-### What did NOT work — the honest pivot (recorded so R4 doesn't repeat it)
-- **In-situ continuous-ecosystem selection on brains is too noisy.** Across many regimes
-  (dense/sparse, cheap/expensive movement, scarce/abundant food) the assay ratio was
-  inconsistent across seeds (0.7×–2.8×): in a crowd, food is grabbed opportunistically by
-  whoever is nearest, so reproductive success only weakly tracks individual navigation skill,
-  and the population pins at pop_cap which throttles selection. Evolved brains even moved at
-  ~2/3 speed (not "sit still"), yet didn't reliably out-forage random ones.
-- **Fix = generational GA** with clean solo fitness (no crowding) + truncation selection.
-  Robust across all seeds, and literally "一代代进化出行为". The continuous ecosystem is kept
-  as the *living-world viewer* (seeded with evolved brains), not as the selector.
-- Latent bug fixed: `np.full(n, e_start)` made an int array when e_start was an int → energy
-  subtraction cast error. Now `float(e_start)` in both ecosystems.
+### What did NOT work / balance lessons (recorded)
+- Predator fitness = catches ONLY is too sparse (catching a fleeing prey is rare) → predators
+  don't evolve. Fix = dense **pursuit (closing-distance) reward** + catches.
+- Balance is delicate: too-strong predators (big catch radius / speed edge) catch everything →
+  prey can't evolve evasion (no survival gradient). Tuned to near-equal speed, prey more agile
+  (turn 0.6 vs 0.4), small catch radius 2.8 → both sides have room to escalate.
+- "Catches vs NAIVE prey" saturates (naive prey are sitting ducks) → measure skill vs the FINAL
+  evolved opponent instead (de-confounded, non-saturating).
 
-### Next-round seed (R4 — predator–prey co-evolution)
-Two evolving species sharing the world: prey (forage plants, flee) and predators (hunt prey
-for energy). Both have evolved NN brains via the GA; fitness couples them — predator fitness =
-prey caught, prey fitness = survival/foraging. An evolutionary arms race: faster/smarter prey
-↔ better hunters. REAL-VERIFY: co-evolution dynamics (predator/prey population cycles,
-behavioral escalation), watch + measure. Reuse brain/sensors/evolve; add a species tag, a
-prey-sensing channel for predators, and catch mechanics.
+### Next-round seed (R5 — predator–prey ECOLOGY: Lotka–Volterra)
+Co-evolution gives behavior; R5 gives the iconic ecological dynamics. Build a CONTINUOUS
+two-species ecosystem (energy + reproduction + death for BOTH species, seeded with the
+R4-evolved brains): prey eat plants & reproduce, predators eat prey & reproduce, predators
+starve when prey are scarce → **Lotka–Volterra population cycles** (oscillating predator/prey
+counts with phase lag). REAL-VERIFY: population time series shows sustained out-of-phase
+oscillation + a phase-plane loop; watch it. Reuse coevo sensing + brain/evolve.
 
 ## Frontier
-- **Current ceiling:** single-species evolved foraging brains. Behavior = forage. No
-  inter-species dynamics, no arms race, still 2D.
+- **Current ceiling:** two species co-evolve behavior (hunt/evade), but episodes are fixed-length
+  GA tournaments — no continuous ecology, no population dynamics, still 2D.
 - **Next frontiers (ambition × feasibility):**
-  1. Predator–prey co-evolution (arms race, Lotka–Volterra cycles) → R4.
-  2. Richer brains/senses: recurrent (CTRNN/GRU) memory, vision rays, communication → R4–R5.
-  3. Speciation / niches; spatial hashing or C++/numba for N≫1k → R5.
-  4. 3D ecosystem (moderngl/raylib) once co-evolution proven in 2D → R5–R6.
-- **Fidelity/stack ladder:** numpy 2D (now) → numba/C++ for big N → recurrent torch brains →
-  moderngl/3D.
-- **Radical ideas weighed:** make in-situ selection work via territory/individual food claims
-  (deferred — GA is robust and sufficient); jump to 3D (deferred — prove co-evolution in 2D
-  first); RL instead of GA (deferred — GA = truer "natural selection").
+  1. Lotka–Volterra population cycles (continuous two-species ecology) → R5.
+  2. Richer brains: recurrent memory (CTRNN/GRU), vision rays, signalling/communication → R5–R6.
+  3. Speciation / niches; spatial hashing or C++/numba for N≫1k → R6.
+  4. 3D ecosystem (moderngl/raylib) once ecology + richer brains proven in 2D → R6–R7.
+- **Fidelity/stack ladder:** numpy 2D (now) → numba/C++ for big N → recurrent torch brains → 3D.
+- **Radical ideas weighed:** Hall-of-Fame co-evolution to curb cyclic forgetting (consider R5);
+  3D now (deferred — prove ecology first); RL (deferred — GA = truer natural selection).
