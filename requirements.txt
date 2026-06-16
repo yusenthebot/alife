@@ -1,0 +1,6 @@
+numpy>=2.0
+pillow>=10
+matplotlib>=3.8
+imageio>=2.30
+imageio-ffmpeg>=0.4
+pytest>=8.0
