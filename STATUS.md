@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-16T10:35 · loop 1
+updated: 2026-06-16T11:05 · loop 2
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R1 done — vectorized Boids flocking + emergence metrics + headless render, REAL-VERIFIED (φ 0.08→0.92)
+doing:    R2 done — genome+energy+food+reproduction+death+SELECTION, REAL-VERIFIED (w_food↑ metab↓ w_coh↓, flat w_sep control); adversarial skeptic pass running
 blocked:  none
-next:     R2 — genome + mutation + natural selection + energy + reproduction; watch traits evolve over generations
+next:     R3 — evolved neural-network brains (sensors→MLP→motors), GA over weights; behavior emerges from evolved nets not rules

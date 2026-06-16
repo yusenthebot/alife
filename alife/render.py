@@ -74,3 +74,38 @@ class Renderer:
 
         self.buf = np.asarray(img, dtype=float)
         return self.buf.astype(np.uint8)
+
+    def eco_frame(self, pos: np.ndarray, vel: np.ndarray, hue: np.ndarray, food: np.ndarray) -> np.ndarray:
+        """Ecosystem frame: food as soft green motes, creatures as triangles whose
+        hue encodes a heritable trait — so watching the color mix shift *is*
+        watching selection. `hue` is per-creature in [0, 1)."""
+        self.buf = self.buf * self.trail + self.bg * (1.0 - self.trail)
+        img = Image.fromarray(self.buf.astype(np.uint8))
+        draw = ImageDraw.Draw(img)
+
+        if food.shape[0]:
+            fc = food * self.scale
+            r = max(1.0, self.size * 0.45)
+            for k in range(food.shape[0]):
+                x, y = float(fc[k, 0]), float(fc[k, 1])
+                draw.ellipse([x - r, y - r, x + r, y + r], fill=(40, 120, 55))
+
+        if pos.shape[0]:
+            c = pos * self.scale
+            speed = np.maximum(np.linalg.norm(vel, axis=1, keepdims=True), 1e-9)
+            head = vel / speed
+            perp = np.stack([-head[:, 1], head[:, 0]], axis=1)
+            s = self.size
+            tip = c + head * (s * 1.9)
+            back = c - head * (s * 1.0)
+            left = back + perp * (s * 0.85)
+            right = back - perp * (s * 0.85)
+            colors = _hsv_to_rgb(np.clip(hue, 0.0, 0.9999), s=0.9, v=1.0)
+            for k in range(pos.shape[0]):
+                draw.polygon(
+                    [tuple(tip[k]), tuple(left[k]), tuple(right[k])],
+                    fill=tuple(int(x) for x in colors[k]),
+                )
+
+        self.buf = np.asarray(img, dtype=float)
+        return self.buf.astype(np.uint8)

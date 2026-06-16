@@ -41,6 +41,17 @@ class World:
             d -= size * np.round(d / size)
         return d
 
+    def delta_to(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """Cross-set displacement d[i, j] = b[j] - a[i] (e.g. agents → food).
+
+        Returns (len(a), len(b), 2), minimum-image under a toroidal topology.
+        """
+        d = b[None, :, :] - a[:, None, :]
+        if self.toroidal:
+            size = self.size
+            d -= size * np.round(d / size)
+        return d
+
     def reflect(self, pos: np.ndarray, vel: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Bounce off walls (bounded worlds). Returns (pos, vel) flipped at edges."""
         size = self.size
