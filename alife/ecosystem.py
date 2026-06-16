@@ -50,7 +50,7 @@ class Ecosystem:
         self.pos = self.rng.uniform([0, 0], w.size, size=(n, 2))
         ang = self.rng.uniform(0, 2 * np.pi, n)
         self.vel = np.stack([np.cos(ang), np.sin(ang)], axis=1)
-        self.energy = np.full(n, cfg.e_start)
+        self.energy = np.full(n, float(cfg.e_start))
         self.dna = gn.random_genomes(n, self.rng)
         self.generation = np.zeros(n, dtype=int)
         self.age = np.zeros(n, dtype=int)
