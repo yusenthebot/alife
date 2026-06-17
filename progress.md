@@ -1,12 +1,13 @@
 # alife — progress
 
-## Current state (Round 29 — 2026-06-17)
+## Current state (Round 30 — 2026-06-17)
 
-An evolving artificial-life ecosystem built from zero over 29 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 30 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, and an open-endedness
-line (R28 MAP-Elites; R29 sensed obstacle-navigation quality-diversity). **140 tests pass.**
+trilogy (R28 MAP-Elites; R29 obstacle-navigation QD; R30 novelty search on a deceptive maze).
+**147 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -45,6 +46,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R27 | milestone review — adversarial verify R25/R26, refresh README, ambition critic |
 | R28 | open-endedness — MAP-Elites illuminates a behavior space (100% vs 16% objective-only) |
 | R29 | open-ended navigation — sensed obstacle field; QD discovers routes around walls (103% vs 25%) |
+| R30 | novelty search — beats objective on a deceptive maze (8/8 vs 2/8; Lehman-Stanley) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
@@ -59,12 +61,12 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
-- **Open-endedness line** (the live frontier): R28 illuminated movement styles in open space; R29
-  added a sensed obstacle field so QD must discover navigation routes (coverage takes the obstacle's
-  shape; efficiency map shows detour shadows behind walls). Natural next steps: **(a) novelty search**
-  as an alternative driver (no objective at all); **(b) QD on the 3D foragers / living world**
-  (illuminate foraging strategies, not just locomotion); **(c) CPPN/indirect encoding** for richer
-  controllers; **(d) co-evolving obstacle layouts** (open-ended environment, not just behavior).
+- **Open-endedness trilogy done** (R28 QD open space · R29 QD obstacle navigation · R30 novelty
+  search beats objective on a deceptive maze). The three core QD/open-ended ideas are now demonstrated.
+  Next steps to push further: **(a) QD on the 3D foragers / living world** (illuminate foraging
+  strategies, not just locomotion); **(b) CPPN/indirect encoding** for richer controllers;
+  **(c) co-evolving environments** (open-ended worlds, not just behavior); **(d) MAP-Elites + the
+  ecosystem** (a living world seeded from an illuminated repertoire).
 - Other heavy leaps still open: **evolving morphology** (Karl Sims: co-evolve body+brain), a
   **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents). Small scripted-phenomenon modules are at
   deep diminishing returns; open-endedness and morphology are the real ambition horizon now.
