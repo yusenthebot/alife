@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 21: a world that evolves order, brains, ecology, language, sociality & a major transition
+## Current state — Round 22: a world that evolves order, brains, ecology, sociality, a major transition & endless coevolution
 
-The pool has climbed twenty-one rungs, each really run and verified by eye + data:
+The pool has climbed twenty-two rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -105,6 +105,9 @@ The pool has climbed twenty-one rungs, each really run and verified by eye + dat
   (and a cost of bigness), cells evolve to cluster — reaching ~7 cells, clearing
   the predator's size threshold; without it they stay unicellular. Predation-driven
   multicellularity, an evolutionary major transition.
+- **R22 — Red Queen coevolution.** Matching-allele host–parasite dynamics: common
+  host types are hunted by their matching parasite, so allele frequencies oscillate
+  forever (never converging) with parasites lagging hosts by ~45 generations.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -144,6 +147,7 @@ alife/
   cooperation.py   evolution of cooperation (Hamilton's rule / assortment) (R19)
   aging.py     evolution of aging (Medawar/Williams senescence) (R20)
   multicell.py   evolution of multicellularity (predation-driven) (R21)
+  redqueen.py    Red Queen host-parasite coevolution (matching-allele) (R22)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -164,8 +168,9 @@ scripts/
   run_cooperation.py  R19: cooperation vs assortment (Hamilton threshold)
   run_aging.py     R20: evolved survival-by-age curves (senescence)
   run_multicell.py R21: multicellularity (clustering + fitness landscape)
+  run_redqueen.py  R22: Red Queen allele oscillations + host-parasite lag
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (108): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability, cooperation, aging, multicellularity
+tests/         pytest (111): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability, cooperation, aging, multicellularity, redqueen
 ```
 
 ## Run it
@@ -204,4 +209,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R19 ✓** evolution of cooperation (Hamilton's rule)
 - **R20 ✓** evolution of aging (Medawar/Williams senescence)
 - **R21 ✓** a major transition: multicellularity (predation-driven)
-- **R22+** a unified showcase; the memory win; further phenomena
+- **R22 ✓** Red Queen host–parasite coevolution
+- **R23+** a unified showcase; the memory win; further phenomena
