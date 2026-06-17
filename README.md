@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 15: a vast, beautiful, cyclic, self-sustaining world
+## Current state — Round 16: a vast, beautiful, cyclic, speciating world
 
-The pool has climbed fifteen rungs, each really run and verified by eye + data:
+The pool has climbed sixteen rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -82,6 +82,10 @@ The pool has climbed fifteen rungs, each really run and verified by eye + data:
   floor** (Huffaker) + food-limited prey + uncapped Type-II predators yield
   genuine predator–prey *limit cycles* — 5+ boom-bust cycles over 7000 steps, a
   closed phase-plane loop instead of R5/R10's spiral-to-a-point.
+- **R16 — speciation.** Frequency-dependent disruptive selection + assortative
+  mating splits one population into **two stable species** (diet≈0 and diet≈1, in
+  4/4 seeds); the random-mating control stays a single species — reproductive
+  isolation is what makes speciation.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -115,6 +119,7 @@ alife/
   swarm3d.py   large-scale 3D flocking via KD-tree spatial index (R13)
   bigworld3d.py  KD-tree-accelerated large-scale 3D ecosystem (R14)
   cycles.py    sustained predator-prey limit cycles (refuge floor) (R15)
+  speciation.py  sympatric speciation (disruptive selection + assortative mating) (R16)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -129,8 +134,9 @@ scripts/
   run_swarm3d.py   R13: vast 12k-agent 3D murmuration
   run_bigworld3d.py R14: ~10k-creature large-scale living 3D world
   run_cycles.py    R15: sustained predator-prey cycles + phase plane
+  run_speciation.py R16: one species splitting into two (diet over generations)
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (88): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles
+tests/         pytest (92): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation
 ```
 
 ## Run it
@@ -163,4 +169,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R13 ✓** vast swarms (12k+ via KD-tree spatial index)
 - **R14 ✓** large-scale living world (~10k-creature KD-tree ecosystem)
 - **R15 ✓** sustained predator–prey limit cycles (prey refuge floor)
-- **R16+** speciation, the memory win, further polish
+- **R16 ✓** sympatric speciation (one species → two)
+- **R17+** communication, the memory win, further polish

@@ -1,12 +1,17 @@
 # alife — progress
 
-## Current state (Round 15 — sustained cycles: the recurring gap, resolved — 2026-06-17)
+## Current state (Round 16 — speciation — 2026-06-17)
 
-**The honest gap is closed.** R5 and R10 only ever reached stable coexistence; R15 produces genuine
-**sustained predator-prey limit cycles** (`cycles.py`): 5+ predator boom-bust cycles over 7000 steps,
-no extinction, a closed loop in the phase plane (not a spiral to a point). The enabling mechanism is
-a **prey refuge floor** (Huffaker) + food-limited prey + uncapped Type-II predators. 88 tests pass.
-**Push gate still pending** Yusen's approval (15 local commits; origin = R1).
+**One species becomes two.** `speciation.py`: frequency-dependent disruptive selection (two
+resources, rare-morph advantage) + **assortative mating** splits an initially-uniform population
+into two stable species (diet≈0 and diet≈1) — 2 species in 4/4 seeds, bimodality coeff 0.96. The
+random-mating control collapses to one species (BC ~0.5) — reproductive isolation is what makes
+speciation. 92 tests pass. **Push gate still pending** Yusen's approval (16 local commits; origin=R1).
+
+### Round 15 — sustained cycles
+`cycles.py`: a Huffaker **prey refuge floor** + food-limited prey + uncapped Type-II predators yield
+genuine predator-prey limit cycles (5+ boom-bust cycles/7000 steps, phase-plane loop) — resolving
+the R5/R10 stable-coexistence gap.
 
 ### Round 14 — the large-scale living world
 A KD-tree-accelerated continuous ecosystem (`bigworld3d.py`) puts ~10,600 evolved-brain creatures
