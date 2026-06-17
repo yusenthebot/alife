@@ -126,6 +126,7 @@ scripts/test.sh
 ```
 
 Artifacts land in `runs/<name>/` (gitignored): mp4s, key frames, metric plots.
+See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 
 ## Roadmap (the floor is not the ceiling)
 

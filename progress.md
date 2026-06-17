@@ -1,8 +1,15 @@
 # alife — progress
 
-## Current state (Round 11 complete — 2026-06-17)
+## Current state (Round 12 — milestone review + first-push gate — 2026-06-17)
 
-**Beauty pass.** The 3D world is now genuinely atmospheric — the goal's "画面迷人". Every 3D scene
+**Milestone review.** The full vision (R1→R11) is built, tested, and verified. R12 is a Review/polish
+round: health-checked (79 tests green), hygiene-checked (no slop/TODOs/secrets; root docs = README +
+QUICKSTART + state files), added `QUICKSTART.md` (operator guide), and reached the **first public-push
+CEO gate** — 11 local commits (R1 public, R2–R11 local). Push awaits Yusen's approval (see executive
+summary); the loop continues on frontier work meanwhile.
+
+### Round 11 — Beauty pass
+The 3D world is now genuinely atmospheric — the goal's "画面迷人". Every 3D scene
 (flocking, foraging, predator–prey, the living world) gets it for free, since it's all one renderer.
 
 ### Stack of rounds
