@@ -48,10 +48,16 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R29 | open-ended navigation — sensed obstacle field; QD discovers routes around walls (103% vs 25%) |
 | R30 | novelty search — beats objective on a deceptive maze (8/8 vs 2/8; Lehman-Stanley) |
 | R31 | evolving morphology — mass-spring virtual creatures evolve a body + gait (dist 14→49; Karl Sims) |
+| R32 | milestone review — adversarially verified R28–R31 (all hold); honest R31 gait caveat recorded |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
   evolve brains with a **generational GA**; keep the continuous ecosystem as the living-world viewer.
+- **R31 morphology — locomotion is mostly but not purely gait-driven.** Muscle-ablation (R32 review):
+  an evolved creature travels 48.7 with muscles vs 11.6 with muscles zeroed, so ~24% of the distance
+  is passive (largely the initial fall/settle, plus some asymmetric-body creep). The gait dominates
+  (2nd-half-of-rollout movement of ~26 units can't be passive), but the headline distance is not 100%
+  gait. Reported as-is; a cleaner metric would subtract a passive-body baseline.
 - **R6 memory (resolved in R26):** evolved recurrence did not beat a memoryless control on the R6
   *foraging* tasks because those tasks didn't *require* memory — reactive policies stayed competitive.
   R26 settles it with a task that provably requires memory (delayed-cue latch, alife/memory_task.py):
