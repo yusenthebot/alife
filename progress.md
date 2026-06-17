@@ -1,62 +1,52 @@
 # alife — progress
 
-## Current state (Round 6 complete — 2026-06-16)
+## Current state (Round 7 complete — 2026-06-17)
 
-Added **recurrent (memory-capable) brains** to the toolkit and rigorously tested whether
-evolved memory helps. Honest headline: across the memory tasks tried, **it did not robustly
-beat a memoryless control** — a real, documented frontier difficulty, not a failure to report.
+**The pivot to 3D succeeded.** Flocking now happens in a real 3D arena, rendered on the GPU —
+the project's stated visual summit ("一个能看着它一代代进化出行为的 3D 生态") is reached for the
+foundational behavior; the rest of the stack gets lifted into 3D in following rounds.
 
 ### Stack of rounds
-- **R1** emergent Boids flocking. **R2** natural selection (genome/energy/repro/death).
-- **R3** evolved NN foraging brains (generational GA, 13–22× held-out). **R4** predator–prey
-  co-evolution arms race. **R5** continuous predator–prey ecology (two-species coexistence).
-- **R6** recurrent brains + memory-task investigation. `brain.py` (RecurrentSpec), `memory.py`.
+- **R1** emergent 2D Boids flocking. **R2** natural selection. **R3** evolved NN foraging brains
+  (generational GA). **R4** predator–prey co-evolution. **R5** continuous predator–prey ecology.
+  **R6** recurrent brains (honest negative: memory not robustly better).
+- **R7** 3D flocking on the GPU. `world3d.py`, `boids3d.py`, `render3d.py` (moderngl).
 
-### R6 — what works (REAL-VERIFIED: tests + comparison run)
-- `brain.py` — `RecurrentSpec` + `forward_recurrent`: a brain with a hidden state (W_hh) that
-  persists across steps. Recurrence is real and tested (output depends on history; state evolves
-  under constant input). Weights are the genome, evolved by the same GA.
-- `memory.py` — two memory-task harnesses with a **clean controlled FF-vs-RNN comparison**
-  (identical architecture; the only difference is whether hidden state persists or is wiped):
-  - `forage_occluded` — food sensing periodically blacks out (must bridge gaps).
-  - `nest_forage` — central-place foraging: carry food home to a nest visible only when near it
-    (food forced far from nest → must leave home-sight and remember the way back).
-  - `evolve_task` — generic GA over either task / either arm.
-- `scripts/run_memory.py`; 58 tests pass.
+### R7 — what works (REAL-VERIFIED: eyes on GPU-rendered 3D frames + data)
+- `world3d.py` — bounded 3D box with boundary-push steering (keeps the flock whole and on-camera).
+- `boids3d.py` — vectorized 3D Reynolds Boids (sep/ali/coh in 3D) + boundary avoidance.
+- `render3d.py` — **moderngl offscreen GPU renderer**: perspective orbiting camera, lit instanced
+  3D cones oriented along velocity, ground grid + wireframe arena, depth test. Standalone GL
+  context works headless on the RTX 5080.
+- `scripts/run_boids3d.py`; 8 new tests (66 total) pass, incl. a GPU render smoke test.
 
-### What did NOT work — the honest finding (this is the round's main result)
-Evolved recurrent memory did **not** robustly outperform the memoryless control:
-- **Occluded foraging:** memoryless WON (held-out ~51 vs ~38). Foraging is solvable by a
-  history-independent **systematic sweep** that covers ground during blackouts — the task does
-  not actually require memory, and the extra recurrent machinery just made the policy harder to evolve.
-- **Central-place (nest) foraging**, the genuinely memory-requiring task, was highly
-  **seed/parameter-dependent**: at one setting recurrent generalized +53% (held 13.2 vs 8.7);
-  at others memoryless tied or won; with more GA power (pop 200, 60 gens, 3 seeds) the held-out
-  means were ~equal (RNN 3.5 vs FF 3.9). In one seed memoryless got **0** (couldn't home) while
-  recurrent got 6.3 — so memory CAN be decisive, but the GA does not reliably *discover* it.
-- **Root cause (known in evo-robotics):** reactive policies are surprisingly powerful for
-  foraging, and evolving genuine memory use (path integration) with a small GA on ~200 weights is
-  a hard search. Not faked, not cherry-picked — reported as-is.
+**Verified run** (`runs/r7_flock3d`, 900 boids × 600 steps):
+- 3D order parameter **0.045 → 0.936** — flocking emerges in 3D.
+- Frames: start = scattered rainbow cloud of random-oriented cones; end = one cohesive flock,
+  cones aligned and moving together, viewed through an orbiting camera. Clearly 3D, mesmerizing.
 
-### Next-round seed (R7 — make memory pay, or pivot to 3D)
-Two honest options:
-1. **Earn the memory win:** a task where reactive policies provably fail — e.g. a discrete cue
-   the agent must recall after it vanishes (delayed-response), or a curriculum (shrink nest-sense
-   over generations) that scaffolds path integration; larger/CTRNN nets; novelty search to escape
-   reactive local optima.
-2. **Pivot to 3D** (the goal's stated summit): take the working R1–R5 stack (flocking → selection
-   → evolved foraging brains → predator–prey ecology) into a real-time 3D renderer (moderngl
-   offscreen / raylib), where the mesmerizing "watch it evolve" payoff lives. R6's recurrent
-   brains remain available but are not on the 2D critical path.
+### What worked / notes
+- moderngl `create_standalone_context()` renders headless on the GPU — no display needed, so the
+  screenshot-verify discipline holds for 3D. (matplotlib was broken; the venv + moderngl path is clean.)
+- Matrix math hand-rolled in numpy (perspective / look_at), uploaded transposed (GL column-major);
+  `look_at` guards the view-parallel-to-up degenerate case.
+- Bounded box (not toroidal) for 3D so the flock doesn't teleport across wrap seams on camera.
+
+### Next-round seed (R8 — lift EVOLUTION into 3D)
+3D rendering + 3D flocking are proven. Next: carry the evolutionary stack into 3D —
+3D genome/energy/food/reproduction/death (R2 in 3D) and/or evolved 3D foraging brains (R3 in 3D,
+sensors over 3D angular sectors / spherical bins). Render the evolving 3D ecosystem with the new
+GPU renderer (color by trait/energy). REAL-VERIFY: watch selection in the 3D world + the data.
+Reuse render3d.py (add food spheres + per-agent color); generalize sensors to 3D.
 
 ## Frontier
-- **Current ceiling:** rich 2D evolutionary ecosystem (selection, NN foraging, predator–prey
-  coexistence); recurrent brains exist but memory advantage is unproven; still 2D.
+- **Current ceiling:** 3D flocking on GPU; the evolution/brains/ecology stack is still 2D.
 - **Next frontiers (ambition × feasibility):**
-  1. **3D ecosystem viewer** (moderngl/raylib offscreen) — the goal's summit, high payoff → R7.
-  2. Make evolved memory pay (delayed-response task / curriculum / novelty search) → R7–R8.
-  3. Speciation, spatial hashing / C++ for N≫2k; richer sensory (vision rays, communication).
-- **Fidelity/stack ladder:** numpy 2D (now) → moderngl/raylib 3D → numba/C++ for scale.
-- **Radical ideas weighed:** novelty/quality-diversity search to beat reactive local optima (R7);
-  jump to 3D now (strong candidate — the visual summit the goal asks for); CTRNN continuous-time
-  brains for better temporal dynamics (R7).
+  1. Lift evolution + foraging brains into 3D (3D sensors, 3D ecosystem) → R8.
+  2. Lift predator–prey into 3D (3D pursuit/evasion, aerial hunting) → R9.
+  3. Prettier GPU rendering: shadows, food as glowing spheres, trails, bloom → ongoing.
+  4. Scale: spatial hashing / numba / C++ for N≫2k; speciation. Earn the memory win (R6 carryover).
+- **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (now) → numba/C++ for scale →
+  shadows/instanced trails for beauty.
+- **Radical ideas weighed:** full 3D sensors via spherical harmonics or ray casts (R8); GPU compute
+  for the sim itself (later, if N grows); import real 3D creature meshes (polish).

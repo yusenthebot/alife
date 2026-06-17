@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 6: recurrent brains (+ an honest negative result)
+## Current state — Round 7: 3D, on the GPU
 
-The pool has climbed six rungs, each really run and verified by eye + data:
+The pool has climbed seven rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -48,6 +48,13 @@ The pool has climbed six rungs, each really run and verified by eye + data:
   "sweep" strategies stay competitive and the small GA rarely discovers genuine
   memory use. A real, known frontier difficulty, not a faked win.
 
+- **R7 — 3D, on the GPU.** Flocking lifted into a real 3D arena and rendered with
+  moderngl (offscreen, on the RTX 5080): a perspective orbiting camera, lit
+  instanced 3D cones, a ground grid and wireframe box. Order parameter 0.045 →
+  0.936 — a 3D murmuration consolidating from a random cloud. The project's stated
+  visual summit, reached for the foundational behavior; the rest of the stack
+  lifts into 3D next.
+
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
 > living-world viewer seeded with evolved brains. (2) R5 reaches stable
@@ -73,6 +80,7 @@ alife/
   coevo.py     predator–prey co-evolutionary GA + arms-race analysis (R4)
   predprey.py  continuous two-species ecosystem (energy/repro/death) (R5)
   memory.py    recurrent brains + occluded/nest memory tasks (R6)
+  world3d.py boids3d.py render3d.py  3D arena + 3D Boids + moderngl GPU renderer (R7)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -80,8 +88,9 @@ scripts/
   run_coevo.py     R4: arms-race curves + predator/prey hunt video
   run_predprey.py  R5: population dynamics + phase plane + living-world video
   run_memory.py    R6: recurrent vs memoryless comparison (honest)
+  run_boids3d.py   R7: 3D flocking on the GPU (orbiting camera, mp4)
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (58): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory
+tests/         pytest (66): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D
 ```
 
 ## Run it
@@ -104,5 +113,6 @@ Artifacts land in `runs/<name>/` (gitignored): mp4s, key frames, metric plots.
 - **R4 ✓** predator–prey co-evolution (an arms race)
 - **R5 ✓** continuous predator–prey ecology (two-species coexistence)
 - **R6 ✓** recurrent / memory brains (infra built; memory advantage = open frontier)
-- **R7** 3D ecosystem viewer (the visual summit) — carry the R1–R5 stack into 3D
-- **R8+** earn the memory win, speciation, spatial scaling
+- **R7 ✓** 3D flocking on the GPU (moderngl) — the visual summit begins
+- **R8** lift evolution + foraging brains into 3D
+- **R9+** predator–prey in 3D, prettier rendering, speciation, scale

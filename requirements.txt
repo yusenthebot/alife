@@ -3,4 +3,5 @@ pillow>=10
 matplotlib>=3.8
 imageio>=2.30
 imageio-ffmpeg>=0.4
+moderngl>=5.10
 pytest>=8.0

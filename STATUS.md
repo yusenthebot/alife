@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-16T22:10 · loop 6
+updated: 2026-06-17T00:10 · loop 7
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R6 done — recurrent (memory) brains (brain.py RecurrentSpec + memory.py tasks). HONEST finding: evolved memory did NOT robustly beat memoryless control (occlusion: sweep wins; nest task: seed/param-dependent, ~parity with more GA power). Real infra + tests (58 pass), negative result documented.
+doing:    R7 done — PIVOT TO 3D succeeded. 3D Boids (world3d/boids3d) + moderngl GPU offscreen renderer (render3d.py): perspective orbiting camera, lit instanced cones, ground grid. Verified on RTX 5080: order 0.045->0.936, frames show scatter->cohesive 3D flock. 66 tests pass.
 blocked:  none
-next:     R7 — PIVOT TO 3D ecosystem viewer (moderngl/raylib offscreen) = the goal's visual summit; carry R1-R5 stack into 3D. (Alt: earn memory win via delayed-response/curriculum.)
+next:     R8 — lift EVOLUTION into 3D: 3D genome/energy/food/reproduction (R2 in 3D) and/or evolved 3D foraging brains (R3 in 3D, 3D sensors); render evolving 3D ecosystem
