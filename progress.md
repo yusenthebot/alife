@@ -1,12 +1,12 @@
 # alife — progress
 
-## Current state (Round 28 — 2026-06-17)
+## Current state (Round 29 — 2026-06-17)
 
-An evolving artificial-life ecosystem built from zero over 28 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 29 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
-scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, and (R28) the first
-open-endedness rung (MAP-Elites quality-diversity). **132 tests pass.**
+scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, and an open-endedness
+line (R28 MAP-Elites; R29 sensed obstacle-navigation quality-diversity). **140 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -44,6 +44,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R26 | the memory win — RNN beats reactive brain on a provably memory-requiring task (R6 rematch) |
 | R27 | milestone review — adversarial verify R25/R26, refresh README, ambition critic |
 | R28 | open-endedness — MAP-Elites illuminates a behavior space (100% vs 16% objective-only) |
+| R29 | open-ended navigation — sensed obstacle field; QD discovers routes around walls (103% vs 25%) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
@@ -58,15 +59,15 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
-- R28 opened a NEW frontier line — **open-endedness** (discover unscripted behavior, not reproduce a
-  known result). The R28 spike (MAP-Elites over heading×curviness) works but the behavior space is
-  small and fully fillable (100%). The interesting next steps make it genuinely open: **(a) add
-  obstacles** so reaching styles must navigate (partial, structured coverage = the obstacle's shadow);
-  **(b) higher-D / learned behavior descriptors**; **(c) novelty search** as an alternative driver;
-  **(d) QD on the 3D foragers / living world** (illuminate foraging strategies, not just locomotion).
+- **Open-endedness line** (the live frontier): R28 illuminated movement styles in open space; R29
+  added a sensed obstacle field so QD must discover navigation routes (coverage takes the obstacle's
+  shape; efficiency map shows detour shadows behind walls). Natural next steps: **(a) novelty search**
+  as an alternative driver (no objective at all); **(b) QD on the 3D foragers / living world**
+  (illuminate foraging strategies, not just locomotion); **(c) CPPN/indirect encoding** for richer
+  controllers; **(d) co-evolving obstacle layouts** (open-ended environment, not just behavior).
 - Other heavy leaps still open: **evolving morphology** (Karl Sims: co-evolve body+brain), a
-  **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents). Small-module phenomena = deep diminishing
-  returns; open-endedness and morphology are the real ambition horizon now.
+  **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents). Small scripted-phenomenon modules are at
+  deep diminishing returns; open-endedness and morphology are the real ambition horizon now.
 - **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
   a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
   this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
