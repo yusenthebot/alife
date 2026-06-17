@@ -1,6 +1,13 @@
 # alife — progress
 
-## Current state (Round 22 — Red Queen coevolution — 2026-06-17)
+## Current state (Round 23 — the gallery capstone — 2026-06-17)
+
+**The whole journey in one poster.** `scripts/run_gallery.py` tiles the headline frame of every rung
+(R1->R22) into a single labelled montage — flocking, selection, brains, predator-prey, 3D worlds,
+cycles, speciation, communication, evolvability, cooperation, aging, multicellularity, Red Queen.
+111 tests pass (no logic change this round). **Push gate still pending** (23 commits; origin=R1).
+
+### Round 22 — Red Queen coevolution
 
 **Coevolution that never settles.** `redqueen.py`: matching-allele host-parasite dynamics. Common
 host types are hunted by their matching parasite (rare-allele advantage), so allele frequencies

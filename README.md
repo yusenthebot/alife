@@ -169,6 +169,7 @@ scripts/
   run_aging.py     R20: evolved survival-by-age curves (senescence)
   run_multicell.py R21: multicellularity (clustering + fitness landscape)
   run_redqueen.py  R22: Red Queen allele oscillations + host-parasite lag
+  run_gallery.py   R23: tile every rung's headline frame into one journey poster
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
 tests/         pytest (111): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability, cooperation, aging, multicellularity, redqueen
 ```
@@ -210,4 +211,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R20 ✓** evolution of aging (Medawar/Williams senescence)
 - **R21 ✓** a major transition: multicellularity (predation-driven)
 - **R22 ✓** Red Queen host–parasite coevolution
-- **R23+** a unified showcase; the memory win; further phenomena
+- **R23 ✓** the gallery — every rung's headline frame in one journey poster
+- **R24+** the memory win; further phenomena; polish
