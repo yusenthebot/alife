@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-16T13:55 · loop 5
+updated: 2026-06-16T22:10 · loop 6
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R5 done — continuous predator-prey ECOSYSTEM (predprey.py): energy+reproduction+death both species, seeded w/ R4 brains, Type-II handling-time stabilizer. 5000 steps no extinction; boom→lagged-predator-boom→prey-crash→COEXISTENCE. 51 tests. (Stable coexistence, not sustained limit cycles — narrow window, honest.)
+doing:    R6 done — recurrent (memory) brains (brain.py RecurrentSpec + memory.py tasks). HONEST finding: evolved memory did NOT robustly beat memoryless control (occlusion: sweep wins; nest task: seed/param-dependent, ~parity with more GA power). Real infra + tests (58 pass), negative result documented.
 blocked:  none
-next:     R6 — recurrent/memory brains (CTRNN/GRU hidden state), evolve via GA, verify on a memory task
+next:     R7 — PIVOT TO 3D ecosystem viewer (moderngl/raylib offscreen) = the goal's visual summit; carry R1-R5 stack into 3D. (Alt: earn memory win via delayed-response/curriculum.)
