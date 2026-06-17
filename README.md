@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 14: a vast, beautiful, self-sustaining 3D world
+## Current state — Round 15: a vast, beautiful, cyclic, self-sustaining world
 
-The pool has climbed fourteen rungs, each really run and verified by eye + data:
+The pool has climbed fifteen rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -78,12 +78,16 @@ The pool has climbed fourteen rungs, each really run and verified by eye + data:
   predators + food) into one 3D volume — hunting, fleeing, grazing, breeding and
   dying at ~20 ms/step, stable over 2200+ steps. The definitive artifact:
   ecology (R10) + atmosphere (R11) + scale (R13) in one watchable world.
+- **R15 — sustained cycles.** The one recurring gap, closed: a prey **refuge
+  floor** (Huffaker) + food-limited prey + uncapped Type-II predators yield
+  genuine predator–prey *limit cycles* — 5+ boom-bust cycles over 7000 steps, a
+  closed phase-plane loop instead of R5/R10's spiral-to-a-point.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
 > living-world viewer seeded with evolved brains. (2) R5 reaches stable
-> coexistence with one boom-bust transient, not sustained limit cycles — a narrow
-> window that otherwise tips into extinction. (3) R6's memory advantage is not
+> coexistence with one boom-bust transient; **sustained limit cycles arrived in
+> R15** via a prey refuge floor. (3) R6's memory advantage is not
 > robust — documented honestly as a frontier challenge. None of these are faked.
 
 ## Layout
@@ -110,6 +114,7 @@ alife/
   predprey3d.py  continuous self-sustaining 3D ecosystem (R10)
   swarm3d.py   large-scale 3D flocking via KD-tree spatial index (R13)
   bigworld3d.py  KD-tree-accelerated large-scale 3D ecosystem (R14)
+  cycles.py    sustained predator-prey limit cycles (refuge floor) (R15)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -123,8 +128,9 @@ scripts/
   run_predprey3d.py R10: continuous 3D living world (populations + video)
   run_swarm3d.py   R13: vast 12k-agent 3D murmuration
   run_bigworld3d.py R14: ~10k-creature large-scale living 3D world
+  run_cycles.py    R15: sustained predator-prey cycles + phase plane
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (86): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale
+tests/         pytest (88): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles
 ```
 
 ## Run it
@@ -156,4 +162,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R12 ✓** milestone review + QUICKSTART (+ first-push gate)
 - **R13 ✓** vast swarms (12k+ via KD-tree spatial index)
 - **R14 ✓** large-scale living world (~10k-creature KD-tree ecosystem)
-- **R15+** sustained population cycles, speciation, the memory win
+- **R15 ✓** sustained predator–prey limit cycles (prey refuge floor)
+- **R16+** speciation, the memory win, further polish

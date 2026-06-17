@@ -1,12 +1,16 @@
 # alife — progress
 
-## Current state (Round 14 — the large-scale living world — 2026-06-17)
+## Current state (Round 15 — sustained cycles: the recurring gap, resolved — 2026-06-17)
 
-**The definitive artifact.** A KD-tree-accelerated continuous ecosystem (`bigworld3d.py`) puts
-**~10,600 evolved-brain creatures** — thousands of prey + predators + food — into ONE 3D volume,
-hunting, fleeing, grazing, breeding and dying, at ~20 ms/step. 2200 steps, no extinction, stable
-coexistence (prey→9000, predators→1600). Combines the ecology (R10) + atmosphere (R11) + scale
-(R13). 86 tests pass. **Push gate still pending** Yusen's approval (14 local commits; origin = R1).
+**The honest gap is closed.** R5 and R10 only ever reached stable coexistence; R15 produces genuine
+**sustained predator-prey limit cycles** (`cycles.py`): 5+ predator boom-bust cycles over 7000 steps,
+no extinction, a closed loop in the phase plane (not a spiral to a point). The enabling mechanism is
+a **prey refuge floor** (Huffaker) + food-limited prey + uncapped Type-II predators. 88 tests pass.
+**Push gate still pending** Yusen's approval (15 local commits; origin = R1).
+
+### Round 14 — the large-scale living world
+A KD-tree-accelerated continuous ecosystem (`bigworld3d.py`) puts ~10,600 evolved-brain creatures
+into ONE 3D volume at ~20 ms/step (2200 steps, no extinction). Ecology + atmosphere + scale.
 
 ### Round 13 — vast swarms
 A KD-tree spatial index breaks the O(N²) ceiling: 12,000+ creatures flock in 3D (~146 ms/step),
