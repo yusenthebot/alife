@@ -1,58 +1,56 @@
 # alife — progress
 
-## Current state (Round 10 complete — 2026-06-17)
+## Current state (Round 11 complete — 2026-06-17)
 
-**A continuous, self-sustaining 3D living world.** Two evolved-brain species — prey and
-predators — live, hunt, flee, graze, breed and die in a 3D volume, and the world runs
-indefinitely without collapse. The full vision ("一个能看着它一代代进化出行为的 3D 生态") is now
-a single runnable artifact.
+**Beauty pass.** The 3D world is now genuinely atmospheric — the goal's "画面迷人". Every 3D scene
+(flocking, foraging, predator–prey, the living world) gets it for free, since it's all one renderer.
 
 ### Stack of rounds
-- **R1** 2D flocking · **R2** selection · **R3** evolved 2D foraging brains · **R4** predator–prey
-  co-evolution · **R5** predator–prey ecology · **R6** recurrent brains (honest negative) ·
-  **R7** 3D flocking (GPU) · **R8** evolution in 3D · **R9** predator–prey in 3D.
-- **R10** continuous 3D ecology. `predprey3d.py`.
+- **R1–R6** 2D: flocking · selection · evolved foraging brains · predator–prey co-evolution ·
+  predator–prey ecology · recurrent brains (honest negative).
+- **R7** 3D flocking (GPU) · **R8** evolution in 3D · **R9** predator–prey in 3D ·
+  **R10** continuous self-sustaining 3D living world.
+- **R11** GPU renderer beauty pass. `render3d.py`.
 
-### R10 — what works (REAL-VERIFIED: GPU 3D frames + population data)
-- `predprey3d.py` — `PredPrey3DEcosystem`: R5's continuous lifecycle (energy · grazing · catching
-  with Type-II digestion cooldown · energy-split reproduction with mutation · starvation/age death)
-  on the 3D substrate (coevo3d body-frame sensing + 3D acceleration). Seeded with R9-evolved 3D
-  hunt/flee brains so behavior is competent from tick 0.
-- `scripts/run_predprey3d.py`; 4 new tests (79 total) pass.
+### R11 — what works (REAL-VERIFIED: eyes on rendered frames)
+- `render3d.py` beauty upgrade (API unchanged — every 3D script benefits):
+  - **Depth fog** → atmospheric perspective; distant creatures and the arena fade into the sky.
+  - **Graded sky** background (fullscreen quad) instead of flat black.
+  - **Key + fill + rim lighting** on creatures → dimensional, glowing edges.
+  - **Soft ground shadows** (projected, blended) → spatial grounding.
+  - **Glowing additive food** (halo + core) → food reads as luminous motes.
+- 79 tests pass (render test confirms the new shaders; sim logic untouched).
 
-**Verified run** (`runs/r10_world3d`, 4000 steps, NO extinction):
-- Prey 315 → 1500 (carrying cap), predators 22 → 320 (gradual rise, then hold), food fluctuating
-  ~100–200. Stable coexistence over the whole run.
-- Frames: a dense cyan prey swarm filling the volume, red predators interspersed and hunting,
-  green food motes — a busy, alive 3D world under a slowly orbiting camera.
+**Verified** (`runs/r11_world3d`, `runs/beauty_test.png`): the living 3D world now has atmospheric
+depth — a dense cyan prey swarm + red predators fading into fog under a graded sky, glowing food.
+Clearly more captivating than the flat R7–R10 look.
 
-### What worked / the balance story (the R5 knife-edge, again)
-- Predator–prey balance is a narrow window (3 tuning passes): R9-evolved predators are lethal →
-  first config over-predated (prey extinct ~865); over-weakening starved the predators (extinct
-  ~577). Stable config: **max intake (energy_per_catch / handling) must exceed predator upkeep**,
-  predators capped below prey, prey breed fast with abundant food. Carried directly from R5's lessons.
-- Result is **stable coexistence (both near carrying caps)**, not sustained Lotka–Volterra cycles —
-  same honest outcome as R5; food is the only freely-fluctuating variable. Recorded, not faked.
+### What worked / notes
+- All effects are camera-orbit-safe (per-frame shader passes, no frame accumulation) — robust for
+  the screenshot-verify discipline. Motion trails were considered but skipped (incompatible with an
+  orbiting camera; would smear the static arena). A fixed-camera trail showcase is a future option.
+- moderngl passes: sky quad (depth off) → fogged lines → blended ground shadows (depth-mask off) →
+  lit opaque creatures → additive glowing food (depth-mask off).
 
-### Next-round seed (R11 — beauty pass, OR unify into one showcase)
-The full arc + a self-sustaining 3D world are done. Highest-value next steps:
-1. **Beauty pass** (the goal's "画面迷人"): shadows, glowing/bloomed food, motion trails, nicer
-   camera, prettier creature meshes — make the 3D world genuinely mesmerizing to watch.
-2. **Unified showcase**: a single `run_alife.py` / README gallery tying R1→R10 into one story with
-   regenerated headline artifacts; tidy/dedupe; consider first `git push` (CEO gate — needs summary).
-3. **Sustained cycles / food-limited dynamics**: let prey be food-limited below cap for livelier
-   population dynamics (carefully, to avoid the collapse knife-edge).
-Lean R11 = beauty pass (trails + glow + shadows) — biggest visual payoff per effort.
+### Next-round seed (R12 — unify + polish + first public release)
+The whole vision is built and now looks good. Strong R12 options:
+1. **Unified showcase + docs polish**: a `QUICKSTART.md` / gallery tying R1→R11 together, regenerate
+   headline artifacts, de-sloppify, ensure root ≤3 doc files. Then **first `git push`** to GitHub
+   (origin still only has R1) — a CEO gate (needs an executive summary before pushing).
+2. **Livelier dynamics**: food-limited prey / sustained 3D cycles (carefully, past the knife-edge).
+3. **Scale**: spatial hashing / numba for much larger swarms (then the 3D vistas get truly dense).
+Lean R12 = unify + polish + present the first-push executive summary (the natural milestone), since
+the core arc is complete and a public release is the obvious next gate.
 
 ## Frontier
-- **Current ceiling:** complete 2D→3D evolutionary stack + a self-sustaining 3D world; visuals are
-  clean but basic (flat-lit cones, point food); populations cap-bound (not cycling).
+- **Current ceiling:** complete 2D→3D evolutionary stack + self-sustaining 3D world + atmospheric
+  rendering. Remaining: it's never been pushed public (origin = R1 only); populations cap-bound;
+  swarms limited to ~2k by O(N²) numpy.
 - **Next frontiers (ambition × feasibility):**
-  1. Beauty pass: trails, bloom/glow, soft shadows, depth fog, better meshes → R11.
-  2. Livelier dynamics: food-limited prey / sustained cycles in 3D → R11–R12.
-  3. Scale (numba/C++/GPU-compute for N≫2k); speciation; earn the memory win (R6).
-  4. Unify + polish + first public push (CEO gate).
-- **Fidelity/stack ladder:** numpy 3D + moderngl GPU (now) → instanced trails + shadow maps + bloom
-  → numba/C++/GPU-compute for huge N.
-- **Radical ideas weighed:** one always-on continuous world combining flocking + foraging + predation
-  + reproduction as the ultimate watchable artifact; real creature meshes; post-processing bloom.
+  1. Unify + polish + first public push (CEO gate) → R12.
+  2. Livelier dynamics (food-limited / cycles); bigger swarms (numba/C++/GPU-compute).
+  3. Earn the memory win (R6 carryover); speciation; communication; real creature meshes.
+- **Fidelity/stack ladder:** numpy 3D + moderngl GPU w/ fog+glow+shadows (now) → instanced trails +
+  shadow maps → numba/C++/GPU-compute for huge N.
+- **Radical ideas weighed:** fixed-camera motion-trail showcase; post-process bloom; one always-on
+  combined world (flock + forage + predate + breed) as the definitive watchable artifact.

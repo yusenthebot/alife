@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 10: a self-sustaining 3D world
+## Current state — Round 11: a self-sustaining 3D world, made beautiful
 
-The pool has climbed ten rungs, each really run and verified by eye + data:
+The pool has climbed eleven rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -67,6 +67,9 @@ The pool has climbed ten rungs, each really run and verified by eye + data:
   evolved hunt/flee brains. It runs 4000+ steps with no extinction: prey and
   predators coexist (≈1500 / ≈320), breeding and dying in the volume — the whole
   vision as one living, watchable 3D artifact.
+- **R11 — beauty pass.** The GPU renderer gains atmospheric depth fog, a graded
+  sky, key+fill+rim lighting, soft ground shadows and glowing additive food —
+  every 3D scene now reads as an atmospheric, living world (the goal's "画面迷人").
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -136,5 +139,6 @@ Artifacts land in `runs/<name>/` (gitignored): mp4s, key frames, metric plots.
 - **R8 ✓** evolution + foraging brains in 3D (evolved 3D foragers + food)
 - **R9 ✓** predator–prey in 3D (aerial arms race)
 - **R10 ✓** continuous 3D ecology (self-sustaining living 3D world)
-- **R11** beauty pass (motion trails, glowing food, soft shadows)
-- **R12+** livelier dynamics, speciation, scale, unify + first push
+- **R11 ✓** beauty pass (depth fog, graded sky, rim light, shadows, glowing food)
+- **R12** unify + polish + first public release
+- **R13+** livelier dynamics, larger swarms, speciation
