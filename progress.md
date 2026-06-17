@@ -1,11 +1,11 @@
 # alife — progress
 
-## Current state (Round 25 — 2026-06-17)
+## Current state (Round 26 — 2026-06-17)
 
-An evolving artificial-life ecosystem built from zero over 25 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 26 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
-scale, atmospheric GPU rendering, and a dozen+ classic evolutionary phenomena. **118 tests pass.**
+scale, atmospheric GPU rendering, and a dozen+ classic evolutionary phenomena. **125 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -40,20 +40,25 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R23 | the gallery — every rung's headline frame in one journey poster |
 | R24 | docs-hygiene (trimmed progress.md to current-state; no new capability) |
 | R25 | sexual selection — Fisherian runaway (costly ornament dragged past survival optimum) |
+| R26 | the memory win — RNN beats reactive brain on a provably memory-requiring task (R6 rematch) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
   evolve brains with a **generational GA**; keep the continuous ecosystem as the living-world viewer.
-- **R6 memory:** evolved recurrence did not robustly beat a memoryless control across the foraging
-  tasks tried — reactive policies stay competitive. Infrastructure is in place; a clean win is open.
+- **R6 memory (resolved in R26):** evolved recurrence did not beat a memoryless control on the R6
+  *foraging* tasks because those tasks didn't *require* memory — reactive policies stayed competitive.
+  R26 settles it with a task that provably requires memory (delayed-cue latch, alife/memory_task.py):
+  RNN reaches 1.0 held-out, FF is pinned at exactly 0.5 by construction. The R6 negative was about
+  the task, not the architecture.
 - **Predator–prey balance is a knife-edge** (R5/R10/R14): max predator intake
   (energy_per_catch / handling) must exceed upkeep; predators capped/limited below prey. Stable
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
-- Most stated + stretch goals are met; remaining frontiers are narrower: the R6 **memory win**
-  (a task where reactive policies provably fail), richer recurrent brains, or consolidation toward
-  a public release. (Sexual selection done in R25.)
+- Most stated + stretch goals are met. The two narrow open frontiers from prior rounds are now
+  closed: sexual selection (R25) and the R6 memory win (R26). Remaining options are broader/heavier:
+  richer recurrent cognition (sequential decision tasks), a GPU-compute scale jump (numba/CUDA),
+  or consolidation toward a public release. Genuine deep diminishing returns on small new modules.
 - **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
   a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
   this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
