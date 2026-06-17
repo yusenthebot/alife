@@ -1,111 +1,57 @@
 # alife — progress
 
-## Current state (Round 23 — the gallery capstone — 2026-06-17)
+## Current state (Round 23 — 2026-06-17)
 
-**The whole journey in one poster.** `scripts/run_gallery.py` tiles the headline frame of every rung
-(R1->R22) into a single labelled montage — flocking, selection, brains, predator-prey, 3D worlds,
-cycles, speciation, communication, evolvability, cooperation, aging, multicellularity, Red Queen.
-111 tests pass (no logic change this round). **Push gate still pending** (23 commits; origin=R1).
+An evolving artificial-life ecosystem built from zero over 23 autonomous rounds. The full stated
+goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
+energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
+scale, atmospheric GPU rendering, and a dozen classic evolutionary phenomena. **111 tests pass.**
 
-### Round 22 — Red Queen coevolution
+Status: feature-complete and well past the stated goal (genuine diminishing returns on new
+capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
+`github.com/yusenthebot/alife`) still has only R1. To publish: `git push origin master`.
 
-**Coevolution that never settles.** `redqueen.py`: matching-allele host-parasite dynamics. Common
-host types are hunted by their matching parasite (rare-allele advantage), so allele frequencies
-oscillate forever (std 0.29, range 0→0.81 — never converging) and parasites lag hosts by ~45
-generations — the Red Queen. 111 tests pass. **Push gate still pending** (22 commits; origin=R1).
+## The rungs (detail in git log + README)
 
-### Round 21 — major transition: multicellularity
-`multicell.py`: a size-selective predator + cost of bigness drives cells to cluster (~7.3 cells with
-predator vs ~1.1 without); fitness landscape shows the intermediate peak.
+| | |
+|---|---|
+| R1 | emergent 2D Boids flocking (order φ 0.08→0.92) |
+| R2 | natural selection — genome/energy/food/reproduction/death |
+| R3 | evolved NN foraging brains (generational GA; 13–22× held-out) |
+| R4 | predator–prey co-evolution (arms race) |
+| R5 | continuous predator–prey ecology (2D coexistence) |
+| R6 | recurrent brains (honest negative: memory not robustly better) |
+| R7 | 3D flocking on the GPU (moderngl, headless on RTX 5080) |
+| R8 | evolution in 3D (evolved 3D foragers + food) |
+| R9 | predator–prey in 3D (aerial arms race) |
+| R10 | continuous self-sustaining 3D living world |
+| R11 | renderer beauty pass (fog, graded sky, rim light, shadows, glowing food) |
+| R12 | milestone review + QUICKSTART + first-push gate |
+| R13 | vast swarms (12k+ via KD-tree spatial index) |
+| R14 | large-scale living world (~10.6k creatures, KD-tree ecosystem) |
+| R15 | sustained predator–prey limit cycles (Huffaker refuge floor) |
+| R16 | sympatric speciation (one species → two) |
+| R17 | evolution of communication (Lewis signalling game) |
+| R18 | evolution of evolvability (self-adaptive mutation rate) |
+| R19 | evolution of cooperation (Hamilton's rule) |
+| R20 | evolution of aging (Medawar/Williams) |
+| R21 | a major transition: multicellularity (predation-driven) |
+| R22 | Red Queen host–parasite coevolution |
+| R23 | the gallery — every rung's headline frame in one journey poster |
 
-### Round 20 — evolution of aging
-`aging.py`: age-specific survival evolves; senescence emerges and sets in earlier under higher
-extrinsic mortality (onset 15→9), Williams' prediction.
+## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
+- **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
+  evolve brains with a **generational GA**; keep the continuous ecosystem as the living-world viewer.
+- **R6 memory:** evolved recurrence did not robustly beat a memoryless control across the foraging
+  tasks tried — reactive policies stay competitive. Infrastructure is in place; a clean win is open.
+- **Predator–prey balance is a knife-edge** (R5/R10/R14): max predator intake
+  (energy_per_catch / handling) must exceed upkeep; predators capped/limited below prey. Stable
+  coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
-### Round 19 — evolution of cooperation
-`cooperation.py`: a donation game with tunable assortment; cooperation switches on right at the
-Hamilton threshold (assortment = c/b), ~0.1 below to ~0.88 above. Altruism by Hamilton's rule.
-
-### Round 18 — evolution of evolvability
-`evolvability.py` ((μ,λ)-ES self-adaptation): mutation rate collapses to the floor in a static
-environment (fitness 1.0) but stays high under a moving optimum (~0.21) — a ~100× divergence.
-
-### Round 17 — evolution of communication
-`signals.py` (Lewis signalling game): random sender/receiver maps evolve a shared convention —
-success 0.25→0.92, mutual info 0→~1.7 bits, evolved code is a permutation. Signals acquire meaning.
-
-### Round 16 — speciation
-`speciation.py`: frequency-dependent disruptive selection + assortative mating splits one population
-into two stable species (2 species 4/4 seeds, BC 0.96); random-mating control stays one species.
-
-### Round 15 — sustained cycles
-`cycles.py`: a Huffaker **prey refuge floor** + food-limited prey + uncapped Type-II predators yield
-genuine predator-prey limit cycles (5+ boom-bust cycles/7000 steps, phase-plane loop) — resolving
-the R5/R10 stable-coexistence gap.
-
-### Round 14 — the large-scale living world
-A KD-tree-accelerated continuous ecosystem (`bigworld3d.py`) puts ~10,600 evolved-brain creatures
-into ONE 3D volume at ~20 ms/step (2200 steps, no extinction). Ecology + atmosphere + scale.
-
-### Round 13 — vast swarms
-A KD-tree spatial index breaks the O(N²) ceiling: 12,000+ creatures flock in 3D (~146 ms/step),
-multiple coherent sub-flocks. `swarm3d.py` (scipy cKDTree). order 0.005 → 0.65.
-
-### Round 12 — milestone review + first-push gate
-Health-checked (tests green), hygiene-checked (no slop/secrets; root docs = README + QUICKSTART +
-state), added `QUICKSTART.md`, reached the first public-push CEO gate. Push awaits approval; loop
-continues frontier work meanwhile.
-
-### Round 11 — Beauty pass
-The 3D world is now genuinely atmospheric — the goal's "画面迷人". Every 3D scene
-(flocking, foraging, predator–prey, the living world) gets it for free, since it's all one renderer.
-
-### Stack of rounds
-- **R1–R6** 2D: flocking · selection · evolved foraging brains · predator–prey co-evolution ·
-  predator–prey ecology · recurrent brains (honest negative).
-- **R7** 3D flocking (GPU) · **R8** evolution in 3D · **R9** predator–prey in 3D ·
-  **R10** continuous self-sustaining 3D living world.
-- **R11** GPU renderer beauty pass. `render3d.py`.
-
-### R11 — what works (REAL-VERIFIED: eyes on rendered frames)
-- `render3d.py` beauty upgrade (API unchanged — every 3D script benefits):
-  - **Depth fog** → atmospheric perspective; distant creatures and the arena fade into the sky.
-  - **Graded sky** background (fullscreen quad) instead of flat black.
-  - **Key + fill + rim lighting** on creatures → dimensional, glowing edges.
-  - **Soft ground shadows** (projected, blended) → spatial grounding.
-  - **Glowing additive food** (halo + core) → food reads as luminous motes.
-- 79 tests pass (render test confirms the new shaders; sim logic untouched).
-
-**Verified** (`runs/r11_world3d`, `runs/beauty_test.png`): the living 3D world now has atmospheric
-depth — a dense cyan prey swarm + red predators fading into fog under a graded sky, glowing food.
-Clearly more captivating than the flat R7–R10 look.
-
-### What worked / notes
-- All effects are camera-orbit-safe (per-frame shader passes, no frame accumulation) — robust for
-  the screenshot-verify discipline. Motion trails were considered but skipped (incompatible with an
-  orbiting camera; would smear the static arena). A fixed-camera trail showcase is a future option.
-- moderngl passes: sky quad (depth off) → fogged lines → blended ground shadows (depth-mask off) →
-  lit opaque creatures → additive glowing food (depth-mask off).
-
-### Next-round seed (R12 — unify + polish + first public release)
-The whole vision is built and now looks good. Strong R12 options:
-1. **Unified showcase + docs polish**: a `QUICKSTART.md` / gallery tying R1→R11 together, regenerate
-   headline artifacts, de-sloppify, ensure root ≤3 doc files. Then **first `git push`** to GitHub
-   (origin still only has R1) — a CEO gate (needs an executive summary before pushing).
-2. **Livelier dynamics**: food-limited prey / sustained 3D cycles (carefully, past the knife-edge).
-3. **Scale**: spatial hashing / numba for much larger swarms (then the 3D vistas get truly dense).
-Lean R12 = unify + polish + present the first-push executive summary (the natural milestone), since
-the core arc is complete and a public release is the obvious next gate.
-
-## Frontier
-- **Current ceiling:** complete 2D→3D evolutionary stack + self-sustaining 3D world + atmospheric
-  rendering. Remaining: it's never been pushed public (origin = R1 only); populations cap-bound;
-  swarms limited to ~2k by O(N²) numpy.
-- **Next frontiers (ambition × feasibility):**
-  1. Unify + polish + first public push (CEO gate) → R12.
-  2. Livelier dynamics (food-limited / cycles); bigger swarms (numba/C++/GPU-compute).
-  3. Earn the memory win (R6 carryover); speciation; communication; real creature meshes.
-- **Fidelity/stack ladder:** numpy 3D + moderngl GPU w/ fog+glow+shadows (now) → instanced trails +
-  shadow maps → numba/C++/GPU-compute for huge N.
-- **Radical ideas weighed:** fixed-camera motion-trail showcase; post-process bloom; one always-on
-  combined world (flock + forage + predate + breed) as the definitive watchable artifact.
+## Frontier / next
+- Most stated + stretch goals are met; remaining frontiers are narrower: the R6 **memory win**
+  (a task where reactive policies provably fail), sexual selection, richer recurrent brains, or
+  consolidation toward a public release.
+- **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (fog/glow/shadows) → KD-tree scale
+  (~10k+) → (future) numba/C++/GPU-compute for far larger N, instanced trails, shadow maps.
+- **Decision pending from Yusen:** publish (push) and/or stop the loop.
