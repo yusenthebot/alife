@@ -65,12 +65,15 @@ def _sense_set(world: World, pos: np.ndarray, heading: np.ndarray, targets: np.n
 
 
 def _move(world, pos, heading, w, sp, top_speed, top_turn, k, chan_a, chan_b):
+    """Returns (new_pos, new_heading, velocity). velocity is the pre-wrap
+    displacement, so its norm is the true step length (correct movement cost)."""
     x = np.concatenate([chan_a, chan_b, np.full((pos.shape[0], 1), 0.5)], axis=1)
     out = brain.forward(w, sp, x)
     heading = (heading + np.tanh(out[:, 0]) * top_turn) % (2 * np.pi)
     speed = _sigmoid(out[:, 1]) * top_speed
     d = np.stack([np.cos(heading), np.sin(heading)], axis=1)
-    return world.wrap(pos + d * speed[:, None]), heading
+    vel = d * speed[:, None]
+    return world.wrap(pos + vel), heading, vel
 
 
 def episode(prey_w: np.ndarray, pred_w: np.ndarray, cfg: CoevoConfig, seed: int, steps: int | None = None):
@@ -94,11 +97,11 @@ def episode(prey_w: np.ndarray, pred_w: np.ndarray, cfg: CoevoConfig, seed: int,
         # prey act (forage + flee)
         food_ch = _sense_set(world, prey_pos, prey_head, food, None, cfg.sense_range, k)
         pred_ch = _sense_set(world, prey_pos, prey_head, pred_pos, None, cfg.sense_range, k)
-        prey_pos, prey_head = _move(world, prey_pos, prey_head, prey_w, sp,
+        prey_pos, prey_head, _ = _move(world, prey_pos, prey_head, prey_w, sp,
                                     cfg.prey_speed, cfg.prey_turn, k, food_ch, pred_ch)
         # predators act (hunt)
         prey_ch = _sense_set(world, pred_pos, pred_head, prey_pos, alive, cfg.sense_range, k)
-        pred_pos, pred_head = _move(world, pred_pos, pred_head, pred_w, sp,
+        pred_pos, pred_head, _ = _move(world, pred_pos, pred_head, pred_w, sp,
                                     cfg.pred_speed, cfg.pred_turn, k, prey_ch, np.zeros((npd, k)))
 
         # prey eat food (alive only)
@@ -154,10 +157,10 @@ def rollout(prey_w, pred_w, cfg: CoevoConfig, seed: int, steps: int, capture_eve
     for t in range(steps):
         food_ch = _sense_set(world, prey_pos, prey_head, food, None, cfg.sense_range, k)
         pred_ch = _sense_set(world, prey_pos, prey_head, pred_pos, None, cfg.sense_range, k)
-        prey_pos, prey_head = _move(world, prey_pos, prey_head, prey_w, sp,
+        prey_pos, prey_head, _ = _move(world, prey_pos, prey_head, prey_w, sp,
                                     cfg.prey_speed, cfg.prey_turn, k, food_ch, pred_ch)
         prey_ch = _sense_set(world, pred_pos, pred_head, prey_pos, alive, cfg.sense_range, k)
-        pred_pos, pred_head = _move(world, pred_pos, pred_head, pred_w, sp,
+        pred_pos, pred_head, _ = _move(world, pred_pos, pred_head, pred_w, sp,
                                     cfg.pred_speed, cfg.pred_turn, k, prey_ch, np.zeros((npd, k)))
         if food.shape[0]:
             fr = world.delta_to(prey_pos, food)
