@@ -1,13 +1,13 @@
 # alife — progress
 
-## Current state (Round 30 — 2026-06-17)
+## Current state (Round 31 — 2026-06-17)
 
-An evolving artificial-life ecosystem built from zero over 30 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 31 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
-scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, and an open-endedness
-trilogy (R28 MAP-Elites; R29 obstacle-navigation QD; R30 novelty search on a deceptive maze).
-**147 tests pass.**
+scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
+trilogy (R28–R30 MAP-Elites / obstacle-nav QD / novelty search), and (R31) evolving morphology
+— mass-spring virtual creatures that evolve a body AND a gait. **155 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -47,6 +47,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R28 | open-endedness — MAP-Elites illuminates a behavior space (100% vs 16% objective-only) |
 | R29 | open-ended navigation — sensed obstacle field; QD discovers routes around walls (103% vs 25%) |
 | R30 | novelty search — beats objective on a deceptive maze (8/8 vs 2/8; Lehman-Stanley) |
+| R31 | evolving morphology — mass-spring virtual creatures evolve a body + gait (dist 14→49; Karl Sims) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
@@ -67,9 +68,12 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   strategies, not just locomotion); **(b) CPPN/indirect encoding** for richer controllers;
   **(c) co-evolving environments** (open-ended worlds, not just behavior); **(d) MAP-Elites + the
   ecosystem** (a living world seeded from an illuminated repertoire).
-- Other heavy leaps still open: **evolving morphology** (Karl Sims: co-evolve body+brain), a
-  **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents). Small scripted-phenomenon modules are at
-  deep diminishing returns; open-endedness and morphology are the real ambition horizon now.
+- **Evolving morphology done (R31)** — 2D mass-spring creatures co-evolve body + gait for locomotion.
+  Natural extensions: richer bodies (more nodes / variable node count), terrain & obstacles, sensing
+  for closed-loop gaits, QD over morphologies (illuminate body-plans), or co-evolving body+NN-brain.
+- Remaining heavy leap: a **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents / faster physics).
+  Both big ambition-critic leaps (open-endedness, morphology) are now demonstrated; scripted-phenomenon
+  modules are at deep diminishing returns.
 - **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
   a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
   this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
