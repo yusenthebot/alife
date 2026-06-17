@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-17T03:25 · loop 12
+updated: 2026-06-17T03:50 · loop 13
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R12 milestone REVIEW — 79 tests green, hygiene clean (no slop/secrets), added QUICKSTART.md. Reached FIRST-PUSH CEO GATE (11 local commits, origin=R1 only); push awaits Yusen approval (executive summary presented). Did NOT push.
-blocked:  push gate — awaiting CEO approval to git push R2-R11 to public yusenthebot/alife
-next:     R13 frontier (push pending): livelier dynamics (food-limited/3D cycles) OR bigger swarms (numba/spatial-hash) OR earn the memory win
+doing:    R13 done — VAST SWARMS (swarm3d.py): KDTree spatial index breaks O(N²); 12000 agents flock at ~146ms/step, order 0.005->0.65, multiple coherent sub-flocks. GPU-rendered atmospheric murmuration verified. 82 tests pass. scipy added.
+blocked:  push gate still pending CEO approval (git push R2-R13 to public yusenthebot/alife; origin=R1 only)
+next:     R14 frontier (push pending): livelier dynamics (food-limited/3D cycles) OR earn the memory win OR scale ecosystems (not just flocking) to large N via KDTree

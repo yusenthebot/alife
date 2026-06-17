@@ -1,12 +1,16 @@
 # alife — progress
 
-## Current state (Round 12 — milestone review + first-push gate — 2026-06-17)
+## Current state (Round 13 — vast swarms — 2026-06-17)
 
-**Milestone review.** The full vision (R1→R11) is built, tested, and verified. R12 is a Review/polish
-round: health-checked (79 tests green), hygiene-checked (no slop/TODOs/secrets; root docs = README +
-QUICKSTART + state files), added `QUICKSTART.md` (operator guide), and reached the **first public-push
-CEO gate** — 11 local commits (R1 public, R2–R11 local). Push awaits Yusen's approval (see executive
-summary); the loop continues on frontier work meanwhile.
+**Scale.** A KD-tree spatial index breaks the O(N²) neighbor ceiling: **12,000+ creatures** flock in
+3D (~146 ms/step), self-organizing into multiple coherent sub-flocks — a vast, dense, atmospheric
+murmuration. `swarm3d.py` (scipy cKDTree). order 0.005 → 0.65 at N=12k; 82 tests pass.
+**Push gate still pending** Yusen's approval (12 local commits R1–R12 + R13; origin = R1 only).
+
+### Round 12 — milestone review + first-push gate
+Health-checked (tests green), hygiene-checked (no slop/secrets; root docs = README + QUICKSTART +
+state), added `QUICKSTART.md`, reached the first public-push CEO gate. Push awaits approval; loop
+continues frontier work meanwhile.
 
 ### Round 11 — Beauty pass
 The 3D world is now genuinely atmospheric — the goal's "画面迷人". Every 3D scene

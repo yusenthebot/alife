@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 11: a self-sustaining 3D world, made beautiful
+## Current state — Round 13: a vast, beautiful, self-sustaining 3D world
 
-The pool has climbed eleven rungs, each really run and verified by eye + data:
+The pool has climbed thirteen rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -70,6 +70,9 @@ The pool has climbed eleven rungs, each really run and verified by eye + data:
 - **R11 — beauty pass.** The GPU renderer gains atmospheric depth fog, a graded
   sky, key+fill+rim lighting, soft ground shadows and glowing additive food —
   every 3D scene now reads as an atmospheric, living world (the goal's "画面迷人").
+- **R13 — vast swarms.** A KD-tree spatial index breaks the O(N²) neighbor
+  ceiling: 12,000+ creatures flock in 3D (~146 ms/step), self-organizing into
+  many coherent sub-flocks — a dense, atmospheric murmuration at scale.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -100,6 +103,7 @@ alife/
   evolve3d.py  evolved 3D foraging brains (3D sensing + GA) (R8)
   coevo3d.py   predator–prey co-evolution in 3D (R9)
   predprey3d.py  continuous self-sustaining 3D ecosystem (R10)
+  swarm3d.py   large-scale 3D flocking via KD-tree spatial index (R13)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -111,8 +115,9 @@ scripts/
   run_evolve3d.py  R8: evolved 3D foragers + living 3D ecosystem render
   run_coevo3d.py   R9: 3D predator-prey arms race + hunt video
   run_predprey3d.py R10: continuous 3D living world (populations + video)
+  run_swarm3d.py   R13: vast 12k-agent 3D murmuration
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (79): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D
+tests/         pytest (82): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale
 ```
 
 ## Run it
@@ -141,5 +146,6 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R9 ✓** predator–prey in 3D (aerial arms race)
 - **R10 ✓** continuous 3D ecology (self-sustaining living 3D world)
 - **R11 ✓** beauty pass (depth fog, graded sky, rim light, shadows, glowing food)
-- **R12** unify + polish + first public release
-- **R13+** livelier dynamics, larger swarms, speciation
+- **R12 ✓** milestone review + QUICKSTART (+ first-push gate)
+- **R13 ✓** vast swarms (12k+ via KD-tree spatial index)
+- **R14+** livelier dynamics, large-scale ecosystems, speciation
