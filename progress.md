@@ -1,11 +1,16 @@
 # alife — progress
 
-## Current state (Round 19 — evolution of cooperation — 2026-06-17)
+## Current state (Round 20 — evolution of aging — 2026-06-17)
 
-**Altruism evolves by Hamilton's rule.** `cooperation.py`: a donation game with tunable assortment;
-cooperation switches on right at the Hamilton threshold (assortment = c/b = 0.25) — flat ~0.1 below
-it, ~0.88 above. Replicator (fitness-proportionate) dynamics; robust. 101 tests pass. **Push gate
-still pending** Yusen's approval (19 local commits; origin=R1).
+**Senescence evolves (Medawar/Williams).** `aging.py`: age-specific intrinsic survival evolves under
+mutation pressure + declining force of selection with age. Survival stays high young and collapses
+old (senescence), and the collapse comes EARLIER under higher extrinsic mortality (onset age 15 at
+m=0.05 → 9 at m=0.35) — Williams' prediction. 104 tests pass. **Push gate still pending** Yusen's
+approval (20 local commits; origin=R1).
+
+### Round 19 — evolution of cooperation
+`cooperation.py`: a donation game with tunable assortment; cooperation switches on right at the
+Hamilton threshold (assortment = c/b), ~0.1 below to ~0.88 above. Altruism by Hamilton's rule.
 
 ### Round 18 — evolution of evolvability
 `evolvability.py` ((μ,λ)-ES self-adaptation): mutation rate collapses to the floor in a static
