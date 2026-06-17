@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 8: evolution in 3D
+## Current state — Round 9: predator–prey in 3D
 
-The pool has climbed eight rungs, each really run and verified by eye + data:
+The pool has climbed nine rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -58,6 +58,10 @@ The pool has climbed eight rungs, each really run and verified by eye + data:
   3D sensing → MLP → 3D acceleration. Random 3D brains forage hopelessly (≈0.5
   food); evolved ones reach ≈52 on a held-out field (~100×). The evolved swarm
   flies through the GPU renderer chasing green food — a living 3D ecosystem.
+- **R9 — predator–prey in 3D.** R4's co-evolution on R8's 3D substrate: prey forage
+  and flee, predators pursue, all in the volume. Vs the final evolved opponent,
+  predator hunting climbs 4 → 164 and prey evasion 0.08 → 0.18 — an aerial arms
+  race, rendered with cyan prey, red predators and green food.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -86,6 +90,7 @@ alife/
   memory.py    recurrent brains + occluded/nest memory tasks (R6)
   world3d.py boids3d.py render3d.py  3D arena + 3D Boids + moderngl GPU renderer (R7)
   evolve3d.py  evolved 3D foraging brains (3D sensing + GA) (R8)
+  coevo3d.py   predator–prey co-evolution in 3D (R9)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -95,8 +100,9 @@ scripts/
   run_memory.py    R6: recurrent vs memoryless comparison (honest)
   run_boids3d.py   R7: 3D flocking on the GPU (orbiting camera, mp4)
   run_evolve3d.py  R8: evolved 3D foragers + living 3D ecosystem render
+  run_coevo3d.py   R9: 3D predator-prey arms race + hunt video
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (71): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D
+tests/         pytest (75): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D
 ```
 
 ## Run it
@@ -121,5 +127,6 @@ Artifacts land in `runs/<name>/` (gitignored): mp4s, key frames, metric plots.
 - **R6 ✓** recurrent / memory brains (infra built; memory advantage = open frontier)
 - **R7 ✓** 3D flocking on the GPU (moderngl) — the visual summit begins
 - **R8 ✓** evolution + foraging brains in 3D (evolved 3D foragers + food)
-- **R9** predator–prey in 3D (aerial arms race)
-- **R10+** continuous 3D ecology, prettier rendering, speciation, scale
+- **R9 ✓** predator–prey in 3D (aerial arms race)
+- **R10** continuous 3D ecology (self-sustaining living 3D world)
+- **R11+** beauty pass (shadows/trails/bloom), speciation, scale
