@@ -1,12 +1,15 @@
 # alife — progress
 
-## Current state (Round 18 — evolution of evolvability — 2026-06-17)
+## Current state (Round 19 — evolution of cooperation — 2026-06-17)
 
-**The mutation rate itself evolves.** `evolvability.py` ((μ,λ)-ES self-adaptation): in a STATIC
-environment the evolved mutation rate collapses to the floor (≈0.002, fitness 1.0); under a MOVING
-optimum it stabilizes high (≈0.21, fitness ~0.73) to keep tracking — a ~100× divergence, robust
-across seeds. Evolvability is an evolved property. 98 tests pass. **Push gate still pending** Yusen's
-approval (18 local commits; origin=R1).
+**Altruism evolves by Hamilton's rule.** `cooperation.py`: a donation game with tunable assortment;
+cooperation switches on right at the Hamilton threshold (assortment = c/b = 0.25) — flat ~0.1 below
+it, ~0.88 above. Replicator (fitness-proportionate) dynamics; robust. 101 tests pass. **Push gate
+still pending** Yusen's approval (19 local commits; origin=R1).
+
+### Round 18 — evolution of evolvability
+`evolvability.py` ((μ,λ)-ES self-adaptation): mutation rate collapses to the floor in a static
+environment (fitness 1.0) but stays high under a moving optimum (~0.21) — a ~100× divergence.
 
 ### Round 17 — evolution of communication
 `signals.py` (Lewis signalling game): random sender/receiver maps evolve a shared convention —
