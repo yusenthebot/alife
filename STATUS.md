@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-17T02:20 · loop 9
+updated: 2026-06-17T02:45 · loop 10
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R9 done — PREDATOR-PREY CO-EVOLUTION IN 3D (coevo3d.py): two species in 3D volume, body-frame sensing + 3D accel, R4 co-evo lessons. Arms race vs final opponent: predator 4->164, prey evasion 0.08->0.18 (2 seeds). GPU-rendered hunt (cyan prey/red predators/green food), prey 166->0. 75 tests.
+doing:    R10 done — CONTINUOUS SELF-SUSTAINING 3D LIVING WORLD (predprey3d.py): R5 lifecycle (energy/repro/death/Type-II) on 3D substrate, seeded w/ R9 brains. 4000 steps no extinction: prey 315->1500, predators 22->320, stable coexistence. GPU-rendered (dense cyan prey + red predators + green food). 79 tests. Full vision realized end-to-end.
 blocked:  none
-next:     R10 — continuous 3D ECOLOGY (R5→3D): energy+reproduction+death in the volume = self-sustaining living 3D world (Lotka-Volterra in 3D). Alt: beauty pass (shadows/trails/bloom).
+next:     R11 — BEAUTY PASS (goal's "画面迷人"): motion trails + glowing/bloomed food + soft shadows + nicer camera/meshes. Alt: unify showcase + first git push (CEO gate).
