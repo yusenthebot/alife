@@ -1,11 +1,11 @@
 # alife — progress
 
-## Current state (Round 23 — 2026-06-17)
+## Current state (Round 25 — 2026-06-17)
 
-An evolving artificial-life ecosystem built from zero over 23 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 25 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
-scale, atmospheric GPU rendering, and a dozen classic evolutionary phenomena. **111 tests pass.**
+scale, atmospheric GPU rendering, and a dozen+ classic evolutionary phenomena. **118 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -38,6 +38,8 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R21 | a major transition: multicellularity (predation-driven) |
 | R22 | Red Queen host–parasite coevolution |
 | R23 | the gallery — every rung's headline frame in one journey poster |
+| R24 | docs-hygiene (trimmed progress.md to current-state; no new capability) |
+| R25 | sexual selection — Fisherian runaway (costly ornament dragged past survival optimum) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
@@ -50,8 +52,12 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 
 ## Frontier / next
 - Most stated + stretch goals are met; remaining frontiers are narrower: the R6 **memory win**
-  (a task where reactive policies provably fail), sexual selection, richer recurrent brains, or
-  consolidation toward a public release.
+  (a task where reactive policies provably fail), richer recurrent brains, or consolidation toward
+  a public release. (Sexual selection done in R25.)
+- **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
+  a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
+  this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
+  but persistently positive; the runaway and the dose-response are the robust signatures.
 - **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (fog/glow/shadows) → KD-tree scale
   (~10k+) → (future) numba/C++/GPU-compute for far larger N, instanced trails, shadow maps.
 - **Decision pending from Yusen:** publish (push) and/or stop the loop.

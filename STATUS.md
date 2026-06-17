@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-17T08:30 · loop 23
+updated: 2026-06-17T09:20 · loop 25
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R23 done — THE GALLERY (scripts/run_gallery.py): tiles every rung's headline frame (R1->R22) into one labelled journey poster (19 panels). Viz-only capstone. 111 tests.
-blocked:  push gate still pending CEO approval (git push R2-R23 to public yusenthebot/alife; origin=R1 only)
-next:     R24 — HYGIENE TRIM of progress.md (grown to ~110 lines of per-round changelog; docs-hygiene says current-state-only, git holds history) + optional another phenomenon. Strongly recommend push/stop.
+doing:    R25 done — SEXUAL SELECTION (sexsel.py): Fisherian runaway. Ornament 0->+2.24 with choice vs 0 without; cost paradox (males pay 53% survival yet win); monotonic dose-response; figure Read+verified. 118 tests.
+blocked:  push gate still pending CEO approval (git push R2-R25 to public yusenthebot/alife; origin=R1 only)
+next:     R26 frontier (push pending). Goal + all stretch + dozen+ phenomena done. Strongly recommend push/stop. Remaining frontier: R6 memory-win retry (only narrow item left); deep diminishing returns.
