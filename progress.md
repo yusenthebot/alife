@@ -1,11 +1,16 @@
 # alife — progress
 
-## Current state (Round 13 — vast swarms — 2026-06-17)
+## Current state (Round 14 — the large-scale living world — 2026-06-17)
 
-**Scale.** A KD-tree spatial index breaks the O(N²) neighbor ceiling: **12,000+ creatures** flock in
-3D (~146 ms/step), self-organizing into multiple coherent sub-flocks — a vast, dense, atmospheric
-murmuration. `swarm3d.py` (scipy cKDTree). order 0.005 → 0.65 at N=12k; 82 tests pass.
-**Push gate still pending** Yusen's approval (12 local commits R1–R12 + R13; origin = R1 only).
+**The definitive artifact.** A KD-tree-accelerated continuous ecosystem (`bigworld3d.py`) puts
+**~10,600 evolved-brain creatures** — thousands of prey + predators + food — into ONE 3D volume,
+hunting, fleeing, grazing, breeding and dying, at ~20 ms/step. 2200 steps, no extinction, stable
+coexistence (prey→9000, predators→1600). Combines the ecology (R10) + atmosphere (R11) + scale
+(R13). 86 tests pass. **Push gate still pending** Yusen's approval (14 local commits; origin = R1).
+
+### Round 13 — vast swarms
+A KD-tree spatial index breaks the O(N²) ceiling: 12,000+ creatures flock in 3D (~146 ms/step),
+multiple coherent sub-flocks. `swarm3d.py` (scipy cKDTree). order 0.005 → 0.65.
 
 ### Round 12 — milestone review + first-push gate
 Health-checked (tests green), hygiene-checked (no slop/secrets; root docs = README + QUICKSTART +
