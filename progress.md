@@ -1,12 +1,16 @@
 # alife — progress
 
-## Current state (Round 20 — evolution of aging — 2026-06-17)
+## Current state (Round 21 — a major transition: multicellularity — 2026-06-17)
 
-**Senescence evolves (Medawar/Williams).** `aging.py`: age-specific intrinsic survival evolves under
-mutation pressure + declining force of selection with age. Survival stays high young and collapses
-old (senescence), and the collapse comes EARLIER under higher extrinsic mortality (onset age 15 at
-m=0.05 → 9 at m=0.35) — Williams' prediction. 104 tests pass. **Push gate still pending** Yusen's
-approval (20 local commits; origin=R1).
+**Cells become multicellular.** `multicell.py`: with a size-selective predator (eats lone/small
+cells, large clusters protected) against a cost of bigness, stickiness evolves UP — clusters reach
+~7.3 cells (clearing the predator's size threshold of 5); without the predator, cells stay
+unicellular (~1.1). The fitness landscape shows the predator carving an intermediate peak. A major
+evolutionary transition, from scratch. 108 tests pass. **Push gate still pending** (21 commits; origin=R1).
+
+### Round 20 — evolution of aging
+`aging.py`: age-specific survival evolves; senescence emerges and sets in earlier under higher
+extrinsic mortality (onset 15→9), Williams' prediction.
 
 ### Round 19 — evolution of cooperation
 `cooperation.py`: a donation game with tunable assortment; cooperation switches on right at the

@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 20: a world that evolves order, brains, ecology, language, evolvability, cooperation & aging
+## Current state — Round 21: a world that evolves order, brains, ecology, language, sociality & a major transition
 
-The pool has climbed twenty rungs, each really run and verified by eye + data:
+The pool has climbed twenty-one rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -101,6 +101,10 @@ The pool has climbed twenty rungs, each really run and verified by eye + data:
   force of selection with age: senescence emerges (survival high young, collapsing
   old), and sets in *earlier* under higher extrinsic mortality (onset age 15→9) —
   Medawar/Williams, demonstrated.
+- **R21 — a major transition: multicellularity.** With a size-selective predator
+  (and a cost of bigness), cells evolve to cluster — reaching ~7 cells, clearing
+  the predator's size threshold; without it they stay unicellular. Predation-driven
+  multicellularity, an evolutionary major transition.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -139,6 +143,7 @@ alife/
   evolvability.py  evolution of evolvability (self-adaptive mutation rate) (R18)
   cooperation.py   evolution of cooperation (Hamilton's rule / assortment) (R19)
   aging.py     evolution of aging (Medawar/Williams senescence) (R20)
+  multicell.py   evolution of multicellularity (predation-driven) (R21)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -158,8 +163,9 @@ scripts/
   run_evolvability.py R18: mutation rate evolving (static vs moving environment)
   run_cooperation.py  R19: cooperation vs assortment (Hamilton threshold)
   run_aging.py     R20: evolved survival-by-age curves (senescence)
+  run_multicell.py R21: multicellularity (clustering + fitness landscape)
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (104): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability, cooperation, aging
+tests/         pytest (108): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability, cooperation, aging, multicellularity
 ```
 
 ## Run it
@@ -197,4 +203,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R18 ✓** evolution of evolvability (the mutation rate itself evolves)
 - **R19 ✓** evolution of cooperation (Hamilton's rule)
 - **R20 ✓** evolution of aging (Medawar/Williams senescence)
-- **R21+** major transitions; the memory win; a unified showcase
+- **R21 ✓** a major transition: multicellularity (predation-driven)
+- **R22+** a unified showcase; the memory win; further phenomena
