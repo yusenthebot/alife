@@ -1,52 +1,51 @@
 # alife — progress
 
-## Current state (Round 7 complete — 2026-06-17)
+## Current state (Round 8 complete — 2026-06-17)
 
-**The pivot to 3D succeeded.** Flocking now happens in a real 3D arena, rendered on the GPU —
-the project's stated visual summit ("一个能看着它一代代进化出行为的 3D 生态") is reached for the
-foundational behavior; the rest of the stack gets lifted into 3D in following rounds.
+**Evolution now happens in 3D.** Random 3D neural brains evolve into competent 3D foragers, and
+the evolved swarm is flown through the GPU renderer as a living 3D ecosystem with food. The two
+biggest threads of the project — *evolved intelligence* and *3D* — are now joined.
 
 ### Stack of rounds
-- **R1** emergent 2D Boids flocking. **R2** natural selection. **R3** evolved NN foraging brains
-  (generational GA). **R4** predator–prey co-evolution. **R5** continuous predator–prey ecology.
-  **R6** recurrent brains (honest negative: memory not robustly better).
-- **R7** 3D flocking on the GPU. `world3d.py`, `boids3d.py`, `render3d.py` (moderngl).
+- **R1** 2D flocking. **R2** natural selection. **R3** evolved 2D NN foraging brains.
+  **R4** predator–prey co-evolution. **R5** predator–prey ecology. **R6** recurrent brains
+  (honest negative). **R7** 3D flocking on the GPU.
+- **R8** evolution lifted into 3D: `evolve3d.py` (3D sensors + 3D forage GA + shared-world rollout).
 
-### R7 — what works (REAL-VERIFIED: eyes on GPU-rendered 3D frames + data)
-- `world3d.py` — bounded 3D box with boundary-push steering (keeps the flock whole and on-camera).
-- `boids3d.py` — vectorized 3D Reynolds Boids (sep/ali/coh in 3D) + boundary avoidance.
-- `render3d.py` — **moderngl offscreen GPU renderer**: perspective orbiting camera, lit instanced
-  3D cones oriented along velocity, ground grid + wireframe arena, depth test. Standalone GL
-  context works headless on the RTX 5080.
-- `scripts/run_boids3d.py`; 8 new tests (66 total) pass, incl. a GPU render smoke test.
+### R8 — what works (REAL-VERIFIED: GPU 3D frames + held-out data)
+- `evolve3d.py` — body-frame 3D sensing (nearest food as left/right · up/down · ahead/behind ×
+  proximity, + energy → 5 inputs) → MLP → 3D body-frame acceleration (3 outputs). Generational GA
+  (truncation + elitism). `rollout3d_shared` runs the evolved swarm in one shared 3D world.
+- `render3d.py` — added GPU food rendering (round green points).
+- `scripts/run_evolve3d.py`; 5 new tests (71 total) pass.
 
-**Verified run** (`runs/r7_flock3d`, 900 boids × 600 steps):
-- 3D order parameter **0.045 → 0.936** — flocking emerges in 3D.
-- Frames: start = scattered rainbow cloud of random-oriented cones; end = one cohesive flock,
-  cones aligned and moving together, viewed through an orbiting camera. Clearly 3D, mesmerizing.
+**Verified run** (`runs/r8_evolve3d`, 45 generations, 320-agent rollout):
+- 3D foraging fitness **0.9 → 49**; held-out (unseen food field) random **0.5** → evolved **52.6**
+  (~100×, robust across 2 seeds — random 3D brains are hopeless, evolved are competent).
+- Frames: evolved forager cones distributed through the 3D volume, hued by heading, clustered on
+  green food points — visibly foraging in 3D under an orbiting camera.
 
 ### What worked / notes
-- moderngl `create_standalone_context()` renders headless on the GPU — no display needed, so the
-  screenshot-verify discipline holds for 3D. (matplotlib was broken; the venv + moderngl path is clean.)
-- Matrix math hand-rolled in numpy (perspective / look_at), uploaded transposed (GL column-major);
-  `look_at` guards the view-parallel-to-up degenerate case.
-- Bounded box (not toroidal) for 3D so the flock doesn't teleport across wrap seams on camera.
+- The R3 generational GA transfers cleanly to 3D — body-frame sensing + body-frame acceleration is
+  a learnable, rotation-invariant control. 3D advantage is even larger than 2D (random baseline ≈0).
+- moderngl point rendering (PROGRAM_POINT_SIZE + round-point discard in the fragment shader) for food.
 
-### Next-round seed (R8 — lift EVOLUTION into 3D)
-3D rendering + 3D flocking are proven. Next: carry the evolutionary stack into 3D —
-3D genome/energy/food/reproduction/death (R2 in 3D) and/or evolved 3D foraging brains (R3 in 3D,
-sensors over 3D angular sectors / spherical bins). Render the evolving 3D ecosystem with the new
-GPU renderer (color by trait/energy). REAL-VERIFY: watch selection in the 3D world + the data.
-Reuse render3d.py (add food spheres + per-agent color); generalize sensors to 3D.
+### Next-round seed (R9 — predator–prey in 3D, OR full 3D living ecosystem)
+Two strong options:
+1. **Predator–prey in 3D** (R4/R5 → 3D): two species, aerial pursuit/evasion + co-evolution arms
+   race in the volume, rendered with the GPU renderer (prey cyan, predators red). The most dramatic
+   3D spectacle. Reuse coevo's structure + evolve3d's 3D sensing/movement.
+2. **Full continuous 3D ecosystem** (R5 → 3D): energy + reproduction + death in 3D for foragers
+   (and predators), Lotka–Volterra-style dynamics in the volume.
+Lean R9 = predator–prey in 3D (visual drama + co-evolution, building on R4 + R8).
 
 ## Frontier
-- **Current ceiling:** 3D flocking on GPU; the evolution/brains/ecology stack is still 2D.
+- **Current ceiling:** 3D flocking + 3D evolved foraging on GPU; predator–prey still 2D.
 - **Next frontiers (ambition × feasibility):**
-  1. Lift evolution + foraging brains into 3D (3D sensors, 3D ecosystem) → R8.
-  2. Lift predator–prey into 3D (3D pursuit/evasion, aerial hunting) → R9.
-  3. Prettier GPU rendering: shadows, food as glowing spheres, trails, bloom → ongoing.
-  4. Scale: spatial hashing / numba / C++ for N≫2k; speciation. Earn the memory win (R6 carryover).
-- **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (now) → numba/C++ for scale →
-  shadows/instanced trails for beauty.
-- **Radical ideas weighed:** full 3D sensors via spherical harmonics or ray casts (R8); GPU compute
-  for the sim itself (later, if N grows); import real 3D creature meshes (polish).
+  1. Predator–prey in 3D (aerial arms race) → R9.
+  2. Continuous 3D ecology (energy/repro/death in volume) → R9–R10.
+  3. Prettier rendering: shadows, glowing food, motion trails, bloom; bigger swarms (numba/C++) → ongoing.
+  4. Earn the memory win (R6 carryover); speciation.
+- **Fidelity/stack ladder:** numpy 3D + moderngl GPU (now) → numba/C++ for scale → shadows/trails for beauty.
+- **Radical ideas weighed:** GPU-compute the sim for huge N; real creature meshes; 3D recurrent
+  brains for aerial pursuit memory.

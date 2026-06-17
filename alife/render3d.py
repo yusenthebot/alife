@@ -90,6 +90,7 @@ class Renderer3D:
         self.world, self.w, self.h, self.scale = world, width, height, scale
         self.ctx = moderngl.create_standalone_context()
         self.ctx.enable(moderngl.DEPTH_TEST)
+        self.ctx.enable(moderngl.PROGRAM_POINT_SIZE)
         self.fbo = self.ctx.framebuffer(
             color_attachments=[self.ctx.texture((width, height), 4)],
             depth_attachment=self.ctx.depth_renderbuffer((width, height)))
@@ -122,6 +123,20 @@ class Renderer3D:
             out vec4 f_color; uniform vec3 color;
             void main(){ f_color = vec4(color,1.0); }""")
 
+        self.point_prog = self.ctx.program(
+            vertex_shader="""#version 330
+            in vec3 in_pos; uniform mat4 vp; uniform float psize;
+            void main(){ gl_Position = vp*vec4(in_pos,1.0); gl_PointSize = psize; }""",
+            fragment_shader="""#version 330
+            out vec4 f_color; uniform vec3 color;
+            void main(){
+              vec2 d = gl_PointCoord - vec2(0.5);
+              if (dot(d,d) > 0.25) discard;          // round points
+              f_color = vec4(color,1.0);
+            }""")
+        self.food_vbo = self.ctx.buffer(reserve=4 * 3 * 40000, dynamic=True)
+        self.food_vao = self.ctx.vertex_array(self.point_prog, [(self.food_vbo, "3f", "in_pos")])
+
         verts, norms = _cone_mesh()
         self.mesh_vbo = self.ctx.buffer(np.hstack([verts, norms]).astype("f4").tobytes())
         self.n_mesh = verts.shape[0]
@@ -136,7 +151,8 @@ class Renderer3D:
         self.line_vao = self.ctx.vertex_array(self.line_prog, [(self.lines_vbo, "3f", "in_pos")])
 
     def render(self, pos: np.ndarray, vel: np.ndarray, color: np.ndarray,
-               cam_angle: float, cam_elev: float = 0.45, radius_mult: float = 1.6) -> np.ndarray:
+               cam_angle: float, cam_elev: float = 0.45, radius_mult: float = 1.6,
+               food: np.ndarray | None = None) -> np.ndarray:
         s = self.world.size
         center = self.world.center
         radius = s * radius_mult
@@ -150,6 +166,13 @@ class Renderer3D:
         self.line_prog["vp"].write(vp_bytes)
         self.line_prog["color"].value = (0.16, 0.20, 0.28)
         self.line_vao.render(mode=moderngl.LINES, vertices=self.n_lines)
+
+        if food is not None and food.shape[0]:
+            self.food_vbo.write(food.astype("f4").tobytes())
+            self.point_prog["vp"].write(vp_bytes)
+            self.point_prog["color"].value = (0.3, 0.85, 0.4)
+            self.point_prog["psize"].value = 6.0
+            self.food_vao.render(mode=moderngl.POINTS, vertices=food.shape[0])
 
         right, up, fwd = _basis(vel)
         inst = np.hstack([pos.astype("f4"), right, up, fwd, color.astype("f4")])
