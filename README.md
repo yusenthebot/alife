@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 16: a vast, beautiful, cyclic, speciating world
+## Current state — Round 17: a world that evolves order, brains, ecology & language
 
-The pool has climbed sixteen rungs, each really run and verified by eye + data:
+The pool has climbed seventeen rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -86,6 +86,10 @@ The pool has climbed sixteen rungs, each really run and verified by eye + data:
   mating splits one population into **two stable species** (diet≈0 and diet≈1, in
   4/4 seeds); the random-mating control stays a single species — reproductive
   isolation is what makes speciation.
+- **R17 — evolution of communication.** A Lewis signalling game: from random
+  sender/receiver maps, selection evolves a shared convention — success climbs
+  from chance (0.25) to ~0.92, mutual information I(state;signal) from 0 to ~1.7
+  bits, and the evolved code is a near-perfect permutation. Signals acquire meaning.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -120,6 +124,7 @@ alife/
   bigworld3d.py  KD-tree-accelerated large-scale 3D ecosystem (R14)
   cycles.py    sustained predator-prey limit cycles (refuge floor) (R15)
   speciation.py  sympatric speciation (disruptive selection + assortative mating) (R16)
+  signals.py   evolution of communication (Lewis signalling game) (R17)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -135,8 +140,9 @@ scripts/
   run_bigworld3d.py R14: ~10k-creature large-scale living 3D world
   run_cycles.py    R15: sustained predator-prey cycles + phase plane
   run_speciation.py R16: one species splitting into two (diet over generations)
+  run_signals.py   R17: communication evolving (success + mutual info + convention)
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (92): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation
+tests/         pytest (95): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication
 ```
 
 ## Run it
@@ -170,4 +176,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R14 ✓** large-scale living world (~10k-creature KD-tree ecosystem)
 - **R15 ✓** sustained predator–prey limit cycles (prey refuge floor)
 - **R16 ✓** sympatric speciation (one species → two)
-- **R17+** communication, the memory win, further polish
+- **R17 ✓** evolution of communication (signals acquire meaning)
+- **R18+** consolidation; the memory win; a unified showcase

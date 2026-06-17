@@ -1,12 +1,16 @@
 # alife — progress
 
-## Current state (Round 16 — speciation — 2026-06-17)
+## Current state (Round 17 — evolution of communication — 2026-06-17)
 
-**One species becomes two.** `speciation.py`: frequency-dependent disruptive selection (two
-resources, rare-morph advantage) + **assortative mating** splits an initially-uniform population
-into two stable species (diet≈0 and diet≈1) — 2 species in 4/4 seeds, bimodality coeff 0.96. The
-random-mating control collapses to one species (BC ~0.5) — reproductive isolation is what makes
-speciation. 92 tests pass. **Push gate still pending** Yusen's approval (16 local commits; origin=R1).
+**Signals acquire meaning.** `signals.py` (Lewis signalling game): from random sender/receiver
+maps, selection evolves a shared signalling convention — communication success climbs from chance
+(0.25) to ~0.92, mutual information I(state;signal) from 0 to ~1.7 bits, and the evolved
+P(signal|state) is a near-perfect permutation (an arbitrary-but-shared code). Reliable across seeds.
+95 tests pass. **Push gate still pending** Yusen's approval (17 local commits; origin=R1).
+
+### Round 16 — speciation
+`speciation.py`: frequency-dependent disruptive selection + assortative mating splits one population
+into two stable species (2 species 4/4 seeds, BC 0.96); random-mating control stays one species.
 
 ### Round 15 — sustained cycles
 `cycles.py`: a Huffaker **prey refuge floor** + food-limited prey + uncapped Type-II predators yield
