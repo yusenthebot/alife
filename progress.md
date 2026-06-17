@@ -1,12 +1,16 @@
 # alife — progress
 
-## Current state (Round 17 — evolution of communication — 2026-06-17)
+## Current state (Round 18 — evolution of evolvability — 2026-06-17)
 
-**Signals acquire meaning.** `signals.py` (Lewis signalling game): from random sender/receiver
-maps, selection evolves a shared signalling convention — communication success climbs from chance
-(0.25) to ~0.92, mutual information I(state;signal) from 0 to ~1.7 bits, and the evolved
-P(signal|state) is a near-perfect permutation (an arbitrary-but-shared code). Reliable across seeds.
-95 tests pass. **Push gate still pending** Yusen's approval (17 local commits; origin=R1).
+**The mutation rate itself evolves.** `evolvability.py` ((μ,λ)-ES self-adaptation): in a STATIC
+environment the evolved mutation rate collapses to the floor (≈0.002, fitness 1.0); under a MOVING
+optimum it stabilizes high (≈0.21, fitness ~0.73) to keep tracking — a ~100× divergence, robust
+across seeds. Evolvability is an evolved property. 98 tests pass. **Push gate still pending** Yusen's
+approval (18 local commits; origin=R1).
+
+### Round 17 — evolution of communication
+`signals.py` (Lewis signalling game): random sender/receiver maps evolve a shared convention —
+success 0.25→0.92, mutual info 0→~1.7 bits, evolved code is a permutation. Signals acquire meaning.
 
 ### Round 16 — speciation
 `speciation.py`: frequency-dependent disruptive selection + assortative mating splits one population

@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 17: a world that evolves order, brains, ecology & language
+## Current state — Round 18: a world that evolves order, brains, ecology, language & its own evolvability
 
-The pool has climbed seventeen rungs, each really run and verified by eye + data:
+The pool has climbed eighteen rungs, each really run and verified by eye + data:
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -90,6 +90,10 @@ The pool has climbed seventeen rungs, each really run and verified by eye + data
   sender/receiver maps, selection evolves a shared convention — success climbs
   from chance (0.25) to ~0.92, mutual information I(state;signal) from 0 to ~1.7
   bits, and the evolved code is a near-perfect permutation. Signals acquire meaning.
+- **R18 — evolution of evolvability.** The mutation rate is itself heritable
+  ((μ,λ)-ES self-adaptation): it collapses to the floor in a static environment
+  (fitness 1.0) but stays high under a moving optimum (~0.21) to keep tracking —
+  a ~100× divergence. Evolvability is an evolved property.
 
 > Honest notes: (1) in-situ selection on brains proved too noisy, so R3/R4
 > selection is a generational GA, with the continuous ecosystem as the
@@ -125,6 +129,7 @@ alife/
   cycles.py    sustained predator-prey limit cycles (refuge floor) (R15)
   speciation.py  sympatric speciation (disruptive selection + assortative mating) (R16)
   signals.py   evolution of communication (Lewis signalling game) (R17)
+  evolvability.py  evolution of evolvability (self-adaptive mutation rate) (R18)
 scripts/
   run_boids.py     R1: flocking mp4 + metrics
   run_evolution.py R2: selection trajectories + trait histograms + replicates
@@ -141,8 +146,9 @@ scripts/
   run_cycles.py    R15: sustained predator-prey cycles + phase plane
   run_speciation.py R16: one species splitting into two (diet over generations)
   run_signals.py   R17: communication evolving (success + mutual info + convention)
+  run_evolvability.py R18: mutation rate evolving (static vs moving environment)
   run.sh test.sh   venv wrappers (isolate from a sourced ROS2 PYTHONPATH)
-tests/         pytest (95): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication
+tests/         pytest (98): emergence, lifecycle, selection, neuroevolution, co-evolution, ecology, memory, 3D, scale, cycles, speciation, communication, evolvability
 ```
 
 ## Run it
@@ -177,4 +183,5 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R15 ✓** sustained predator–prey limit cycles (prey refuge floor)
 - **R16 ✓** sympatric speciation (one species → two)
 - **R17 ✓** evolution of communication (signals acquire meaning)
-- **R18+** consolidation; the memory win; a unified showcase
+- **R18 ✓** evolution of evolvability (the mutation rate itself evolves)
+- **R19+** further evolutionary phenomena; the memory win; a unified showcase
