@@ -194,7 +194,7 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R3 ✓** evolved neural-network brains (foraging emerges from weights)
 - **R4 ✓** predator–prey co-evolution (an arms race)
 - **R5 ✓** continuous predator–prey ecology (two-species coexistence)
-- **R6 ✓** recurrent / memory brains (infra built; memory advantage = open frontier)
+- **R6 ✓** recurrent / memory brains (infra built; honest negative — settled later in R26)
 - **R7 ✓** 3D flocking on the GPU (moderngl) — the visual summit begins
 - **R8 ✓** evolution + foraging brains in 3D (evolved 3D foragers + food)
 - **R9 ✓** predator–prey in 3D (aerial arms race)
@@ -212,4 +212,6 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R21 ✓** a major transition: multicellularity (predation-driven)
 - **R22 ✓** Red Queen host–parasite coevolution
 - **R23 ✓** the gallery — every rung's headline frame in one journey poster
-- **R24+** the memory win; further phenomena; polish
+- **R24 ✓** docs-hygiene pass (trimmed progress.md to current-state)
+- **R25 ✓** sexual selection — Fisherian runaway (costly ornament dragged past the survival optimum)
+- **R26 ✓** the memory win — recurrent brains beat reactive ones on a *provably* memory-requiring task (the R6 rematch)
