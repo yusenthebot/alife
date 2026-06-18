@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T13:35 · loop 55
-goal:     keep going divergently until Yusen orders stop (发散思维). GPU substrate arc.
+updated: 2026-06-18T14:10 · loop 56
+goal:     keep going divergently until Yusen orders stop (发散思维). GPU-substrate arc.
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R55 done + PUSHED — GPU PHYSARUM (gpuslime.py): 1,000,000 slime-mold agents, stigmergy only (no neighbour search), self-organize fine mesh -> bold transport networks (structure std/mean 2->10), scales to 4M agents. Builds on R54 GPU substrate. Figure Read+verified (iconic Physarum networks). 264 tests. origin synced R55.
+doing:    R56 done + PUSHED — A MILLION BOIDS (gpuboids.py): GPU Vicsek field-mediated flocking, order φ 0.06->0.98 in 1M agents, clean order-disorder phase transition (0.98@lownoise->0.12@highnoise); full-circle to R1. grid=64 (coarse=long-range alignment) was the key. 268 tests. origin synced R56.
 blocked:  none. Order: keep going, never stop until ordered, divergent.
-next:     R56 — more GPU-megascale ALife (GPU boids full-circle to R1 w/ spatial grid, or GPU Lenia continuous-CA creatures) OR fresh frontier. GPU pattern: SSBO + ping-pong + memory_barrier + atomicAdd(uint) for deposits. Cold-start ORIENT.
+next:     R57 — GPU EVOLVING agents (heritable genes + selection at 1M scale = GPU x evolution, the project's core) OR GPU Lenia continuous-CA, OR fresh frontier. GPU pattern proven: SSBO+ping-pong+memory_barrier+atomicAdd(int/uint), require=460, coarse grid for long-range. Cold-start ORIENT.
