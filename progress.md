@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 66 — 2026-06-18)
+## Current state (Round 67 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 66 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 67 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -13,9 +13,10 @@ local-adaptation / Lenia), and **R61: Particle Life — organisms self-assemble 
 force matrix**, **R62: Autocatalytic sets (RAF) — self-sustaining chemistry at a phase
 transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spiral waves**, **R64: Development & diversity — L-system plants + MAP-Elites morphospace**, and
 **R65: Ant-colony foraging — stigmergy trails + Deneubourg shortest path**, and
-**R66: The edge of chaos — searching the CA rule space (Langton's λ)**.
-**324 tests pass.** PUBLISHED & SYNCED through R66 on public
-github.com/yusenthebot/alife (origin/master = 0ff147a). An origin-of-life arc runs
+**R66: The edge of chaos — searching the CA rule space (Langton's λ)**, and
+**R67: Evolving CA to compute — emergent global synchronization (Mitchell-Crutchfield-Das)**.
+**330 tests pass.** PUBLISHED & SYNCED through R67 on public
+github.com/yusenthebot/alife (origin/master = 74b17cc). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -93,6 +94,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R64 | Development & diversity — L-system plants (recursive grammar→grown form): developmental cascade, 6 species from 6 grammars, and MAP-Elites illuminating the (slenderness, branchiness) morphospace to 100% with diverse evolved plants. Honest note: every scalar fitness for an isolated plant collapses to a degenerate shape (spike/sprawl/line) — diversity illumination, not single-objective optimization, is the honest result |
 | R65 | Ant-colony foraging — stigmergy: a spatial colony self-organizes a nest↔food pheromone highway (corridor 87 vs 3 off-axis; foraging accelerates), and the Deneubourg double-bridge locks onto the SHORTER route (P→1 across ratios, 12/12 seeds); equal-arm control breaks symmetry at random. Collective optimization with no optimizer |
 | R66 | The edge of chaos — meta-level: search the SPACE of 2D life-like CA rules. Langton's λ phase transition (density rises monotonically); complexity is RARE and the fraction of complex rules peaks at intermediate λ (Conway sits there); a blind search of 2^18 rules rediscovers Life-like worlds clustering at the edge. Three regimes (ordered/complex/chaotic) shown |
+| R67 | Evolving CA to compute (Mitchell-Crutchfield-Das) — a GA evolves a 1D CA rule table for the SYNCHRONIZATION task: from any start, drive the whole lattice to global blink-in-unison (0% random → 92% evolved), via emergent defect "particles" that annihilate (eye-verified spacetime). Honest sibling: density classification is NOT cracked (hard-IC acc below trivial; no perfect local rule) — red-team caught an inflated easy-IC metric |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
