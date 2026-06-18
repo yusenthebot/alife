@@ -33,6 +33,11 @@ PANELS = [
     ("r37_sexevo/sexevo.png", "R37 · evolution of sex (Muller's ratchet)"),
     ("r38_spatialcoop/spatialcoop.png", "R38 · spatial reciprocity (cooperation)"),
     ("r39_rps/rps.png", "R39 · rock-paper-scissors (biodiversity)"),
+    ("r41_baldwin/baldwin.png", "R41 · the Baldwin effect (learning + evo)"),
+    ("r42_groupsel/groupsel.png", "R42 · group selection (Simpson's paradox)"),
+    ("r44_quasispecies/quasispecies.png", "R44 · error threshold (Eigen)"),
+    ("r45_reactiondiff/reactiondiff.png", "R45 · morphogenesis (Gray-Scott)"),
+    ("r46_conway/conway.png", "R46 · Conway's Game of Life"),
 ]
 
 COLS = 3

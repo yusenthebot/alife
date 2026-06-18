@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 46 — 2026-06-18)
+## Current state (Round 47 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 46 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 47 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -65,6 +65,7 @@ capabilities). **First public push is pending CEO approval** — 46 commits are 
 | R44 | error threshold — Eigen's quasispecies: master sequence collapses above μc≈ln(σ)/L |
 | R45 | morphogenesis — Gray-Scott reaction-diffusion: Turing patterns (spots/stripes/waves) |
 | R46 | Conway's Game of Life — Gosper gun (unbounded growth) + soup→ash; the CA root of ALife |
+| R47 | review — refreshed phenomena gallery (R25–R46, 17 panels); architecture/hygiene; 225 green |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
