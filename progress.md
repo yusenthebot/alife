@@ -1,15 +1,15 @@
 # alife — progress
 
-## Current state (Round 43 — 2026-06-18)
+## Current state (Round 44 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 43 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 44 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
 (no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex,
 R38 spatial reciprocity, and **R39: rock-paper-scissors (local dispersal preserves biodiversity)**.
-**205 tests pass.**
+**212 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -62,6 +62,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R41 | the Baldwin effect — learning finds & assimilates a needle (Hinton-Nowlan); blind without it |
 | R42 | group selection — Simpson's paradox: cooperation up in the whole, down in every group |
 | R43 | animation showcase — the in-situ ecosystem as a GIF (watch foraging evolve; the "迷人" goal) |
+| R44 | error threshold — Eigen's quasispecies: master sequence collapses above μc≈ln(σ)/L |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
