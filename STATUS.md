@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T12:00 · loop 52
+updated: 2026-06-18T12:35 · loop 53
 goal:     keep going divergently until Yusen orders stop (发散思维). Arc: Digital Genesis (Avida/Tierra digital evolution)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R52 done + PUSHED — DIGITAL GENESIS II (digtasks.py): computation PAYS. Hand-written NAND computer (verified: self-replicates + does NAND) drives equal-length pure copier to extinction via merit (100%/3 seeds); de-novo NAND emerges 23x from pure copiers (fragile, doesn't sweep — honest; EQU needs larger regime). 251 tests. origin synced R52.
+doing:    R53 done + PUSHED — DIGITAL GENESIS III (digphylo.py): tree of life in the soup. 24 founding lineages coalesce to 1 common ancestor (dominant ->100%); Muller-plot clade turnover; ongoing evolutionary activity (3414 genotypes explored). 256 tests. origin synced R53.
 blocked:  none. Order: keep going, never stop until ordered, divergent.
-next:     R53 — phylogeny + open-endedness instrument on the digital soup (lineage tree-of-life + Bedau-Packard evolutionary activity) — reliable+distinct+visual; OR pivot to GPU megaworld runner-up (moderngl GL4.6 compute, verified). Avoid EQU slog in minimal VM.
+next:     R54 — diverge further: GPU megaworld (moderngl GL4.6 compute, runner-up, verified) OR digital host-parasite coevolution OR a fresh frontier. Cold-start ORIENT from this file + progress.md + git. EQU de-novo = slog in minimal VM, skip.

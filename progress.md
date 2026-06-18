@@ -1,15 +1,15 @@
 # alife — progress
 
-## Current state (Round 53 — 2026-06-18)
+## Current state (Round 54 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 53 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 54 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
 (no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex,
 R38 spatial reciprocity, and **R39: rock-paper-scissors (local dispersal preserves biodiversity)**.
-**256 tests pass.** PUBLISHED: R2–R50 live on public github.com/yusenthebot/alife.
+**260 tests pass.** PUBLISHED: R2–R50 live on public github.com/yusenthebot/alife.
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 49 commits are local; `origin` (public
@@ -73,6 +73,7 @@ capabilities). **First public push is pending CEO approval** — 49 commits are 
 | R51 | Digital Genesis — self-replicating PROGRAMS evolve (Avida/Tierra); a substrate leap (executable genome) |
 | R52 | Digital Genesis II — computation PAYS: NAND computer outcompetes copier; de-novo NAND emerges (fragile) |
 | R53 | Digital Genesis III — phylogeny: clades rise/fall, 24 lineages coalesce to 1 common ancestor |
+| R54 | GPU substrate leap — 1.05M-cell Gray-Scott on compute shaders (GPU=CPU to 1e-7; ~100x faster) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
