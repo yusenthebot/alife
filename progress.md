@@ -1,13 +1,14 @@
 # alife — progress
 
-## Current state (Round 31 — 2026-06-17)
+## Current state (Round 33 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 31 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 33 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
-trilogy (R28–R30 MAP-Elites / obstacle-nav QD / novelty search), and (R31) evolving morphology
-— mass-spring virtual creatures that evolve a body AND a gait. **155 tests pass.**
+trilogy (R28–R30 MAP-Elites / obstacle-nav QD / novelty search), evolving morphology (R31), and
+the **capstone (R33): foraging behavior that evolves IN SITU in one living world — no GA, only
+life, death and reproduction** (resolves the R3 open problem). **162 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -49,10 +50,16 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R30 | novelty search — beats objective on a deceptive maze (8/8 vs 2/8; Lehman-Stanley) |
 | R31 | evolving morphology — mass-spring virtual creatures evolve a body + gait (dist 14→49; Karl Sims) |
 | R32 | milestone review — adversarially verified R28–R31 (all hold); honest R31 gait caveat recorded |
+| R33 | capstone — foraging behavior evolves IN SITU (no GA); directedness 0.08→0.33, food-limited pop |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
-- **In-situ ecosystem selection on brains is too noisy** (crowding dilutes the skill signal) →
-  evolve brains with a **generational GA**; keep the continuous ecosystem as the living-world viewer.
+- **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
+  selection too noisy *in a cap-limited, food-dense regime* (population pins at the cap, eating is
+  opportunistic, skill stops mattering). R33's capstone (alife/ecosim.py) shows it works once the
+  ecology is strictly **energy-limited**: a generous pop cap so food is the real limiter, scarce food,
+  movement costs energy, expensive reproduction. Directed foraging then evolves with no GA at all —
+  directedness 0.08→0.33, population self-regulates well below the cap, lineages 25 generations deep.
+  The R3 negative was about the *regime*, not in-situ selection per se.
 - **R31 morphology — locomotion is mostly but not purely gait-driven.** Muscle-ablation (R32 review):
   an evolved creature travels 48.7 with muscles vs 11.6 with muscles zeroed, so ~24% of the distance
   is passive (largely the initial fall/settle, plus some asymmetric-body creep). The gait dominates
@@ -68,18 +75,15 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
-- **Open-endedness trilogy done** (R28 QD open space · R29 QD obstacle navigation · R30 novelty
-  search beats objective on a deceptive maze). The three core QD/open-ended ideas are now demonstrated.
-  Next steps to push further: **(a) QD on the 3D foragers / living world** (illuminate foraging
-  strategies, not just locomotion); **(b) CPPN/indirect encoding** for richer controllers;
-  **(c) co-evolving environments** (open-ended worlds, not just behavior); **(d) MAP-Elites + the
-  ecosystem** (a living world seeded from an illuminated repertoire).
-- **Evolving morphology done (R31)** — 2D mass-spring creatures co-evolve body + gait for locomotion.
-  Natural extensions: richer bodies (more nodes / variable node count), terrain & obstacles, sensing
-  for closed-loop gaits, QD over morphologies (illuminate body-plans), or co-evolving body+NN-brain.
+- **The capstone (R33) ties the project together:** brains + sensing + energy + reproduction +
+  in-situ natural selection in one living world, behavior evolving as you watch — the original vision
+  realized as ONE system, not a collection of demos. Both big ambition-critic leaps (open-endedness
+  R28–R30, morphology R31) and the longest-standing open problem (R3 in-situ selection) are now done.
+- Ways to push the capstone further: **(a) put evolved MORPHOLOGY creatures in the living world**
+  (body+brain+ecology in one); **(b) predators in the in-situ world** (co-evolving arms race without
+  a GA); **(c) speciation / niches** emerging in situ; **(d) sexual reproduction + recombination**.
 - Remaining heavy leap: a **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents / faster physics).
-  Both big ambition-critic leaps (open-endedness, morphology) are now demonstrated; scripted-phenomenon
-  modules are at deep diminishing returns.
+  Scripted-phenomenon modules are at deep diminishing returns; the live frontier is the integrated world.
 - **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
   a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
   this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
