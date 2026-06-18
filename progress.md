@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 74 — 2026-06-18)
+## Current state (Round 75 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 74 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 75 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -20,9 +20,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R71: Bak-Sneppen co-evolution — self-organized criticality + punctuated equilibrium**, and
 **R72: Genetic programming — evolution rediscovers a hidden equation (symbolic regression)**, and
 **R73: Reservoir computing — an ESN learns to dream the Lorenz attractor**, and
-**R74: The abelian sandpile — self-organized criticality + fractal order**.
-**368 tests pass.** PUBLISHED & SYNCED through R74 on public
-github.com/yusenthebot/alife (origin/master = 8778907). An origin-of-life arc runs
+**R74: The abelian sandpile — self-organized criticality + fractal order**, and
+**R75: Swarm cognition — a honeybee colony decides by cross-inhibition consensus**.
+**375 tests pass.** PUBLISHED & SYNCED through R75 on public
+github.com/yusenthebot/alife (origin/master = 8bce5eb). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -108,6 +109,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R72 | Genetic programming (Koza symbolic regression) — new evolutionary substrate: evolve variable-structure PROGRAM TREES (vs all prior fixed genomes). From (x,y) data alone, tree-GA rediscovers the formula: x²+sin(2x) recovered EXACTLY as sin(x+x)+(x*x) (RMSE 0.000), cubic RMSE 0.001; parsimony curbs bloat. Evolution writes its own equations |
 | R73 | Reservoir computing (Echo State Network) — a fixed RANDOM recurrent reservoir (spectral radius 1.2) + a trained linear readout learns the Lorenz system, then closed-loop autonomously regenerates it: tracks ~4.6 Lyapunov times before chaos separates them, and reconstructs the butterfly attractor's climate (x-z + 3D). New paradigm vs trained-weight brains |
 | R74 | The abelian sandpile (Bak-Tang-Wiesenfeld) — canonical lattice SOC: driven slowly, self-organizes to critical density (mean height 2.11) with scale-free power-law avalanches (slope -1.22); abelian toppling makes a point source relax into a self-similar FRACTAL (heights 0-3). Two faces: critical avalanches + emergent fractal order |
+| R75 | Swarm cognition (honeybee decision, Seeley/Marshall) — agent-based collective decision: scouts recruit by quality-weighted dancing + a cross-inhibition stop-signal. Value-sensitive (best site wins, acc >0.8); cross-inhibition BREAKS DEADLOCK between equal sites into decisive consensus (loser→0.00 in ~61 steps) which recruitment alone can't (stays split 0.57/0.40, never resolves). Distinct from R65 stigmergy |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
