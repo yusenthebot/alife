@@ -54,6 +54,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R33 | capstone — foraging behavior evolves IN SITU (no GA); directedness 0.08→0.33, food-limited pop |
 | R34 | in-situ predator–prey — refuge-stabilized coexistence, boom-bust, prey evolve evasion (no GA) |
 | R35 | evolution in a changing world — population tracks a flipping food valence (sawtooth re-adaptation) |
+| R36 | review — red-team R33/R34/R35 (mutation-off controls), architecture/hygiene audit |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
@@ -86,6 +87,12 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   (body+brain+ecology in one); **(b) in-situ speciation / niches**; **(c) sexual reproduction +
   recombination**. (R34 added in-situ predators — coexistence + prey evasion robust; a clean
   two-sided arms race resisted tuning, see honest note.)
+- **R33 red-team nuance (R36):** the in-situ directedness gain is genuine natural selection (a no-mutation
+  run still rises by *sorting the initial random brains'* standing variation; R35's tracking, by contrast,
+  fully collapses with mutation off — confirming that one needs heritable innovation). Over ~5k steps
+  mutation adds little to R33 beyond selecting standing variation (and carries slight load). So R33 is
+  honestly "selection acting in situ," with cumulative mutation-driven innovation a smaller effect on
+  that horizon. Not an artifact — directedness depends on the energy-based life/death regime.
 - **R34 honest note:** in-situ predator–prey coexists robustly via a Huffaker refuge and prey reliably
   evolve evasion, but a clean *two-sided* arms race (pursuit ALSO rising) did not materialize — the
   predator population pins at its cap and prey are abundant, so pursuit selection is weak; predators

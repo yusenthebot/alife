@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T02:10 · loop 35
+updated: 2026-06-18T02:35 · loop 36
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R35 done — EVOLUTION IN A CHANGING WORLD (ecoseasons.py): two food colours, nutritious one FLIPS each season (poison=wrong colour); population re-evolves which to chase. Clean SAWTOOTH: approach-bias -0.3 at each flip -> +0.25 by season end, 3/3 seeds, pop survives. FAST substrate (~8s/run). Figure Read+verified. 174 tests.
-blocked:  push gate still pending CEO approval (git push R2-R35 to public yusenthebot/alife; origin=R1 only)
-next:     R36 — in-situ speciation/niches, morphology-in-world, or sexual reproduction (keep on the FAST ecosim substrate; predeco was slow). Push/stop your call; loop continues.
+doing:    R36 REVIEW — red-teamed R33/R34/R35 via mutation-off controls: R35 tracking REQUIRES heritable selection (recovery +0.50 vs -0.04 no-mut) CONFIRMED; R33 directedness rises even no-mut = selection on STANDING VARIATION (honest nuance recorded), not an artifact. Architecture clean (39 modules <=237 lines, 3 docs+STATUS, no drift). Full suite (174) running.
+blocked:  push gate still pending CEO approval (git push R2-R36 to public yusenthebot/alife; origin=R1 only)
+next:     R37 — keep on FAST ecosim substrate: in-situ speciation/niches or sexual reproduction. Push/stop your call; loop continues.
