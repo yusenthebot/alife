@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 71 — 2026-06-18)
+## Current state (Round 72 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 71 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 72 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -17,9 +17,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R67: Evolving CA to compute — emergent global synchronization (Mitchell-Crutchfield-Das)**, and
 **R68: Physarum transport networks — maze-solving + Tokyo-rail networks (Tero-Nakagaki)**, and
 **R69: Hopfield associative memory — energy landscape + 0.138N capacity limit**, and
-**R71: Bak-Sneppen co-evolution — self-organized criticality + punctuated equilibrium**.
-**350 tests pass.** PUBLISHED & SYNCED through R71 on public
-github.com/yusenthebot/alife (origin/master = f962bb7). An origin-of-life arc runs
+**R71: Bak-Sneppen co-evolution — self-organized criticality + punctuated equilibrium**, and
+**R72: Genetic programming — evolution rediscovers a hidden equation (symbolic regression)**.
+**357 tests pass.** PUBLISHED & SYNCED through R72 on public
+github.com/yusenthebot/alife (origin/master = ee2e1a2). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -102,6 +103,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R69 | Hopfield associative memory — attractor net: Hebbian weights carve an energy landscape, memories are valleys; 5 balanced patterns recalled perfectly (overlap +1.00) from 30%-corrupted/occluded cues; energy descends monotonically (Lyapunov); capacity phase transition at αc≈0.138N (recall collapses above). New compute model vs prior controllers (R3/R6/R26) |
 | R70 | Milestone review — full suite 344; adversarially re-verified R62-R69 (all hold; softened R68 maze to "near-shortest"); built R59-R69 frontier gallery; refreshed README through R70 |
 | R71 | Bak-Sneppen co-evolution — self-organized CRITICALITY (new dimension): least-fit species + neighbours replaced → self-organized gap at f_c≈0.667 (94% above), power-law avalanches (slope -1.16, scale-free), punctuated equilibrium (bursts + stasis in space-time). Criticality with no tuning |
+| R72 | Genetic programming (Koza symbolic regression) — new evolutionary substrate: evolve variable-structure PROGRAM TREES (vs all prior fixed genomes). From (x,y) data alone, tree-GA rediscovers the formula: x²+sin(2x) recovered EXACTLY as sin(x+x)+(x*x) (RMSE 0.000), cubic RMSE 0.001; parsimony curbs bloat. Evolution writes its own equations |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
