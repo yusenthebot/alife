@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T05:45 · loop 42
+updated: 2026-06-18T06:15 · loop 43
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R42 done — GROUP SELECTION / Simpson's paradox (groupsel.py): trait-group model. With assortment=0.12 global cooperation rises 0.5->0.96 while within EVERY group it declines (dp<0 each gen); random groups -> 0. Assortment threshold ~0.05-0.1. FAST. Figure Read+verified. 205 tests (full-suite backstop due — last full run 193 @R40; R41/R42 new-files-only).
-blocked:  push gate still pending CEO approval (git push R2-R42 to public yusenthebot/alife; origin=R1 only)
-next:     R43 — tag/greenbeard cooperation or a major transition (eusociality/division-of-labor); then run full-suite backstop. Push/stop your call; loop continues.
+doing:    R43 done — ANIMATION SHOWCASE (scripts/run_animate.py): in-situ ecosystem as a 150-frame GIF (runs/r43_animation/ecosystem.gif), creatures coloured by lineage gen. Early=scattered/low-gen/food-rich -> Late=warm/maxgen33/food-depleted, directedness 0.08->0.33. Serves original '画面还迷人' goal. Sample frames Read+verified. Full-suite backstop (205) running.
+blocked:  push gate still pending CEO approval (git push R2-R43 to public yusenthebot/alife; origin=R1 only)
+next:     R44 — tag/greenbeard cooperation, division-of-labor, or more animations (RPS spirals, boids). Push/stop your call; loop continues.

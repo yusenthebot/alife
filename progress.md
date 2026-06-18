@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 42 — 2026-06-18)
+## Current state (Round 43 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 42 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 43 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -61,6 +61,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R40 | review + phenomena-wall poster (R25–R39 montage); README roadmap refreshed; 193 tests green |
 | R41 | the Baldwin effect — learning finds & assimilates a needle (Hinton-Nowlan); blind without it |
 | R42 | group selection — Simpson's paradox: cooperation up in the whole, down in every group |
+| R43 | animation showcase — the in-situ ecosystem as a GIF (watch foraging evolve; the "迷人" goal) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
