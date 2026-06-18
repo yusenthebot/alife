@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 69: a full artificial-life ecosystem and a tour of the field's great ideas
+## Current state — Round 79: a full artificial-life ecosystem and a tour of the field's great ideas
 
-The pool has climbed sixty-nine rungs, each really run and verified by eye + data.
+The pool has climbed seventy-nine rungs, each really run and verified by eye + data.
 The original goal is long met — flocking → selection → neural-network brains →
 predator–prey → energy/reproduction → a 3D ecosystem you watch evolve — and the
 project has gone well past it across several arcs:
@@ -29,9 +29,13 @@ project has gone well past it across several arcs:
 - **The field's great ideas** (R61–R69): Particle Life, autocatalytic sets (origin of
   metabolism), hypercycles, L-system development, ant-colony stigmergy, the edge of chaos,
   evolving cellular automata to compute, Physarum transport networks, and Hopfield memory.
+- **Criticality, computation & morphogenesis** (R71–R79): Bak-Sneppen and sandpile
+  self-organized criticality, genetic programming (evolution discovers equations), reservoir
+  computing (dreaming the Lorenz attractor), NK fitness landscapes, honeybee swarm decisions,
+  iterated-PD strategy evolution, diffusion-limited aggregation, and cellular-Potts tissue sorting.
 
 The early rungs are narrated below; the full ladder is the checklist further down.
-**344 tests pass.** Every figure is reproducible from `scripts/`.
+**402 tests pass.** Every figure is reproducible from `scripts/`.
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -278,3 +282,13 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R68 ✓** Physarum transport networks (Tero) — maze-solving + efficient networks
 - **R69 ✓** Hopfield memory — energy-landscape recall + the 0.138N capacity limit
 - **R70 ✓** review — adversarial re-verify R62–R69, frontier gallery (R59–R69), docs-hygiene
+- **R71 ✓** Bak-Sneppen co-evolution — self-organized criticality + punctuated equilibrium
+- **R72 ✓** genetic programming — evolution rediscovers a hidden equation (symbolic regression)
+- **R73 ✓** reservoir computing — an Echo State Network dreams the Lorenz attractor
+- **R74 ✓** the abelian sandpile — self-organized criticality + a self-similar fractal
+- **R75 ✓** swarm cognition — a honeybee colony decides by cross-inhibition consensus
+- **R76 ✓** NK fitness landscapes — ruggedness, trapping & the complexity catastrophe
+- **R77 ✓** evolution of cooperation — iterated Prisoner's Dilemma strategy evolution
+- **R78 ✓** diffusion-limited aggregation — Brownian growth into a fractal
+- **R79 ✓** cellular Potts model — tissue sorts itself by differential adhesion
+- **R80 ✓** review — adversarial re-verify R71–R79, frontier gallery (R71–R79), docs-hygiene
