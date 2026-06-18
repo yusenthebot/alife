@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 81 — 2026-06-18)
+## Current state (Round 82 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 81 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 82 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -25,9 +25,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R76: NK fitness landscapes — ruggedness, trapping & the complexity catastrophe**, and
 **R77: Evolution of cooperation — iterated Prisoner's Dilemma strategy evolution**, and
 **R78: Diffusion-limited aggregation — Brownian growth into a fractal**, **R79: Cellular Potts model — tissue sorts itself by differential adhesion**, and
-**R81: Restricted Boltzmann machine — a neural network learns to dream**.
-**409 tests pass.** PUBLISHED & SYNCED through R81 on public
-github.com/yusenthebot/alife (origin/master = c6e3ff6). An origin-of-life arc runs
+**R81: Restricted Boltzmann machine — a neural network learns to dream**, and
+**R82: The voter model — coarsening with and without surface tension**.
+**415 tests pass.** PUBLISHED & SYNCED through R82 on public
+github.com/yusenthebot/alife (origin/master = 6ac212b). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -120,6 +121,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R79 | Cellular Potts model (Graner-Glazier) — tissue-level morphogenesis: cells = energy-minimizing lattice domains (adhesion + area constraint, Metropolis). A salt-and-pepper mix of two cell types SORTS itself into separate tissues by differential adhesion (Steinberg); heterotypic boundary 345→181, while the EQUAL-adhesion control mixes (345→750) — mechanism proven |
 | R80 | Milestone review — adversarially re-verified all 9 of R71–R79 (all hold; R73 valid-time noted as reservoir-size-dependent, published n_res=800 reproduces 4.6 Lyap); built R71–R79 frontier gallery; README refreshed through R80 |
 | R81 | Restricted Boltzmann machine — generative neural net (completes trilogy w/ R69 recall, R73 prediction). CD-1 on bars-and-stripes; trained net DREAMS valid patterns 78% (21/30 distinct, no mode collapse) vs untrained 0.2% / random 0.05%; hidden weights = bar/stripe detectors; valid-dream fraction rises with training |
+| R82 | The voter model — consensus dynamics: VOTER rule coarsens into rough fractal domains with NO surface tension (interface 0.21, driftless martingale mean opinion); MAJORITY rule has surface tension (smooth round domains, interface collapses to 0.107). Same lattice, two universality classes (honest: exact consensus=density needs async) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
