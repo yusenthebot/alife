@@ -1,18 +1,18 @@
 # alife — progress
 
-## Current state (Round 47 — 2026-06-18)
+## Current state (Round 48 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 47 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 48 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
 (no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex,
 R38 spatial reciprocity, and **R39: rock-paper-scissors (local dispersal preserves biodiversity)**.
-**225 tests pass.**
+**231 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
-capabilities). **First public push is pending CEO approval** — 46 commits are local; `origin` (public
+capabilities). **First public push is pending CEO approval** — 48 commits are local; `origin` (public
 `github.com/yusenthebot/alife`) still has only R1. To publish: `git push origin master`.
 
 ## The rungs (detail in git log + README)
@@ -66,6 +66,7 @@ capabilities). **First public push is pending CEO approval** — 46 commits are 
 | R45 | morphogenesis — Gray-Scott reaction-diffusion: Turing patterns (spots/stripes/waves) |
 | R46 | Conway's Game of Life — Gosper gun (unbounded growth) + soup→ash; the CA root of ALife |
 | R47 | review — refreshed phenomena gallery (R25–R46, 17 panels); architecture/hygiene; 225 green |
+| R48 | Daisyworld — life regulates planetary temperature (Gaia/homeostasis); std 1.7 vs 12.6 bare |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
