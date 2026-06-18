@@ -1,19 +1,21 @@
 # alife — progress
 
-## Current state (Round 60 — 2026-06-18)
+## Current state (Round 61 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 60 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 61 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
-(no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex,
-R38 spatial reciprocity, and **R39: rock-paper-scissors (local dispersal preserves biodiversity)**.
-**281 tests pass.** PUBLISHED: R2–R50 live on public github.com/yusenthebot/alife.
+(no GA)**, a **Digital Genesis arc (R51–R53)** of self-replicating evolving programs, a
+**GPU-compute substrate (R54–R60)** running 1M-agent ALife (RD / Physarum / Vicsek / evolution /
+local-adaptation / Lenia), and **R61: Particle Life — organisms self-assemble from an asymmetric
+force matrix**. **288 tests pass.** PUBLISHED & SYNCED through R61 on public
+github.com/yusenthebot/alife (origin/master = a35767e).
 
-Status: feature-complete and well past the stated goal (genuine diminishing returns on new
-capabilities). **First public push is pending CEO approval** — 49 commits are local; `origin` (public
-`github.com/yusenthebot/alife`) still has only R1. To publish: `git push origin master`.
+Status: well past the stated goal and into a long frontier tail (running divergently under standing
+order to keep going until told to stop; each round commits + pushes). Each round adds a genuinely
+distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## The rungs (detail in git log + README)
 
@@ -80,6 +82,7 @@ capabilities). **First public push is pending CEO approval** — 49 commits are 
 | R58 | review — frontier gallery (R51–R57 Digital Genesis + GPU); architecture clean; full suite 272 |
 | R59 | local adaptation @1M — GPU spatial evolution: the genetic map evolves to mirror the environment (corr→0.99) |
 | R60 | Lenia — continuous-CA creatures self-organize on the GPU (deferred R47, resolved at scale) |
+| R61 | Particle Life — organisms self-assemble from an asymmetric K×K force matrix (cells/membranes; 5.3× a gas; distinct matrices → distinct biota; all-repulsive control stays a gas) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
@@ -130,5 +133,7 @@ capabilities). **First public push is pending CEO approval** — 49 commits are 
   this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
   but persistently positive; the runaway and the dose-response are the robust signatures.
 - **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (fog/glow/shadows) → KD-tree scale
-  (~10k+) → (future) numba/C++/GPU-compute for far larger N, instanced trails, shadow maps.
-- **Decision pending from Yusen:** publish (push) and/or stop the loop.
+  (~10k+) → **GPU compute shaders (R54–R60): 1M agents, SSBO+ping-pong+memory_barrier+atomics,
+  correctness-gated vs numpy.** Proven toolkit for any future megascale ALife.
+- **Status: published & synced** through R61 (origin/master public). Loop runs divergently under
+  standing order; only push/publish/delete-other-projects gate (push now pre-approved each round).
