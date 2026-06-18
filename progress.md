@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 62 — 2026-06-18)
+## Current state (Round 63 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 62 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 63 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -10,9 +10,11 @@ trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ fo
 (no GA)**, a **Digital Genesis arc (R51–R53)** of self-replicating evolving programs, a
 **GPU-compute substrate (R54–R60)** running 1M-agent ALife (RD / Physarum / Vicsek / evolution /
 local-adaptation / Lenia), and **R61: Particle Life — organisms self-assemble from an asymmetric
-force matrix**, and **R62: Autocatalytic sets (RAF) — self-sustaining chemistry at a phase
-transition**. **295 tests pass.** PUBLISHED & SYNCED through R62 on public
-github.com/yusenthebot/alife (origin/master = 2e3fc83).
+force matrix**, **R62: Autocatalytic sets (RAF) — self-sustaining chemistry at a phase
+transition**, and **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spiral waves**.
+**302 tests pass.** PUBLISHED & SYNCED through R63 on public
+github.com/yusenthebot/alife (origin/master = 8bf2bb3). An origin-of-life arc runs
+R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
 order to keep going until told to stop; each round commits + pushes). Each round adds a genuinely
@@ -85,6 +87,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R60 | Lenia — continuous-CA creatures self-organize on the GPU (deferred R47, resolved at scale) |
 | R61 | Particle Life — organisms self-assemble from an asymmetric K×K force matrix (cells/membranes; 5.3× a gas; distinct matrices → distinct biota; all-repulsive control stays a gas) |
 | R62 | Autocatalytic sets (RAF) — self-sustaining chemistry at a phase transition (Kauffman/Hordijk-Steel; giant RAF 0→625 reactions, P 0→0.98; f* grows modestly while diversity grows exponentially; circular-set fixpoint algorithm; red-teamed) |
+| R63 | Hypercycles (Eigen-Schuster) — n≥5 limit cycle + all coexist (vs competitive exclusion for uncoupled); non-reciprocating parasite collapses the well-mixed cycle; spatial CA → rotating spiral waves with balanced coexistence. Honest negative: Boerlijst-Hogeweg spatial parasite-rescue NOT reproduced (red-team caught a seeding artifact; parasite invades spatially too) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
