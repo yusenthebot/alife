@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 63 — 2026-06-18)
+## Current state (Round 64 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 63 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 64 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -11,9 +11,10 @@ trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ fo
 **GPU-compute substrate (R54–R60)** running 1M-agent ALife (RD / Physarum / Vicsek / evolution /
 local-adaptation / Lenia), and **R61: Particle Life — organisms self-assemble from an asymmetric
 force matrix**, **R62: Autocatalytic sets (RAF) — self-sustaining chemistry at a phase
-transition**, and **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spiral waves**.
-**302 tests pass.** PUBLISHED & SYNCED through R63 on public
-github.com/yusenthebot/alife (origin/master = 8bf2bb3). An origin-of-life arc runs
+transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spiral waves**, and
+**R64: Development & diversity — L-system plants + MAP-Elites morphospace**.
+**310 tests pass.** PUBLISHED & SYNCED through R64 on public
+github.com/yusenthebot/alife (origin/master = 4e900a1). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -88,6 +89,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R61 | Particle Life — organisms self-assemble from an asymmetric K×K force matrix (cells/membranes; 5.3× a gas; distinct matrices → distinct biota; all-repulsive control stays a gas) |
 | R62 | Autocatalytic sets (RAF) — self-sustaining chemistry at a phase transition (Kauffman/Hordijk-Steel; giant RAF 0→625 reactions, P 0→0.98; f* grows modestly while diversity grows exponentially; circular-set fixpoint algorithm; red-teamed) |
 | R63 | Hypercycles (Eigen-Schuster) — n≥5 limit cycle + all coexist (vs competitive exclusion for uncoupled); non-reciprocating parasite collapses the well-mixed cycle; spatial CA → rotating spiral waves with balanced coexistence. Honest negative: Boerlijst-Hogeweg spatial parasite-rescue NOT reproduced (red-team caught a seeding artifact; parasite invades spatially too) |
+| R64 | Development & diversity — L-system plants (recursive grammar→grown form): developmental cascade, 6 species from 6 grammars, and MAP-Elites illuminating the (slenderness, branchiness) morphospace to 100% with diverse evolved plants. Honest note: every scalar fitness for an isolated plant collapses to a degenerate shape (spike/sprawl/line) — diversity illumination, not single-objective optimization, is the honest result |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
