@@ -1,14 +1,15 @@
 # alife — progress
 
-## Current state (Round 34 — 2026-06-18)
+## Current state (Round 35 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 34 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 35 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
-(no GA)**, and **R34: a two-species in-situ predator–prey world** (refuge-stabilized coexistence,
-boom-bust dynamics, evolved prey evasion). **169 tests pass.**
+(no GA)**, R34 in-situ predator–prey, and **R35: evolution tracking a flipping environment**
+(a living world whose food valence flips each season; the population re-adapts in a sawtooth).
+**174 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -52,6 +53,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R32 | milestone review — adversarially verified R28–R31 (all hold); honest R31 gait caveat recorded |
 | R33 | capstone — foraging behavior evolves IN SITU (no GA); directedness 0.08→0.33, food-limited pop |
 | R34 | in-situ predator–prey — refuge-stabilized coexistence, boom-bust, prey evolve evasion (no GA) |
+| R35 | evolution in a changing world — population tracks a flipping food valence (sawtooth re-adaptation) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
