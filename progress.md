@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 57 — 2026-06-18)
+## Current state (Round 58 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 57 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 58 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -77,6 +77,7 @@ capabilities). **First public push is pending CEO approval** — 49 commits are 
 | R55 | GPU Physarum — 1,000,000 slime-mold agents self-organize into transport networks (stigmergy) |
 | R56 | a million boids — GPU Vicsek flocking (order φ→0.98) + phase transition; full-circle to R1 |
 | R57 | natural selection at a million-genome scale — GPU tournament evolution finds the global optimum |
+| R58 | review — frontier gallery (R51–R57 Digital Genesis + GPU); architecture clean; full suite 272 |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
