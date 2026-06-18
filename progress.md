@@ -1,15 +1,14 @@
 # alife — progress
 
-## Current state (Round 35 — 2026-06-18)
+## Current state (Round 37 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 35 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 37 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
-(no GA)**, R34 in-situ predator–prey, and **R35: evolution tracking a flipping environment**
-(a living world whose food valence flips each season; the population re-adapts in a sawtooth).
-**174 tests pass.**
+(no GA)**, R34 in-situ predator–prey, R35 evolution tracking a flipping environment, R36 review,
+and **R37: the evolution of sex (Muller's ratchet)**. **180 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -55,6 +54,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R34 | in-situ predator–prey — refuge-stabilized coexistence, boom-bust, prey evolve evasion (no GA) |
 | R35 | evolution in a changing world — population tracks a flipping food valence (sawtooth re-adaptation) |
 | R36 | review — red-team R33/R34/R35 (mutation-off controls), architecture/hygiene audit |
+| R37 | evolution of sex — Muller's ratchet: asexual load ratchets up (→73), sex holds balance (~12) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
