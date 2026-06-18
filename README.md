@@ -10,17 +10,28 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 49: a full artificial-life ecosystem — evolution, open-endedness, morphology, an in-situ living world, and self-organization
+## Current state — Round 69: a full artificial-life ecosystem and a tour of the field's great ideas
 
-The pool has climbed forty-nine rungs, each really run and verified by eye + data.
+The pool has climbed sixty-nine rungs, each really run and verified by eye + data.
 The original goal is long met — flocking → selection → neural-network brains →
 predator–prey → energy/reproduction → a 3D ecosystem you watch evolve — and the
-project has gone well past it: an open-endedness trilogy (quality-diversity,
-novelty search), evolving morphology (virtual creatures), a **capstone** where
-foraging behaviour evolves *in situ* in one living world with no GA, a dozen-plus
-classic evolutionary phenomena, and the self-organization side of the field
-(reaction-diffusion morphogenesis, Conway's Life, Daisyworld). The early rungs are
-narrated below; the full ladder is the checklist further down. **237 tests pass.**
+project has gone well past it across several arcs:
+
+- **Evolution & open-endedness** (R1–R49): an open-endedness trilogy (quality-diversity,
+  novelty search), evolving morphology (virtual creatures), a **capstone** where foraging
+  behaviour evolves *in situ* in one living world with no GA, and a dozen-plus classic
+  phenomena (speciation, communication, aging, cooperation, sexual selection, Muller's
+  ratchet, group selection, the Baldwin effect, Daisyworld, …).
+- **Digital Genesis** (R51–R53): self-replicating *programs* evolve in an Avida-style VM —
+  executable genomes, computation that pays, a tree of life.
+- **GPU substrate** (R54–R60): 1M-agent worlds on compute shaders — Gray-Scott, Physarum,
+  Vicsek flocking, megascale evolution, local adaptation, Lenia — all correctness-gated.
+- **The field's great ideas** (R61–R69): Particle Life, autocatalytic sets (origin of
+  metabolism), hypercycles, L-system development, ant-colony stigmergy, the edge of chaos,
+  evolving cellular automata to compute, Physarum transport networks, and Hopfield memory.
+
+The early rungs are narrated below; the full ladder is the checklist further down.
+**344 tests pass.** Every figure is reproducible from `scripts/`.
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -246,3 +257,24 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R47 ✓** review — refreshed phenomena gallery (R25–R46)
 - **R48 ✓** Daisyworld — life regulates planetary temperature (Gaia / homeostasis)
 - **R49 ✓** evolutionary branching — one lineage splits under disruptive competition
+- **R50 ✓** release-readiness consolidation — full R1–R49 story, docs-hygiene
+- **R51 ✓** Digital Genesis — self-replicating programs evolve (Avida/Tierra VM)
+- **R52 ✓** Digital Genesis II — computation pays (NAND merit; de-novo logic emerges)
+- **R53 ✓** Digital Genesis III — a tree of life (lineages coalesce to one ancestor)
+- **R54 ✓** GPU substrate leap — 1.05M-cell Gray-Scott on compute shaders (≈100×)
+- **R55 ✓** GPU Physarum — 1,000,000 slime-mold agents self-organize transport networks
+- **R56 ✓** a million boids — GPU Vicsek flocking + phase transition (φ→0.98)
+- **R57 ✓** natural selection at a million-genome scale (GPU tournament evolution)
+- **R58 ✓** review — frontier gallery (R51–R57)
+- **R59 ✓** local adaptation @1M — GPU spatial evolution mirrors the environment (corr→0.99)
+- **R60 ✓** GPU Lenia — continuous-CA creatures self-organize from soup
+- **R61 ✓** Particle Life — organisms self-assemble from an asymmetric force matrix
+- **R62 ✓** autocatalytic sets (RAF) — self-sustaining chemistry at a phase transition (Kauffman)
+- **R63 ✓** hypercycles (Eigen-Schuster) — limit cycle, the parasite, spiral waves
+- **R64 ✓** L-system development — grammar→plant; MAP-Elites fills a morphospace
+- **R65 ✓** ant-colony foraging — stigmergy trails + Deneubourg shortest path
+- **R66 ✓** the edge of chaos — searching the CA rule space (Langton's λ)
+- **R67 ✓** evolving CA to compute — emergent global synchronization (Mitchell-Crutchfield-Das)
+- **R68 ✓** Physarum transport networks (Tero) — maze-solving + efficient networks
+- **R69 ✓** Hopfield memory — energy-landscape recall + the 0.138N capacity limit
+- **R70 ✓** review — adversarial re-verify R62–R69, frontier gallery (R59–R69), docs-hygiene
