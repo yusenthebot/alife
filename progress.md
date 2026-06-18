@@ -1,15 +1,15 @@
 # alife — progress
 
-## Current state (Round 38 — 2026-06-18)
+## Current state (Round 39 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 38 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 39 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
 trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
-(no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex
-(Muller's ratchet), and **R38: spatial reciprocity (cooperation survives by clustering)**.
-**187 tests pass.**
+(no GA)**, R34 in-situ predator–prey, R35 environmental tracking, R37 the evolution of sex,
+R38 spatial reciprocity, and **R39: rock-paper-scissors (local dispersal preserves biodiversity)**.
+**193 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -57,6 +57,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R36 | review — red-team R33/R34/R35 (mutation-off controls), architecture/hygiene audit |
 | R37 | evolution of sex — Muller's ratchet: asexual load ratchets up (→73), sex holds balance (~12) |
 | R38 | spatial reciprocity — cooperation persists by clustering on a lattice (0.42) vs well-mixed (0) |
+| R39 | rock-paper-scissors — local dispersal preserves all 3 species (~0.33) vs well-mixed fixation |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ

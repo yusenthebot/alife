@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T03:35 · loop 38
+updated: 2026-06-18T04:05 · loop 39
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R38 done — SPATIAL RECIPROCITY / Nowak-May (spatialcoop.py): lattice prisoner's dilemma, cooperators survive by CLUSTERING (coop 0.42 at b=1.6) while well-mixed reshuffle collapses to 0; b-sweep shows spatial-reciprocity threshold ~1.6-1.7; famous cluster patterns rendered. FAST CA pure-numpy. Figure Read+verified. 187 tests.
-blocked:  push gate still pending CEO approval (git push R2-R38 to public yusenthebot/alife; origin=R1 only)
-next:     R39 — another classic on a FAST substrate (Baldwin effect / learning, tag-based greenbeard, RPS coexistence) OR a milestone review. Push/stop your call; loop continues.
+doing:    R39 done — ROCK-PAPER-SCISSORS / cyclic dominance (rps.py): lattice keeps all 3 species ~0.33 (min 0.32) via local dispersal; well-mixed amplifies to fixation (~step45, min 0). Interwoven coexistence domains (honest: not crisp spirals — needs May-Leonard empty-site). FAST CA. Figure Read+verified. 193 tests (full-suite backstop running).
+blocked:  push gate still pending CEO approval (git push R2-R39 to public yusenthebot/alife; origin=R1 only)
+next:     R40 — milestone review + gallery refresh (6 rounds since R36 review), or another classic (Baldwin/greenbeard). Push/stop your call; loop continues.
