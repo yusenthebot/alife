@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 73 — 2026-06-18)
+## Current state (Round 74 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 73 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 74 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -19,9 +19,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R69: Hopfield associative memory — energy landscape + 0.138N capacity limit**, and
 **R71: Bak-Sneppen co-evolution — self-organized criticality + punctuated equilibrium**, and
 **R72: Genetic programming — evolution rediscovers a hidden equation (symbolic regression)**, and
-**R73: Reservoir computing — an ESN learns to dream the Lorenz attractor**.
-**362 tests pass.** PUBLISHED & SYNCED through R73 on public
-github.com/yusenthebot/alife (origin/master = 35c3ecf). An origin-of-life arc runs
+**R73: Reservoir computing — an ESN learns to dream the Lorenz attractor**, and
+**R74: The abelian sandpile — self-organized criticality + fractal order**.
+**368 tests pass.** PUBLISHED & SYNCED through R74 on public
+github.com/yusenthebot/alife (origin/master = 8778907). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -106,6 +107,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R71 | Bak-Sneppen co-evolution — self-organized CRITICALITY (new dimension): least-fit species + neighbours replaced → self-organized gap at f_c≈0.667 (94% above), power-law avalanches (slope -1.16, scale-free), punctuated equilibrium (bursts + stasis in space-time). Criticality with no tuning |
 | R72 | Genetic programming (Koza symbolic regression) — new evolutionary substrate: evolve variable-structure PROGRAM TREES (vs all prior fixed genomes). From (x,y) data alone, tree-GA rediscovers the formula: x²+sin(2x) recovered EXACTLY as sin(x+x)+(x*x) (RMSE 0.000), cubic RMSE 0.001; parsimony curbs bloat. Evolution writes its own equations |
 | R73 | Reservoir computing (Echo State Network) — a fixed RANDOM recurrent reservoir (spectral radius 1.2) + a trained linear readout learns the Lorenz system, then closed-loop autonomously regenerates it: tracks ~4.6 Lyapunov times before chaos separates them, and reconstructs the butterfly attractor's climate (x-z + 3D). New paradigm vs trained-weight brains |
+| R74 | The abelian sandpile (Bak-Tang-Wiesenfeld) — canonical lattice SOC: driven slowly, self-organizes to critical density (mean height 2.11) with scale-free power-law avalanches (slope -1.22); abelian toppling makes a point source relax into a self-similar FRACTAL (heights 0-3). Two faces: critical avalanches + emergent fractal order |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
