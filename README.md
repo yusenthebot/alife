@@ -215,3 +215,16 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R24 ✓** docs-hygiene pass (trimmed progress.md to current-state)
 - **R25 ✓** sexual selection — Fisherian runaway (costly ornament dragged past the survival optimum)
 - **R26 ✓** the memory win — recurrent brains beat reactive ones on a *provably* memory-requiring task (the R6 rematch)
+- **R27 ✓** milestone review (adversarial verification + ambition critic)
+- **R28 ✓** open-endedness — MAP-Elites illuminates a behaviour space (quality-diversity)
+- **R29 ✓** open-ended navigation — QD discovers routes around an obstacle field
+- **R30 ✓** novelty search — beats the objective on a deceptive maze (Lehman-Stanley)
+- **R31 ✓** evolving morphology — mass-spring virtual creatures evolve a body + gait (Karl Sims)
+- **R32 ✓** milestone review (adversarial verify R28–R31)
+- **R33 ✓** the capstone — foraging behaviour evolves IN SITU in one living world (no GA)
+- **R34 ✓** in-situ predator–prey — refuge-stabilised coexistence + evolved prey evasion
+- **R35 ✓** evolution in a changing world — tracking a flipping environment (sawtooth re-adaptation)
+- **R36 ✓** review — red-team R33/R34/R35 (mutation-off controls)
+- **R37 ✓** the evolution of sex — Muller's ratchet (recombination purges mutation load)
+- **R38 ✓** spatial reciprocity — cooperation survives by clustering (Nowak-May)
+- **R39 ✓** rock-paper-scissors — local dispersal preserves biodiversity

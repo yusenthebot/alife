@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T04:05 · loop 39
+updated: 2026-06-18T04:45 · loop 40
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R39 done — ROCK-PAPER-SCISSORS / cyclic dominance (rps.py): lattice keeps all 3 species ~0.33 (min 0.32) via local dispersal; well-mixed amplifies to fixation (~step45, min 0). Interwoven coexistence domains (honest: not crisp spirals — needs May-Leonard empty-site). FAST CA. Figure Read+verified. 193 tests (full-suite backstop running).
-blocked:  push gate still pending CEO approval (git push R2-R39 to public yusenthebot/alife; origin=R1 only)
-next:     R40 — milestone review + gallery refresh (6 rounds since R36 review), or another classic (Baldwin/greenbeard). Push/stop your call; loop continues.
+doing:    R40 REVIEW — full suite 193 green; README roadmap refreshed thru R39; built phenomena-wall poster (scripts/run_phenomena.py -> runs/r40_phenomena, 12 panels R25-R39) Read+verified; architecture clean (43 modules <=237 lines, 3 docs+STATUS). No code regressions.
+blocked:  push gate still pending CEO approval (git push R2-R40 to public yusenthebot/alife; origin=R1 only)
+next:     R41 — another classic on a FAST substrate (Baldwin effect / tag-greenbeard / group selection) or push the integrated living world. Push/stop your call; loop continues.

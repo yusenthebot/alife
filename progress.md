@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 39 — 2026-06-18)
+## Current state (Round 40 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 39 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 40 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -58,6 +58,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R37 | evolution of sex — Muller's ratchet: asexual load ratchets up (→73), sex holds balance (~12) |
 | R38 | spatial reciprocity — cooperation persists by clustering on a lattice (0.42) vs well-mixed (0) |
 | R39 | rock-paper-scissors — local dispersal preserves all 3 species (~0.33) vs well-mixed fixation |
+| R40 | review + phenomena-wall poster (R25–R39 montage); README roadmap refreshed; 193 tests green |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
