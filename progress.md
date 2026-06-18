@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 76 — 2026-06-18)
+## Current state (Round 77 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 76 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 77 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -22,9 +22,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R73: Reservoir computing — an ESN learns to dream the Lorenz attractor**, and
 **R74: The abelian sandpile — self-organized criticality + fractal order**, and
 **R75: Swarm cognition — a honeybee colony decides by cross-inhibition consensus**, and
-**R76: NK fitness landscapes — ruggedness, trapping & the complexity catastrophe**.
-**382 tests pass.** PUBLISHED & SYNCED through R76 on public
-github.com/yusenthebot/alife (origin/master = 917069d). An origin-of-life arc runs
+**R76: NK fitness landscapes — ruggedness, trapping & the complexity catastrophe**, and
+**R77: Evolution of cooperation — iterated Prisoner's Dilemma strategy evolution**.
+**390 tests pass.** PUBLISHED & SYNCED through R77 on public
+github.com/yusenthebot/alife (origin/master = 9229c0a). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -112,6 +113,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R74 | The abelian sandpile (Bak-Tang-Wiesenfeld) — canonical lattice SOC: driven slowly, self-organizes to critical density (mean height 2.11) with scale-free power-law avalanches (slope -1.22); abelian toppling makes a point source relax into a self-similar FRACTAL (heights 0-3). Two faces: critical avalanches + emergent fractal order |
 | R75 | Swarm cognition (honeybee decision, Seeley/Marshall) — agent-based collective decision: scouts recruit by quality-weighted dancing + a cross-inhibition stop-signal. Value-sensitive (best site wins, acc >0.8); cross-inhibition BREAKS DEADLOCK between equal sites into decisive consensus (loser→0.00 in ~61 steps) which recruitment alone can't (stays split 0.57/0.40, never resolves). Distinct from R65 stigmergy |
 | R76 | NK fitness landscapes (Kauffman) — the GEOMETRY of evolution: epistasis K tunes ruggedness. K=0 single smooth peak (walks reach global); rising K → local optima explode (1→2045), walks get TRAPPED (frac-global 1→0), and the COMPLEXITY CATASTROPHE — gap between the global optimum and what adaptive walks reach widens (0→0.136). Verified K=0 global = mean-of-maxes |
+| R77 | Evolution of cooperation (iterated PD strategy evolution) — memory-1 strategies, exact Markov payoffs. Axelrod tournament (reciprocators thrive, ALLC exploited); NOISE breaks TFT (vendettas, coop→0.5) but not self-correcting WSLS/Pavlov; well-mixed evolution is BISTABLE (5/8 seeds → cooperation, 2 → defection) — honest: cooperation contingent in well-mixed (cf R38 spatial). Distinct from fixed-strategy R19/R38 |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
