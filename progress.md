@@ -1,14 +1,14 @@
 # alife — progress
 
-## Current state (Round 33 — 2026-06-18)
+## Current state (Round 34 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 33 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 34 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
-trilogy (R28–R30 MAP-Elites / obstacle-nav QD / novelty search), evolving morphology (R31), and
-the **capstone (R33): foraging behavior that evolves IN SITU in one living world — no GA, only
-life, death and reproduction** (resolves the R3 open problem). **162 tests pass.**
+trilogy (R28–R30), evolving morphology (R31), the **capstone (R33): in-situ foraging evolution
+(no GA)**, and **R34: a two-species in-situ predator–prey world** (refuge-stabilized coexistence,
+boom-bust dynamics, evolved prey evasion). **169 tests pass.**
 
 Status: feature-complete and well past the stated goal (genuine diminishing returns on new
 capabilities). **First public push is pending CEO approval** — 23 commits are local; `origin` (public
@@ -51,6 +51,7 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
 | R31 | evolving morphology — mass-spring virtual creatures evolve a body + gait (dist 14→49; Karl Sims) |
 | R32 | milestone review — adversarially verified R28–R31 (all hold); honest R31 gait caveat recorded |
 | R33 | capstone — foraging behavior evolves IN SITU (no GA); directedness 0.08→0.33, food-limited pop |
+| R34 | in-situ predator–prey — refuge-stabilized coexistence, boom-bust, prey evolve evasion (no GA) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
@@ -80,8 +81,14 @@ capabilities). **First public push is pending CEO approval** — 23 commits are 
   realized as ONE system, not a collection of demos. Both big ambition-critic leaps (open-endedness
   R28–R30, morphology R31) and the longest-standing open problem (R3 in-situ selection) are now done.
 - Ways to push the capstone further: **(a) put evolved MORPHOLOGY creatures in the living world**
-  (body+brain+ecology in one); **(b) predators in the in-situ world** (co-evolving arms race without
-  a GA); **(c) speciation / niches** emerging in situ; **(d) sexual reproduction + recombination**.
+  (body+brain+ecology in one); **(b) in-situ speciation / niches**; **(c) sexual reproduction +
+  recombination**. (R34 added in-situ predators — coexistence + prey evasion robust; a clean
+  two-sided arms race resisted tuning, see honest note.)
+- **R34 honest note:** in-situ predator–prey coexists robustly via a Huffaker refuge and prey reliably
+  evolve evasion, but a clean *two-sided* arms race (pursuit ALSO rising) did not materialize — the
+  predator population pins at its cap and prey are abundant, so pursuit selection is weak; predators
+  also get pursuit "for free" from a sensor that points at prey. Reported as the data shows it; this
+  is the same R5/R10/R14 knife-edge the project has hit before.
 - Remaining heavy leap: a **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents / faster physics).
   Scripted-phenomenon modules are at deep diminishing returns; the live frontier is the integrated world.
 - **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
