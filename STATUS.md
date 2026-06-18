@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T12:35 · loop 53
-goal:     keep going divergently until Yusen orders stop (发散思维). Arc: Digital Genesis (Avida/Tierra digital evolution)
+updated: 2026-06-18T13:05 · loop 54
+goal:     keep going divergently until Yusen orders stop (发散思维). GPU substrate now available.
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R53 done + PUSHED — DIGITAL GENESIS III (digphylo.py): tree of life in the soup. 24 founding lineages coalesce to 1 common ancestor (dominant ->100%); Muller-plot clade turnover; ongoing evolutionary activity (3414 genotypes explored). 256 tests. origin synced R53.
+doing:    R54 done + PUSHED — GPU SUBSTRATE LEAP (gpurd.py): Gray-Scott on GLSL compute shader (moderngl, RTX 5080). Correctness-gated (GPU=CPU float32 to 1.5e-7; bug was missing memory_barrier between ping-pong dispatches). Scales: 1.05M cells @26k steps/s, 4.2M cells, 27B cell-updates/s, ~100x vs CPU. 260 tests. origin synced R54.
 blocked:  none. Order: keep going, never stop until ordered, divergent.
-next:     R54 — diverge further: GPU megaworld (moderngl GL4.6 compute, runner-up, verified) OR digital host-parasite coevolution OR a fresh frontier. Cold-start ORIENT from this file + progress.md + git. EQU de-novo = slog in minimal VM, skip.
+next:     R55 — leverage GPU substrate (port living ecosystem or digital soup to megascale) OR fresh frontier. moderngl compute pattern: SSBOs + ping-pong + ctx.memory_barrier() each step (REQUIRED), require=460. Cold-start ORIENT.
