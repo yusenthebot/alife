@@ -1,8 +1,8 @@
 # STATUS — main
-updated: 2026-06-18T09:15 · loop 48
+updated: 2026-06-18T10:25 · loop 50
 goal:     evolving artificial-life ecosystem in ~/alife — Boids → genome/selection → NN brains → predator-prey → 3D (frontier mode, floor≠ceiling)
 phase:    review
 owns:     all of ~/alife (single session)
-doing:    R48 done — DAISYWORLD / Gaia homeostasis (daisyworld.py): black(warm)+white(cool) daisies regulate planet temp as sun brightens — flat ~22°C across L=0.7-1.25 (std 1.7) vs bare planet linear (std 12.6); black->white handoff; regulation breaks at extremes. FAST deterministic. Figure Read+verified. 231 tests.
-blocked:  push gate still pending CEO approval (git push R2-R48 to public yusenthebot/alife; origin=R1 only)
-next:     R49 — niche construction (eco-evo feedback) or adaptive-dynamics branching. ~15 rounds since 'keep going'; deep saturation. Push/stop your call; loop continues.
+doing:    R50 release-readiness — README "Current state" refreshed R22->R49 + full-story intro; roadmap checklist extended to R49; docs-hygiene (3 docs+STATUS). Full-suite backstop (237) running. progress.md bumped to R50.
+blocked:  push gate still pending CEO approval (git push R2-R50 to public yusenthebot/alife; origin=R1 only)
+next:     R51 — niche construction / digital-organism evolution, OR keep consolidating. ~17 rounds since 'keep going'; PUSH is the standing high-value decision (repo now release-ready).

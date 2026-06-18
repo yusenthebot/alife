@@ -10,9 +10,17 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 22: a world that evolves order, brains, ecology, sociality, a major transition & endless coevolution
+## Current state — Round 49: a full artificial-life ecosystem — evolution, open-endedness, morphology, an in-situ living world, and self-organization
 
-The pool has climbed twenty-two rungs, each really run and verified by eye + data:
+The pool has climbed forty-nine rungs, each really run and verified by eye + data.
+The original goal is long met — flocking → selection → neural-network brains →
+predator–prey → energy/reproduction → a 3D ecosystem you watch evolve — and the
+project has gone well past it: an open-endedness trilogy (quality-diversity,
+novelty search), evolving morphology (virtual creatures), a **capstone** where
+foraging behaviour evolves *in situ* in one living world with no GA, a dozen-plus
+classic evolutionary phenomena, and the self-organization side of the field
+(reaction-diffusion morphogenesis, Conway's Life, Daisyworld). The early rungs are
+narrated below; the full ladder is the checklist further down. **237 tests pass.**
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -228,3 +236,13 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R37 ✓** the evolution of sex — Muller's ratchet (recombination purges mutation load)
 - **R38 ✓** spatial reciprocity — cooperation survives by clustering (Nowak-May)
 - **R39 ✓** rock-paper-scissors — local dispersal preserves biodiversity
+- **R40 ✓** review + phenomena-wall poster (R25–R39 montage)
+- **R41 ✓** the Baldwin effect — learning guides evolution, then is genetically assimilated
+- **R42 ✓** group selection — Simpson's paradox (cooperation up in the whole, down in every part)
+- **R43 ✓** animation showcase — the in-situ ecosystem as a GIF (watch foraging evolve)
+- **R44 ✓** Eigen's error threshold — quasispecies error catastrophe above μc≈ln(σ)/L
+- **R45 ✓** morphogenesis — Gray-Scott reaction-diffusion (Turing patterns)
+- **R46 ✓** Conway's Game of Life — Gosper gun + soup→ash (the CA root of ALife)
+- **R47 ✓** review — refreshed phenomena gallery (R25–R46)
+- **R48 ✓** Daisyworld — life regulates planetary temperature (Gaia / homeostasis)
+- **R49 ✓** evolutionary branching — one lineage splits under disruptive competition

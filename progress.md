@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 49 — 2026-06-18)
+## Current state (Round 50 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 49 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 50 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -68,6 +68,7 @@ capabilities). **First public push is pending CEO approval** — 49 commits are 
 | R47 | review — refreshed phenomena gallery (R25–R46, 17 panels); architecture/hygiene; 225 green |
 | R48 | Daisyworld — life regulates planetary temperature (Gaia/homeostasis); std 1.7 vs 12.6 bare |
 | R49 | evolutionary branching — one lineage splits under disruptive competition (adaptive dynamics) |
+| R50 | release-readiness — README tells full R1–R49 story; roadmap to R49; docs-hygiene; 237 green |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
