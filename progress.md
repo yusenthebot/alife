@@ -1,8 +1,14 @@
 # alife — progress
 
-## Current state (Round 89 — 2026-06-18)
+## Current state (Round 90 — 2026-06-18, review)
 
-An evolving artificial-life ecosystem built from zero over 89 autonomous rounds. The full stated
+R90 was a review round: adversarial re-verification (fresh seeds/params) confirmed all four recent
+headline claims hold (R86 backward jams + triangular fundamental diagram, R87 small-world decoupling +
+exact closed-form match, R88 spiral re-entry for k=6 and k=12 with uncut-wave control, R89 Jensen
+threshold at α=1); workspace tidy (no slop, root 2 docs + 2 state files); R81–R89 milestone gallery at
+`runs/r90_review/gallery.png`; README + roadmap refreshed.
+
+An evolving artificial-life ecosystem built from zero over 90 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
