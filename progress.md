@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 88 — 2026-06-18)
+## Current state (Round 89 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 88 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 89 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -32,9 +32,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R85: The Ising model — spontaneous magnetisation & the order-disorder phase transition**, and
 **R86: Nagel-Schreckenberg traffic — phantom jams emerge from local rules, propagate backward**, and
 **R87: Watts-Strogatz small-world networks — a few shortcuts collapse path length, clustering survives**, and
-**R88: Excitable media — self-sustaining spiral waves & re-entry (Greenberg-Hastings)**.
-**451 tests pass.** PUBLISHED & SYNCED through R88 on public
-github.com/yusenthebot/alife (origin/master = c50e636). A network-science arc runs R83 (scale-free)
+**R88: Excitable media — self-sustaining spiral waves & re-entry (Greenberg-Hastings)**, and
+**R89: A major transition — the evolution of division of labor (Jensen: specialise iff returns accelerate)**.
+**457 tests pass.** PUBLISHED & SYNCED through R89 on public
+github.com/yusenthebot/alife (origin/master = cd7ebd4). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
@@ -135,6 +136,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R86 | Nagel-Schreckenberg traffic — self-organized phantom jams on a ring from 4 local rules (accelerate / brake-to-gap / random-dawdle p / move): jams nucleate above a critical density with NO bottleneck and propagate BACKWARD at −1 cell/step (measured by stopped-field cross-correlation, 94% of steps) while cars move forward +1.47; triangular fundamental diagram peaks at ρ_c≈0.10-0.14 then collapses; control p=0 → fewer jams (the random slowdown is the cause) |
 | R87 | Watts-Strogatz small-world networks — completes the network arc (the other pillar vs R83 scale-free): rewiring a ring lattice by a tiny fraction p collapses average path length while clustering survives. Matches closed-form theory (ring C0=0.600=3(k-2)/(4(k-1)), L0=50=n/2k); at p=0.01 path length → 0.32 of ring but clustering stays 0.98 (decoupling of scales); random graph C~0.01 L~3.8. Dynamical payoff: rounds to inform whole net drop 100→8 with shortcuts |
 | R88 | Excitable media / spiral waves (Greenberg-Hastings CA) — new flavor (not RD R45, not life-like CA R46): cells cycle rest→excited→refractory→rest, fire when ≥thresh neighbours excited. Planar wave constant speed 1.0 cell/step; colliding waves ANNIHILATE on refractory tails (240→0, unlike linear waves); a BROKEN wavefront curls into a self-sustaining SPIRAL (re-entry, activity sustains forever, period~k); CONTROL: same medium uncut planar wave dies to 0 (no re-entry). Models BZ spirals & cardiac arrhythmia. Square geometry = Moore Chebyshev metric |
+| R89 | A major transition — the evolution of division of labor. Colony-level (group) selection over members' effort split θ; sweep convexity α of task function g(x)=xᵅ. Confirms Jensen exactly: specialists beat generalists iff convex (α>1: g(1)/2 > g(0.5) ⇔ 0.5 > 0.5ᵅ). Evolve convex α=3 → BIMODAL castes (~32% pure task-A, ~32% pure task-B, ~1% generalist), spec index 0.82, productivity ~3× (superadditive); CONTROL concave α=0.5 stays generalist (spec 0.27, flat); α-sweep crosses spec 0.5 at α=1.00, exactly the Jensen threshold. Distinct from R42 group selection |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
