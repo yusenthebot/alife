@@ -1,6 +1,13 @@
 # alife — progress
 
-## Current state (Round 110 — 2026-06-19, review)
+## Current state (Round 111 — 2026-06-19)
+
+R111 added spatial rock-paper-scissors (`alife/rpsmobility.py`): cyclic competition on a lattice
+where MOBILITY decides survival — low mobility keeps three species coexisting in cyclic spiral
+domains, but above a critical mobility the spirals merge and biodiversity collapses to one survivor
+(Reichenbach-Mobilia-Frey 2007). Distinct from R39's well-mixed RPS.
+
+### R110 milestone review
 
 R110 milestone review: all nine R101–R109 headline claims re-verified with fresh seeds (Poiseuille +
 Kármán, swimmer-vs-control, granular Beverloo/jamming, explosive-sync hysteresis, KPZ β<½, OFC
@@ -44,7 +51,7 @@ flows, R102 an immersed swimmer that self-propels, R103 evolve the swimming gait
 Public README was restructured at R91 per CEO: project description + deploy + block diagram only;
 per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 109 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 111 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -93,9 +100,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R106: KPZ surface growth — ballistic deposition bends the growth exponent to 1/3**, and
 **R107: Olami-Feder-Christensen earthquakes — non-conservative self-organized criticality (Gutenberg-Richter)**, and
 **R108: Synthetic gene circuits — the repressilator clock & the toggle switch (loop parity decides)**, and
-**R109: Spatial predator-prey — reaction-diffusion shows space rescues coexistence from boom-bust**.
-**565 tests pass.** PUBLISHED & SYNCED through R109 on public
-github.com/yusenthebot/alife (origin/master = 29442a9). A real-fluid swimming arc runs R101
+**R109: Spatial predator-prey — reaction-diffusion shows space rescues coexistence from boom-bust**, and
+**R111: Spatial rock-paper-scissors — mobility destroys biodiversity past a threshold (RMF 2007)**.
+**571 tests pass.** PUBLISHED & SYNCED through R111 on public
+github.com/yusenthebot/alife (origin/master = 18c565c). A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
@@ -216,6 +224,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R107 | Olami-Feder-Christensen earthquakes — a spring-block fault grid loaded to threshold; a slip resets to 0 and gives α·stress to each of 4 neighbours (NON-conservative: 4α<1 loses stress), triggering avalanches. SOC survives despite dissipation: at α=0.22 the earthquake sizes follow a Gutenberg-Richter power law (τ≈1.9) over ~2 decades; strong dissipation (α=0.10) → only tiny quakes; conservation tunes the catalogue (big-quake fraction 0→0.98 as α 0.12→0.25). Distinct from R74 conservative abelian sandpile |
 | R108 | Synthetic gene circuits (Hill-repression ODEs) — designed gene-regulatory dynamics, distinct from R94's random Boolean nets. The REPRESSILATOR (3-gene repression ring) sustains oscillations (a genetic clock, period ~12, three phase-shifted proteins); LOOP PARITY decides — odd rings (3,5,7) oscillate, even rings (2,4,6) are silent; oscillation needs COOPERATIVITY (Hill ≳ 2); the TOGGLE SWITCH (2 mutually-repressing genes) is bistable — initial bias selects one of two stable states (a one-bit cellular memory) |
 | R109 | Spatial predator-prey (Rosenzweig-MacArthur reaction-diffusion) — a continuum field formulation (distinct from agent-based R5/R15/R34). CONTROL well-mixed 0D: boom-bust limit cycle, prey crashes to min ~0.011 (paradox of enrichment), global fluctuation std ~0.26; SPATIAL 2D: asynchronous patches form pursuit waves (field std ~0.14), the global population averages out-of-phase oscillators → fluctuation ~4× smaller (~0.06) and minimum ~10× higher (~0.10, far from extinction). Space turns a fragile boom-bust system into a persistent one |
+| R111 | Spatial rock-paper-scissors (cyclic competition + mobility) — A beats B beats C beats A on a lattice with reaction (predation + reproduction) and conservative domino-swap EXCHANGE mobility. Distinct from R39's well-mixed RPS. Reichenbach-Mobilia-Frey (2007): low mobility → three species coexist in cyclic spiral domains (3 survivors); above a critical mobility the spirals merge until one wavelength exceeds the system → biodiversity collapses to 1 survivor; the survival curve drops 3→1 across the threshold. Honest: finite-size means strong seed fluctuation near threshold (averaged collapse is clean) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
