@@ -1,6 +1,19 @@
 # alife — progress
 
-## Current state (Round 120 — 2026-06-19)
+## Current state (Round 121 — 2026-06-19)
+
+R121 added a COMPOSED world (`alife/flowforage.py`) — the depth/composition frontier the R120 review
+called for. It couples three existing pieces into one eco-evolutionary world: a fluid FLOW (the R101
+lattice-Boltzmann solver `fluid.py`, Kármán snapshot, or an analytic divergence-free vortex array)
+advects a population of microswimmers that CHEMOTAX up a diffusing/depleting NUTRIENT field, eat,
+reproduce with mutation, or starve — a toy of ocean plankton. Two emergent results none of the parts
+shows alone: (1) the heritable chemotactic sensitivity χ is SELECTED — it rises ~1.56→2.7 when a
+nutrient gradient exists to exploit (depletion makes the field patchy), while a neutral tag (chemotaxis
+disabled) just drifts; (2) the FLOW shapes that evolution — stronger currents do some of the foraging,
+so less chemotaxis is selected (χ falls 2.68→2.42 with flow strength, robust 5/5 seeds). Verified
+non-circularly (χ is the evolved trait measured from the population; selection emerges from the eco
+dynamics). Honest tertiary: chemotaxis+depletion makes foragers spread to EVEN spacing (resource
+tiling, dispersion<1), not patches. Genuinely imports/runs fluid.py for the showcase flow.
 
 ### R120 milestone review
 
@@ -208,8 +221,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R116: May's complexity-stability + Allesina-Tang — random-matrix spectra set the edge of ecological stability (σ√(SC)=1)**, and
 **R117: Turing on a growing domain — stripes INSERT to hold their wavelength as the domain grows (n∝L)**, and
 **R118: Phyllotaxis — the golden angle uniquely packs gap-free (Vogel) and emerges from least-crowding (Douady-Couder)**, and
-**R119: Snowflake growth — six-fold crystals + the Nakaya plate↔dendrite morphology from Reiter's hexagonal CA**.
-**642 tests pass.** PUBLISHED & SYNCED through R119 on public
+**R119: Snowflake growth — six-fold crystals + the Nakaya plate↔dendrite morphology from Reiter's hexagonal CA**, and
+**R121: A composed world — chemotactic foragers EVOLVE inside a fluid flow (fluid.py + nutrient + selection); the current reshapes how much chemotaxis is selected**.
+**650 tests pass.** PUBLISHED & SYNCED through R121 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -340,6 +354,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R117 | Turing patterns on a growing domain (Crampin-Gaffney-Maini 1999) — Schnakenberg RD in 1D (dx=1 lattice, Du=1, Dv=40, Neumann BC) on a domain growing by periodic uniform stretch (interpolation onto a longer grid + relaxation). The intrinsic Turing wavelength λ*∝1/√γ is fixed by the chemistry, so as the domain lengthens stretched stripes go unstable and NEW stripes INSERT/split, holding the spacing. Verified: n_stripes ∝ L (corr 0.985); wavelength sawtooth around λ*≈7.5 (stretch to ~1.5λ*, insert, reset; std/mean 10%); λ* set by γ not domain; static control = fixed count, wavelength domain-independent. Insertion is RD-driven not interpolation artifact (linear interp smooths; count jumps only after relaxation). Developmental route distinct from R114 somitogenesis (clock+front) and static Turing/gierermeinhardt (frozen count). Figure: insertion kymograph + n∝L + wavelength sawtooth + λ*(γ) |
 | R118 | Phyllotaxis — golden angle, optimal packing, emergence (Vogel 1979; Douady-Couder 1992). WHY golden (137.508°=360(2−φ)): Vogel spiral (organ n at angle n·α, radius ∝√n); packing uniformity = min nearest-neighbour gap (scipy cKDTree) peaks SHARPLY at exactly golden (the most irrational number → no radial alignment); rational p/q → q spokes; 0.5° off → visible gaps/arms. HOW it emerges: Douady-Couder least-crowding rule — each new primordium at the apex-circle angle minimising repulsion (Σ1/d^p) from outward-drifting (r×=exp(G)) predecessors; self-selects the golden branch (~138-140°, →137.5 as G→0) with a secondary Lucas branch (~99.5°) at low G (bifurcation diagram). Both verified non-circularly (packing optimum by angle-sweep; emergent angle measured from dynamics). Fibonacci parastichies follow from golden's continued-fraction convergents. Fresh KIND (optimal packing/Fibonacci morphogenesis), distinct from lsystem. Figure: golden sunflower + off-angle spokes + packing-optimum peak + emergence trajectory + bifurcation |
 | R119 | Snowflake growth — Reiter's hexagonal snow-crystal CA (2005); Nakaya morphology (1954). On a hex (axial) lattice: a cell is RECEPTIVE if frozen (s≥1) or touching frozen; receptive cells hold water + gain constant vapour γ, non-receptive cells' water DIFFUSES (hex Laplacian, rate α); background humidity β. Diffusion smooths (flat faces) vs tip instability (Mullins-Sekerka → dendrites). One knob β sweeps compact plate/star → branching dendrite (compactness = frozen/π R² decreases monotonically with β). Six-fold symmetry EXACT (neighbour set closed under transpose-mirror + inversion → verified). Fresh KIND (crystal growth/dendrites), distinct from dla.py (random-walker DLA) — deterministic vapour-diffusion CA. Honest: full β range non-monotone (real Nakaya diagram is too) + crystal must stay inside L (np.roll periodic). Figure: 5-snowflake gallery (star/dendrite/broad/feathery/plate) + compactness-vs-β curve |
+| R121 | A COMPOSED world — chemotactic foragers evolving inside a fluid flow (flowforage.py); the depth/composition frontier per the R120 critic. Couples fluid.py (R101 LBM Kármán flow, or analytic divergence-free vortex array) + a diffusing/depleting nutrient field + an evolving population (agents advected by flow + chemotaxis up ∇nutrient·χ + eat/energy/reproduce-with-mutation/die). EMERGENT results none of the parts shows alone: (1) heritable chemotactic sensitivity χ is SELECTED — rises ~1.56→2.7 with a gradient to exploit; a neutral tag (chemotaxis off) drifts (1.56→1.57) → clean selection vs drift control; (2) FLOW shapes evolution — χ falls 2.68→2.42 as flow strength rises (5/5 seeds), stirring substitutes for active foraging. Non-circular (χ measured from population, selection emergent). Honest: chemotaxis+depletion → EVEN spacing (dispersion<1, resource tiling), NOT patches (index-of-dispersion headline was wrong-signed; reframed). Genuinely imports/runs fluid.py. Figure: real Kármán vorticity + world snapshot (agents coloured by χ on nutrient) + χ-vs-time selection + χ-vs-flow-strength |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
