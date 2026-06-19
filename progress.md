@@ -1,6 +1,18 @@
 # alife — progress
 
-## Current state (Round 124 — 2026-06-19)
+## Current state (Round 125 — 2026-06-19)
+
+R125 added Cahn-Hilliard spinodal decomposition (`alife/cahnhilliard.py`): a quenched binary mixture
+(alloy / oil-water / polymer blend) spontaneously UNMIXES into interpenetrating domains of two phases
+that slowly COARSEN — small domains dissolve to feed big ones. The canonical "Model B": a CONSERVED
+order parameter c down a double-well free energy, dc/dt = M∇²(−ε²∇²c + c³ − c). The Laplacian out front
+makes c conserved (material is moved, not created) — distinct from the non-conserved reaction-diffusion
+Turing patterns (gierermeinhardt/reactiondiff). From tiny noise the field splits into ±1 domains whose
+characteristic size follows the Lifshitz-Slyozov-Wagner law L(t) ~ t^(1/3) — measured exponent 0.33.
+Convex-splitting semi-implicit Fourier scheme (unconditionally stable for any ε, conserves the mean
+exactly). The coarsening-length metric (structure-factor first moment) is validated on a stripe control.
+Visual round (CEO steer): the coarsening sequence (watch domains merge) + log-log L(t) line on t^(1/3) +
+an unmixing GIF.
 
 R124 added the complex Ginzburg-Landau equation (`alife/cgle.py`): the universal amplitude PDE
 dA/dt = A + (1+ib)∇²A − (1+ic)|A|²A that every oscillatory medium reduces to near onset. The phase of
@@ -267,8 +279,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R121: A composed world — chemotactic foragers EVOLVE inside a fluid flow (fluid.py + nutrient + selection); the current reshapes how much chemotaxis is selected**, and
 **R122: Dielectric-breakdown model — one exponent η sweeps Laplacian growth from compact blobs to DLA fractals to lightning needles**, and
 **R123: Self-propelled particles — a spinning MILL vs a marching FLOCK vs a still CLUMP from one knob (D'Orsogna 2006)**, and
-**R124: Complex Ginzburg-Landau — rainbow spiral pinwheels (topological defects) breaking into defect turbulence across the Benjamin-Feir line**.
-**674 tests pass.** PUBLISHED & SYNCED through R124 on public
+**R124: Complex Ginzburg-Landau — rainbow spiral pinwheels (topological defects) breaking into defect turbulence across the Benjamin-Feir line**, and
+**R125: Cahn-Hilliard spinodal decomposition — a quenched mixture unmixes into domains that coarsen as L(t)~t^(1/3)**.
+**681 tests pass.** PUBLISHED & SYNCED through R125 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -403,6 +416,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R122 | Dielectric-breakdown model (Niemeyer-Pietronero-Wiesmann 1984) — Laplacian growth with one exponent. Solve the harmonic field around the cluster (φ=0 on cluster, φ=1 on outer ring, Laplace between via a precomputed sparse 5-point operator boolean-restricted to free cells, scipy spsolve), then add a perimeter cell with prob ∝ φ^η. η sweeps the morphology zoo: η=0 → compact (D→2, Eden), η=1 → DLA fractal dendrite, large η → lightning needles (D→1). Verified: radius-mass fractal dimension D(η) decreases monotonically (~1.86,1.62,1.24,1.02 for η=0,1,2,4). Mechanism: tips screen fjords, concentrating the gradient; η sharpens it (field panel shows bright tips / dark fjords). Generalises R78 dla.py (random-walker = η=1 special case); distinct field-based algorithm. Honest: η=1 measures D~1.6 (finite-size/batch) vs asymptotic 1.71 — the TREND is the claim. Figure: 4-η morphology zoo + D(η) curve + harmonic-field screening map |
 | R123 | Self-propelled particles — D'Orsogna-Chuang-Bertozzi-Chayes (2006). Newtonian SPP: dv/dt=(α−β|v|²)v + Morse force (Cr e^{-r/lr} repulsion − Ca e^{-r/la} attraction) + bounded alignment a·(v̂_avg−v̂). One knob → three eyeball-distinct collective states: MILL (align=0: hollow rotating ring, P~0 M~0.96), FLOCK (align≥0.5: coherent march, P~1 M~0), CLUMP (low α: still disordered blob). Read by eye; confirmed by polarization P=|mean v̂| + signed milling M=|mean (r̂×v̂)| (validated on controls). Mill is emergent (alignment destroys it→flock) and is the shape Reynolds boids cannot make → distinct from boids/boids3d/swarm3d. CEO VISUAL steer; decided via adversarial proposer+judge workflow. Figure: mill/flock/clump quiver snapshots + (P,M) bars + spinning-mill GIF (heading-hue wheel = visible circulation) |
 | R124 | Complex Ginzburg-Landau eqn (cgle.py) — universal amplitude PDE dA/dt=A+(1+ib)∇²A−(1+ic)|A|²A. Phase=colour wheel; each full-turn winding = a ±1 TOPOLOGICAL DEFECT (spiral core, |A|→0) — rainbow pinwheel in phase, dark dot in |A|. Benjamin-Feir line 1+bc=0: 1+bc>0 → frozen rotating SPIRALS; 1+bc<0 → DEFECT TURBULENCE, defect count explodes (~84→~366). Winding-number defect counter VALIDATED on controls (single spiral=+1, ± pair=net 0, uniform=0); net charge=0 on periodic torus (defects in ± pairs). Fourier integrating-factor split-step (diffusion exact, reaction explicit). VISUAL round (CEO steer): spiral gallery + amplitude cores + BF-transition curve + rotating-spiral GIF. Distinct from R88 excitable.py (discrete Greenberg-Hastings CA, one spiral) — continuum complex PDE, many defects |
+| R125 | Cahn-Hilliard spinodal decomposition (cahnhilliard.py), "Model B" conserved-order-parameter phase separation. dc/dt=M∇²μ, μ=−ε²∇²c+c³−c. Quenched mixture unmixes into ±1 domains that COARSEN (small dissolve to feed big). Conserved order parameter (Laplacian out front → mean exactly conserved) → distinct from non-conserved RD Turing (gierermeinhardt/reactiondiff). Domain size follows Lifshitz-Slyozov-Wagner L(t)~t^(1/3) — measured n=0.33. Convex-splitting semi-implicit Fourier scheme (unconditionally stable any ε; naive semi-implicit blows up for small ε — needs the A·k² stabilizer). Length metric (structure-factor 1st moment) validated on a stripe control. VISUAL: coarsening sequence + log-log L(t) on t^(1/3) + unmixing GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
