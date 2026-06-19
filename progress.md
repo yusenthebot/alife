@@ -1,12 +1,12 @@
 # alife — progress
 
-## Current state (Round 94 — 2026-06-18)
+## Current state (Round 95 — 2026-06-18)
 
 R90 was a review round (all R86–R89 claims re-verified; R81–R89 gallery at
 `runs/r90_review/gallery.png`). Public README restructured at R91 per CEO: project description +
 deploy + block diagram only; per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 94 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 95 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -41,9 +41,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R91: Evolved Particle Life — selection discovers self-propelled matter (the asymmetry is the engine)**, and
 **R92: Gierer-Meinhardt activator-inhibitor — Turing spots with an intrinsic wavelength (spots ∝ area)**, and
 **R93: Schelling segregation — mild individual preferences make extreme separation nobody chose**, and
-**R94: Kauffman random Boolean networks — order, chaos, and the critical edge at K=2**.
-**481 tests pass.** PUBLISHED & SYNCED through R94 on public
-github.com/yusenthebot/alife (origin/master = 7bc162a). A network-science arc runs R83 (scale-free)
+**R94: Kauffman random Boolean networks — order, chaos, and the critical edge at K=2**, and
+**R95: Bacterial chemotaxis — run-and-tumble climbs a gradient with no sense of direction**.
+**487 tests pass.** PUBLISHED & SYNCED through R95 on public
+github.com/yusenthebot/alife (origin/master = 717f3b0). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
@@ -149,6 +150,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R92 | Gierer-Meinhardt activator-inhibitor — the other canonical Turing system (vs R45 Gray-Scott): slow self-activating activator + fast inhibitor (short-range activation, long-range inhibition). Makes leopard Turing spots (215 on 130²); INTRINSIC WAVELENGTH → spot count ∝ coat area (~12.7/1000 cells, constant spacing); inhibitor field broader than activator (Dh/Da=25); geometry sets arrangement (narrow strip → one elongated row). HONEST NEGATIVE: Murray's spots-vs-stripes-by-geometry (spotted body/striped tail) did NOT reproduce in this spot regime (thin tail goes blank, saturation suppresses pattern); clean GM stripes need a different regime, left as frontier |
 | R93 | Schelling segregation (micromotives→macrobehavior, first social model) — two agent types on a grid with empties; an agent relocates if fewer than a fraction τ of its occupied neighbours share its type. CONTROL τ=0 stays mixed (seg 0.50, all content); MILD τ=0.3 → strong segregation (seg 0.76) yet everyone content (100%) — nobody wanted it; tipping curve rises sharply 0.50→~0.99 then DROPS to ~0.5 at τ≈0.8 (gridlock regime, never settles); relocation conserves agent counts |
 | R94 | Kauffman random Boolean networks (gene-regulatory DYNAMICS, vs R76 static NK fitness) — N genes, each a random Boolean function of K others, synchronous updates → cyclic attractors ("cell types"). Connectivity K drives an order→chaos transition, verified vs theory: Derrida sensitivity = K/2 exactly (crosses 1 at critical K=2); one flipped gene HEALS at K=1 (→0), marginal at K=2, AVALANCHES at K≥3 (→0.46); attractor cycle length 1→7→never-closes as K goes 1→2→≥3 |
+| R95 | Bacterial chemotaxis (run-and-tumble, Berg) — a cell too small to sense gradient direction climbs by biasing a random walk in TIME: straight runs + reorienting tumbles, with tumbling SUPPRESSED while concentration is improving. CONTROL α=0 (no temporal modulation) → pure diffusion (conc flat 0.25, 14% near source); α=10 climbs (conc 0.25→0.44, 37% accumulate near source); dose-response monotone (final conc 0.25→0.58 as α 0→16). Distinct from R65 ant stigmergy & R55/R68 Physarum |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
