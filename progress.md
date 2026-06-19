@@ -1,6 +1,18 @@
 # alife — progress
 
-## Current state (Round 121 — 2026-06-19)
+## Current state (Round 122 — 2026-06-19)
+
+R122 added the dielectric-breakdown model (`alife/dielectric.py`): Laplacian growth with one knob
+(Niemeyer-Pietronero-Wiesmann 1984). Grow a cluster into a harmonic field (φ=0 on the cluster, φ=1 far
+away, Laplace between), adding a perimeter cell with probability ∝ φ^η. The single exponent η sweeps
+the whole morphology zoo: η=0 ignores the field → COMPACT (fractal dimension D→2, Eden-like); η=1 is
+the DLA regime → FRACTAL dendrite; large η over-rewards the strongest tip → lightning-like NEEDLES
+(D→1). Verified: D(η) measured by radius-mass scaling decreases monotonically (~1.86→1.62→1.24→1.02
+for η=0,1,2,4). The harmonic field explains the mechanism — protruding tips screen the fjords,
+concentrating the gradient, and η sets how ruthlessly that compounds. Sparse Laplace solve (precomputed
+5-point operator, boolean-restricted to free cells). Generalises R78 DLA (the η=1 random-walker case);
+distinct algorithm (field-based, not random-walker). D(η) is finite-size honest (η=1 measures ~1.6 vs
+asymptotic 1.71; the TREND is the claim).
 
 R121 added a COMPOSED world (`alife/flowforage.py`) — the depth/composition frontier the R120 review
 called for. It couples three existing pieces into one eco-evolutionary world: a fluid FLOW (the R101
@@ -222,8 +234,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R117: Turing on a growing domain — stripes INSERT to hold their wavelength as the domain grows (n∝L)**, and
 **R118: Phyllotaxis — the golden angle uniquely packs gap-free (Vogel) and emerges from least-crowding (Douady-Couder)**, and
 **R119: Snowflake growth — six-fold crystals + the Nakaya plate↔dendrite morphology from Reiter's hexagonal CA**, and
-**R121: A composed world — chemotactic foragers EVOLVE inside a fluid flow (fluid.py + nutrient + selection); the current reshapes how much chemotaxis is selected**.
-**650 tests pass.** PUBLISHED & SYNCED through R121 on public
+**R121: A composed world — chemotactic foragers EVOLVE inside a fluid flow (fluid.py + nutrient + selection); the current reshapes how much chemotaxis is selected**, and
+**R122: Dielectric-breakdown model — one exponent η sweeps Laplacian growth from compact blobs to DLA fractals to lightning needles**.
+**658 tests pass.** PUBLISHED & SYNCED through R122 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -355,6 +368,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R118 | Phyllotaxis — golden angle, optimal packing, emergence (Vogel 1979; Douady-Couder 1992). WHY golden (137.508°=360(2−φ)): Vogel spiral (organ n at angle n·α, radius ∝√n); packing uniformity = min nearest-neighbour gap (scipy cKDTree) peaks SHARPLY at exactly golden (the most irrational number → no radial alignment); rational p/q → q spokes; 0.5° off → visible gaps/arms. HOW it emerges: Douady-Couder least-crowding rule — each new primordium at the apex-circle angle minimising repulsion (Σ1/d^p) from outward-drifting (r×=exp(G)) predecessors; self-selects the golden branch (~138-140°, →137.5 as G→0) with a secondary Lucas branch (~99.5°) at low G (bifurcation diagram). Both verified non-circularly (packing optimum by angle-sweep; emergent angle measured from dynamics). Fibonacci parastichies follow from golden's continued-fraction convergents. Fresh KIND (optimal packing/Fibonacci morphogenesis), distinct from lsystem. Figure: golden sunflower + off-angle spokes + packing-optimum peak + emergence trajectory + bifurcation |
 | R119 | Snowflake growth — Reiter's hexagonal snow-crystal CA (2005); Nakaya morphology (1954). On a hex (axial) lattice: a cell is RECEPTIVE if frozen (s≥1) or touching frozen; receptive cells hold water + gain constant vapour γ, non-receptive cells' water DIFFUSES (hex Laplacian, rate α); background humidity β. Diffusion smooths (flat faces) vs tip instability (Mullins-Sekerka → dendrites). One knob β sweeps compact plate/star → branching dendrite (compactness = frozen/π R² decreases monotonically with β). Six-fold symmetry EXACT (neighbour set closed under transpose-mirror + inversion → verified). Fresh KIND (crystal growth/dendrites), distinct from dla.py (random-walker DLA) — deterministic vapour-diffusion CA. Honest: full β range non-monotone (real Nakaya diagram is too) + crystal must stay inside L (np.roll periodic). Figure: 5-snowflake gallery (star/dendrite/broad/feathery/plate) + compactness-vs-β curve |
 | R121 | A COMPOSED world — chemotactic foragers evolving inside a fluid flow (flowforage.py); the depth/composition frontier per the R120 critic. Couples fluid.py (R101 LBM Kármán flow, or analytic divergence-free vortex array) + a diffusing/depleting nutrient field + an evolving population (agents advected by flow + chemotaxis up ∇nutrient·χ + eat/energy/reproduce-with-mutation/die). EMERGENT results none of the parts shows alone: (1) heritable chemotactic sensitivity χ is SELECTED — rises ~1.56→2.7 with a gradient to exploit; a neutral tag (chemotaxis off) drifts (1.56→1.57) → clean selection vs drift control; (2) FLOW shapes evolution — χ falls 2.68→2.42 as flow strength rises (5/5 seeds), stirring substitutes for active foraging. Non-circular (χ measured from population, selection emergent). Honest: chemotaxis+depletion → EVEN spacing (dispersion<1, resource tiling), NOT patches (index-of-dispersion headline was wrong-signed; reframed). Genuinely imports/runs fluid.py. Figure: real Kármán vorticity + world snapshot (agents coloured by χ on nutrient) + χ-vs-time selection + χ-vs-flow-strength |
+| R122 | Dielectric-breakdown model (Niemeyer-Pietronero-Wiesmann 1984) — Laplacian growth with one exponent. Solve the harmonic field around the cluster (φ=0 on cluster, φ=1 on outer ring, Laplace between via a precomputed sparse 5-point operator boolean-restricted to free cells, scipy spsolve), then add a perimeter cell with prob ∝ φ^η. η sweeps the morphology zoo: η=0 → compact (D→2, Eden), η=1 → DLA fractal dendrite, large η → lightning needles (D→1). Verified: radius-mass fractal dimension D(η) decreases monotonically (~1.86,1.62,1.24,1.02 for η=0,1,2,4). Mechanism: tips screen fjords, concentrating the gradient; η sharpens it (field panel shows bright tips / dark fjords). Generalises R78 dla.py (random-walker = η=1 special case); distinct field-based algorithm. Honest: η=1 measures D~1.6 (finite-size/batch) vs asymptotic 1.71 — the TREND is the claim. Figure: 4-η morphology zoo + D(η) curve + harmonic-field screening map |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
