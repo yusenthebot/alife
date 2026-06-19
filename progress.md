@@ -1,6 +1,16 @@
 # alife — progress
 
-## Current state (Round 116 — 2026-06-19)
+## Current state (Round 117 — 2026-06-19)
+
+R117 added Turing-on-a-growing-domain (`alife/growingturing.py`): how a stripe pattern keeps its
+spacing as the embryo grows. Static Turing freezes a fixed stripe count, but the intrinsic wavelength
+λ* is set by the chemistry (Schnakenberg reaction-diffusion, λ*∝1/√γ), so on a domain that grows by
+periodic uniform stretch the stretched stripes go Turing-unstable and a NEW stripe INSERTS/splits —
+holding the spacing. Verified: stripe count grows in proportion to length (n∝L/λ*, corr 0.985);
+wavelength oscillates in a sawtooth around λ*≈7.5 (stretch to ~1.5λ*, insert, reset; std/mean 10%);
+chemistry sets λ* (∝1/√γ), not the domain. Insertion is RD-driven, not an interpolation artifact
+(linear interp smooths; count jumps only after relaxation). A developmental route distinct from R114
+somitogenesis (clock+front SET spacing) and from static Turing (count frozen).
 
 R116 added May's complexity-stability theorem + Allesina-Tang (`alife/maystability.py`): random-matrix
 ecology. A community Jacobian (self-regulation −d, random interactions with connectance C and strength
@@ -158,8 +168,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R113: 3D Ising model — dimensionality (coordination z:4→6) lifts the critical temperature 2.27→4.51**, and
 **R114: Somitogenesis (clock-and-wavefront) — a genetic oscillator's period becomes the body's segment size (2πv/ω)**, and
 **R115: Chimera states — identical nonlocally-coupled oscillators split into coexisting coherent + incoherent domains**, and
-**R116: May's complexity-stability + Allesina-Tang — random-matrix spectra set the edge of ecological stability (σ√(SC)=1)**.
-**617 tests pass.** PUBLISHED & SYNCED through R116 on public
+**R116: May's complexity-stability + Allesina-Tang — random-matrix spectra set the edge of ecological stability (σ√(SC)=1)**, and
+**R117: Turing on a growing domain — stripes INSERT to hold their wavelength as the domain grows (n∝L)**.
+**625 tests pass.** PUBLISHED & SYNCED through R117 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -287,6 +298,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R114 | Somitogenesis — the clock-and-wavefront model (Cooke-Zeeman 1976; her1/her7 segmentation clock). Each presomitic-mesoderm cell runs a phase oscillator; a determination wavefront recedes along the AP axis and FREEZES each cell's phase as it passes, turning a temporal rhythm into a periodic spatial pattern of somites. Geometry forced: somite size = front speed × clock period = 2πv/ω, verified EXACTLY (max rel err 0.2%, emergent from integrating clocks not plugged back in). Controls: omega=0 → 1 segment; instant front → no pattern. Posterior frequency gradient → travelling kinematic phase waves (as in real PSM) arresting into graded somites (anterior larger). Distinct route to pattern from Turing/RD (wavelength SET by clock+moving boundary, no diffusion instability) and from Kuramoto sync. Kymograph + size-law + zebra-segment figure |
 | R115 | Chimera states (Kuramoto-Battogtokh 2002; Abrams-Strogatz) — a ring of IDENTICAL phase oscillators, symmetrically coupled via a NONLOCAL kernel (exp decay) with phase lag α just below π/2, spontaneously breaks into a coherent (phase-locked) domain coexisting with an incoherent (drifting) one. Coupling sum = circular convolution via FFT (O(N log N)): dθ_i/dt = ω − Σ_j G(i−j) sin(θ_i−θ_j+α). Verified at κ=4, α=1.46: local order R has a plateau (≈1) beside a dip (<0.5), global order partial (~0.72), split persists in space-time, robust across 5 seeds (coherent fraction ~0.3). Controls: all-to-all coupling OR α=0 → full sync (R≡1), no chimera. Distinct from kuramoto.py (global sync) + explosivesync.py. Honest: regime is narrow in (κ,α); on finite rings chimeras are extremely long-lived (lifetime grows with N), not strictly eternal. Figure: phase snapshot + local-order profile + 2 space-time kymographs |
 | R116 | May's complexity-stability theorem (May 1972) + Allesina-Tang (2012) — random-matrix-theory ecology. Community Jacobian: diagonal −d (self-regulation), off-diagonal random interactions present w.p. C (connectance), strength std σ, transpose-correlation ρ. Girko circular law: eigenvalues fill a disk centered −d radius σ√(SC) → stable iff σ√(SC)<d, so complexity (S, C, σ) DESTABILISES. Elliptic law (correlation ρ): semi-axes σ√(SC)(1±ρ); predator-prey ρ<0 shrinks horizontal axis → stability edge pushed out (stabilising), mutualism/competition ρ>0 destabilising → interaction STRUCTURE beats complexity. Verified from raw eigenvalue spectra (scipy.linalg.eigvals): Girko radius, sharp stability transition at κ=σ√(SC)=1, elliptic-law edges per structure. Honest: finite-S puts the measured rightmost eigenvalue slightly right of the asymptotic bulk edge. A spectral (not dynamical) model — distinct from all predprey/ecosystem rounds. Figure: Girko disk + May transition + 3 structure ellipses + structure-shifted stability curves |
+| R117 | Turing patterns on a growing domain (Crampin-Gaffney-Maini 1999) — Schnakenberg RD in 1D (dx=1 lattice, Du=1, Dv=40, Neumann BC) on a domain growing by periodic uniform stretch (interpolation onto a longer grid + relaxation). The intrinsic Turing wavelength λ*∝1/√γ is fixed by the chemistry, so as the domain lengthens stretched stripes go unstable and NEW stripes INSERT/split, holding the spacing. Verified: n_stripes ∝ L (corr 0.985); wavelength sawtooth around λ*≈7.5 (stretch to ~1.5λ*, insert, reset; std/mean 10%); λ* set by γ not domain; static control = fixed count, wavelength domain-independent. Insertion is RD-driven not interpolation artifact (linear interp smooths; count jumps only after relaxation). Developmental route distinct from R114 somitogenesis (clock+front) and static Turing/gierermeinhardt (frozen count). Figure: insertion kymograph + n∝L + wavelength sawtooth + λ*(γ) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
