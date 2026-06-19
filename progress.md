@@ -1,6 +1,28 @@
 # alife — progress
 
-## Current state (Round 137 — 2026-06-19)
+## Current state (Round 138 — 2026-06-19)
+
+R138 added Turing patterns on a sphere (`alife/turingsphere.py`): how an animal gets its spots on a
+curved, CLOSED body rather than a flat sheet. The Gray-Scott reaction-diffusion system runs on the
+surface of a sphere, represented as an icosphere mesh (an icosahedron subdivided n times and projected to
+the unit sphere — this avoids the lat-lon coordinate-pole singularity and gives near-uniform resolution).
+Diffusion is the random-walk graph Laplacian (Lap u = mean(neighbours) − u), whose eigenvalues lie in
+[−2, 0] so the standard explicit Gray-Scott step is stable, and which conserves constants exactly
+(|L·1| < 1e-16). The same chemistry that spots a plane spots the ball — three eyeball-distinct coat
+regimes by (F,k): isolated SPOTS (a leopard ball, ~41 spots), a LABYRINTH, and a CORAL maze. The fresh,
+sphere-specific result is that the CLOSED geometry quantises the pattern: with no boundary the spots must
+wrap around and join up, and their number is set by the ratio of sphere size to the intrinsic Turing
+wavelength — refine the mesh (a larger sphere in wavelength units) and the spot count climbs 0 → 18 → 41
+across subdiv 3/4/5, roughly ∝ area/λ². Honest: the spot-count metric is only meaningful in the isolated-
+spots regime (the size-law panel uses that; the labyrinth/coral are connected and not counted as spots),
+and the graph Laplacian approximates the Laplace-Beltrami operator — I claim the qualitative pattern and
+the size-scaling, not precise wavelengths. Genuinely distinct from coatpattern.py (flat 2D Gray-Scott on
+a tapering body) and reactiondiff.py (flat GS): this is a closed curved manifold with topological
+quantisation. VISUAL: three coat-regime balls rendered in 3D (Poly3DCollection, per-face colour) + the
+spot-count-vs-size law + the spotted ball unwrapped to a seamless lon-lat map + the far side + a 30-frame
+rotating GIF.
+
+### R137 details
 
 R137 added invasion fronts (`alife/fisherfront.py`): how fast life spreads — and when it can't get
 started. The logistic reaction-diffusion u_t = D u_xx + r u(1-u) (Fisher-KPP 1937) sends a population
@@ -476,8 +498,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R134: Murmuration vs a predator — a flock that flees as one starves the hawk (100×+ fewer catches)**, and
 **R135: Faraday waves — a vibrated surface erupts into a subharmonic, drive-tuned standing-wave lattice**, and
 **R136: Grain growth — a polycrystal coarsens by curvature (Q-state Potts, soap-froth/metal grains)**, and
-**R137: Invasion fronts — Fisher-KPP pulled waves (c=2√rD) & the Allee extinction threshold**.
-**763 tests pass.** PUBLISHED & SYNCED through R137 on public
+**R137: Invasion fronts — Fisher-KPP pulled waves (c=2√rD) & the Allee extinction threshold**, and
+**R138: Turing patterns on a sphere — an animal coat on a curved closed surface (icosphere Gray-Scott)**.
+**771 tests pass.** PUBLISHED & SYNCED through R138 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -624,6 +647,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R135 | Faraday waves (faraday.py) — a vertically vibrated fluid surface erupts into a standing-wave lattice (Faraday 1831). Spectral surface field; vibration modulates effective gravity g→g−a cos(Ωt) so each Fourier mode is a damped Mathieu (parametric) oscillator, cubic −βh³ saturates. (1) PARAMETRIC ONSET — above threshold rms ×544, sub-threshold a=0.2 DECAYS ×0.18 (a-only ablation; the decay proves growth is real pumping not numerical blow-up). (2) SUBHARMONIC — surface oscillates at Ω/2 (measured 3.14 vs 3.16, NOT Ω — the parametric-resonance signature). (3) DRIVE-TUNED WAVELENGTH — selected k* (emergent FFT) lands on gravity-capillary dispersion ω0(k*)=Ω/2; shake faster → finer lattice (Ω×0.7/1.0/1.5 → k 1.42/1.94/2.59 vs theory 1.50/2.00/2.71). Robust seeds 0/1/2. HONEST: isotropic cubic → cellular/labyrinth lattice, no square/hex symmetry claimed. Fresh — distinct from chladni (plate NODAL lines, not parametric) + swifthohenberg (autonomous, no temporal subharmonic). VISUAL: 3-Ω gallery coarse→fine + rms-vs-control + subharmonic FFT + k*(Ω) dispersion match + 60-frame eruption GIF |
 | R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 | R137 | Invasion fronts (fisherfront.py) — Fisher-KPP pulled waves + the Allee extinction threshold. Logistic RD u_t=D u_xx+r u(1-u) → a PULLED travelling front at c=2√(rD) (speed set by the dilute leading edge). Allee term r u(1-u)(u-a) → a PUSHED front c=√(rD/2)(1-2a) with an EXTINCTION THRESHOLD: a<½ invade, a=½ stall, a>½ RETREAT (founder population dies). Matches CLOSED-FORM theory: Fisher c on the 2√(rD) line across r,D (slightly below = Bramson log correction); Allee velocity on √(rD/2)(1-2a) to <1%, zero-crossing exactly at a=½. 2D: Fisher colony 15→51 (invades) vs Allee a=0.7 colony 28→8 (extinct), same seed. Deterministic/reproducible. DISTINCT from barkley/excitable (excitable PULSE w/ refractory rest, not monostable invasion) + Gray-Scott/Turing (standing patterns). VISUAL: 2D invasion-vs-extinction snapshots + Fisher speed law + Allee velocity-vs-a zero-crossing + shape-invariant profiles + 38-frame side-by-side GIF |
+| R138 | Turing patterns on a sphere (turingsphere.py) — an animal coat on a curved CLOSED surface. Gray-Scott RD on an ICOSPHERE mesh (icosahedron subdivided n times → unit sphere; no lat-lon pole singularity, near-uniform resolution). Diffusion = row-normalized graph Laplacian (Lap u = mean(nbrs)−u, eigvals [−2,0] → standard GS step stable; conserves constants, |L·1|<1e-16). Three eyeball coat regimes by (F,k): isolated SPOTS (~41, leopard ball), LABYRINTH, CORAL. Sphere-specific QUANT: closed geometry quantises the pattern — spot count grows with sphere size (subdiv 3/4/5 → 0/18/41 spots, ∝ area/λ²; mesh refine = larger R/λ since normalized Laplacian sets λ in edge units). HONEST: spot-count only meaningful in the isolated-spots regime (size-law uses that; labyrinth/coral not counted as spots); graph Laplacian ≈ Laplace-Beltrami → qualitative pattern + size-scaling, not precise λ. DISTINCT from coatpattern (flat 2D taper) + reactiondiff (flat GS) — closed curved manifold + topological quantization. VISUAL: 3 coat-regime 3D balls (Poly3DCollection) + spot-count-vs-size + lon-lat unwrap + far side + 30-frame rotating GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Liesegang periodic precipitation rings — clean Jablczynski spacing law would NOT form robustly (R136, 3 probes, PIVOTED to grain growth).** The Ostwald supersaturation / Keller-Rubinow model (outer ion a diffuses into gel of inner ion b, a+b→c, c precipitates above a nucleation threshold then grows) is notoriously parameter-sensitive. With weak autocatalysis + easy nucleation I got ~5 bands but BUNCHED near the source with irregular spacing (ratios 0.22/1/1, not the increasing geometric progression); with strong autocatalysis + hard nucleation the first band's growth consumed the whole moving reaction front → 1-2 continuous bands, no banding. The clean √t time-law + geometric spacing regime is narrow and likely needs a better-formulated model (explicit moving-front + Ostwald ripening, or the 2D radial induced-precipitation model). DEFERRED — revisit with a literature-faithful precipitation model, not the simple autocatalytic-deposition tweak.
