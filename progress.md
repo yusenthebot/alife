@@ -1,6 +1,23 @@
 # alife — progress
 
-## Current state (Round 122 — 2026-06-19)
+## Current state (Round 123 — 2026-06-19)
+
+**CEO steer (R123): the loop had done many ABSTRACT rounds (eigenvalue clouds, growth-rate plots,
+critical exponents); pivot to VISUALLY-CHECKABLE rounds — open the figure and immediately SEE it works
+(recognizable patterns, life-like motion, animations), not metric plots.** R123+ bias toward visual.
+
+R123 added self-propelled particles (`alife/selfpropelled.py`): the D'Orsogna et al. (2006) model —
+self-propulsion/drag (α−β|v|²)v + a Morse potential (short-range repulsion, longer-range attraction) +
+a tunable alignment term. One knob flips the collective state, each with a silhouette you name at a
+glance: MILL (a hollow rotating RING circling an empty centre, P~0 M~1), FLOCK (cohesive march one way,
+P~1 M~0), CLUMP (a still disordered blob, low speed, P~0 M~0). The state is read by EYE and confirmed by
+two order parameters — polarization P=|mean heading| and signed milling M=|mean (r̂×v)| (both validated
+on hand-built controls: tangent ring M~1, half-CW-CCW M~0, aligned P~1). The mill is genuinely emergent
+(adding alignment destroys it → flock, proving it is rule-driven, not prescribed), and is the shape
+Reynolds boids (boids/boids3d/swarm3d) structurally cannot make. Decided via an adversarial
+proposer+judge workflow; PIVOTED from the judge's first pick (Couzin 2002 zonal model) after it would
+NOT mill in 3 sweeps even with a rear blind spot — D'Orsogna SPP mills reliably. Figure: mill/flock/clump
+snapshots + (P,M) bars + a hero animated GIF of the spinning milling torus (heading-hue colour-wheel).
 
 R122 added the dielectric-breakdown model (`alife/dielectric.py`): Laplacian growth with one knob
 (Niemeyer-Pietronero-Wiesmann 1984). Grow a cluster into a harmonic field (φ=0 on the cluster, φ=1 far
@@ -235,8 +252,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R118: Phyllotaxis — the golden angle uniquely packs gap-free (Vogel) and emerges from least-crowding (Douady-Couder)**, and
 **R119: Snowflake growth — six-fold crystals + the Nakaya plate↔dendrite morphology from Reiter's hexagonal CA**, and
 **R121: A composed world — chemotactic foragers EVOLVE inside a fluid flow (fluid.py + nutrient + selection); the current reshapes how much chemotaxis is selected**, and
-**R122: Dielectric-breakdown model — one exponent η sweeps Laplacian growth from compact blobs to DLA fractals to lightning needles**.
-**658 tests pass.** PUBLISHED & SYNCED through R122 on public
+**R122: Dielectric-breakdown model — one exponent η sweeps Laplacian growth from compact blobs to DLA fractals to lightning needles**, and
+**R123: Self-propelled particles — a spinning MILL vs a marching FLOCK vs a still CLUMP from one knob (D'Orsogna 2006)**.
+**666 tests pass.** PUBLISHED & SYNCED through R123 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -369,8 +387,10 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R119 | Snowflake growth — Reiter's hexagonal snow-crystal CA (2005); Nakaya morphology (1954). On a hex (axial) lattice: a cell is RECEPTIVE if frozen (s≥1) or touching frozen; receptive cells hold water + gain constant vapour γ, non-receptive cells' water DIFFUSES (hex Laplacian, rate α); background humidity β. Diffusion smooths (flat faces) vs tip instability (Mullins-Sekerka → dendrites). One knob β sweeps compact plate/star → branching dendrite (compactness = frozen/π R² decreases monotonically with β). Six-fold symmetry EXACT (neighbour set closed under transpose-mirror + inversion → verified). Fresh KIND (crystal growth/dendrites), distinct from dla.py (random-walker DLA) — deterministic vapour-diffusion CA. Honest: full β range non-monotone (real Nakaya diagram is too) + crystal must stay inside L (np.roll periodic). Figure: 5-snowflake gallery (star/dendrite/broad/feathery/plate) + compactness-vs-β curve |
 | R121 | A COMPOSED world — chemotactic foragers evolving inside a fluid flow (flowforage.py); the depth/composition frontier per the R120 critic. Couples fluid.py (R101 LBM Kármán flow, or analytic divergence-free vortex array) + a diffusing/depleting nutrient field + an evolving population (agents advected by flow + chemotaxis up ∇nutrient·χ + eat/energy/reproduce-with-mutation/die). EMERGENT results none of the parts shows alone: (1) heritable chemotactic sensitivity χ is SELECTED — rises ~1.56→2.7 with a gradient to exploit; a neutral tag (chemotaxis off) drifts (1.56→1.57) → clean selection vs drift control; (2) FLOW shapes evolution — χ falls 2.68→2.42 as flow strength rises (5/5 seeds), stirring substitutes for active foraging. Non-circular (χ measured from population, selection emergent). Honest: chemotaxis+depletion → EVEN spacing (dispersion<1, resource tiling), NOT patches (index-of-dispersion headline was wrong-signed; reframed). Genuinely imports/runs fluid.py. Figure: real Kármán vorticity + world snapshot (agents coloured by χ on nutrient) + χ-vs-time selection + χ-vs-flow-strength |
 | R122 | Dielectric-breakdown model (Niemeyer-Pietronero-Wiesmann 1984) — Laplacian growth with one exponent. Solve the harmonic field around the cluster (φ=0 on cluster, φ=1 on outer ring, Laplace between via a precomputed sparse 5-point operator boolean-restricted to free cells, scipy spsolve), then add a perimeter cell with prob ∝ φ^η. η sweeps the morphology zoo: η=0 → compact (D→2, Eden), η=1 → DLA fractal dendrite, large η → lightning needles (D→1). Verified: radius-mass fractal dimension D(η) decreases monotonically (~1.86,1.62,1.24,1.02 for η=0,1,2,4). Mechanism: tips screen fjords, concentrating the gradient; η sharpens it (field panel shows bright tips / dark fjords). Generalises R78 dla.py (random-walker = η=1 special case); distinct field-based algorithm. Honest: η=1 measures D~1.6 (finite-size/batch) vs asymptotic 1.71 — the TREND is the claim. Figure: 4-η morphology zoo + D(η) curve + harmonic-field screening map |
+| R123 | Self-propelled particles — D'Orsogna-Chuang-Bertozzi-Chayes (2006). Newtonian SPP: dv/dt=(α−β|v|²)v + Morse force (Cr e^{-r/lr} repulsion − Ca e^{-r/la} attraction) + bounded alignment a·(v̂_avg−v̂). One knob → three eyeball-distinct collective states: MILL (align=0: hollow rotating ring, P~0 M~0.96), FLOCK (align≥0.5: coherent march, P~1 M~0), CLUMP (low α: still disordered blob). Read by eye; confirmed by polarization P=|mean v̂| + signed milling M=|mean (r̂×v̂)| (validated on controls). Mill is emergent (alignment destroys it→flock) and is the shape Reynolds boids cannot make → distinct from boids/boids3d/swarm3d. CEO VISUAL steer; decided via adversarial proposer+judge workflow. Figure: mill/flock/clump quiver snapshots + (P,M) bars + spinning-mill GIF (heading-hue wheel = visible circulation) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
+- **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
   selection too noisy *in a cap-limited, food-dense regime* (population pins at the cap, eating is
   opportunistic, skill stops mattering). R33's capstone (alife/ecosim.py) shows it works once the
