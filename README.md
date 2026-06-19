@@ -10,9 +10,9 @@ This repository is built in autonomous **evolving rounds**: each round clears th
 current bar, then researches the frontier and raises it. Every round is *really*
 run — frames rendered, screenshots inspected, metrics plotted — never faked.
 
-## Current state — Round 79: a full artificial-life ecosystem and a tour of the field's great ideas
+## Current state — Round 89: a full artificial-life ecosystem and a tour of the field's great ideas
 
-The pool has climbed seventy-nine rungs, each really run and verified by eye + data.
+The pool has climbed eighty-nine rungs, each really run and verified by eye + data.
 The original goal is long met — flocking → selection → neural-network brains →
 predator–prey → energy/reproduction → a 3D ecosystem you watch evolve — and the
 project has gone well past it across several arcs:
@@ -33,9 +33,15 @@ project has gone well past it across several arcs:
   self-organized criticality, genetic programming (evolution discovers equations), reservoir
   computing (dreaming the Lorenz attractor), NK fitness landscapes, honeybee swarm decisions,
   iterated-PD strategy evolution, diffusion-limited aggregation, and cellular-Potts tissue sorting.
+- **Networks, transitions & collective dynamics** (R81–R89): a restricted Boltzmann machine that
+  dreams, the voter model, the two pillars of network science (Barabási–Albert scale-free and
+  Watts–Strogatz small-world) with epidemics riding on them, the Ising equilibrium phase
+  transition, Nagel–Schreckenberg traffic (phantom jams that propagate backward), Greenberg–Hastings
+  excitable media (self-sustaining spiral waves / re-entry), and a major evolutionary transition —
+  the evolution of division of labor (Jensen: specialise iff returns accelerate).
 
 The early rungs are narrated below; the full ladder is the checklist further down.
-**402 tests pass.** Every figure is reproducible from `scripts/`.
+**457 tests pass.** Every figure is reproducible from `scripts/`.
 
 - **R1 — emergent flocking.** Vectorized Reynolds Boids; collective order emerges
   with no leader (order parameter φ 0.08 → 0.92).
@@ -292,3 +298,13 @@ See `QUICKSTART.md` for a per-stage operator guide (which command shows what).
 - **R78 ✓** diffusion-limited aggregation — Brownian growth into a fractal
 - **R79 ✓** cellular Potts model — tissue sorts itself by differential adhesion
 - **R80 ✓** review — adversarial re-verify R71–R79, frontier gallery (R71–R79), docs-hygiene
+- **R81 ✓** restricted Boltzmann machine — a neural network learns to dream (bars-and-stripes)
+- **R82 ✓** the voter model — coarsening with and without surface tension
+- **R83 ✓** network science — scale-free networks (Barabási–Albert) & their Achilles heel
+- **R84 ✓** epidemics on networks — the vanishing threshold of scale-free topology
+- **R85 ✓** the Ising model — spontaneous magnetisation & the order–disorder phase transition
+- **R86 ✓** Nagel–Schreckenberg traffic — phantom jams that emerge from nothing & propagate backward
+- **R87 ✓** Watts–Strogatz small-world networks — a few shortcuts collapse path length, clustering survives
+- **R88 ✓** excitable media — self-sustaining spiral waves & re-entry (Greenberg–Hastings)
+- **R89 ✓** a major transition — the evolution of division of labor (Jensen threshold at α=1)
+- **R90 ✓** review — adversarial re-verify R86–R89, frontier gallery (R81–R89), docs-hygiene
