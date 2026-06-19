@@ -1,12 +1,19 @@
 # alife — progress
 
-## Current state (Round 99 — 2026-06-18)
+## Current state (Round 100 — 2026-06-18, review)
 
-R90 was a review round (all R86–R89 claims re-verified; R81–R89 gallery at
-`runs/r90_review/gallery.png`). Public README restructured at R91 per CEO: project description +
-deploy + block diagram only; per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
+R100 milestone review: full-suite backstop (511); all nine R91–R99 headline claims re-verified with
+fresh seeds (R91 symmetric-control=0 drift, R92 spots∝area, R93 mild-τ segregates, R94 Derrida=K/2 at
+K_c=2, R95 chemotaxis dose-response, R96 K_c=1.596σ, R97 percolation p_c≈0.593, R98 q_c≈40, R99 MIPS
+CV control) — none broke; R91–R99 gallery at `runs/r100_review/gallery.png`. **Ambition decision:**
+after 14 steady classic-model rounds (R85–R99), R101+ escalates to a bigger leap in *kind* — the
+**evolved-swimming-in-a-real-fluid arc**: R101 lattice-Boltzmann (D2Q9) fluid verified against known
+flows, R102 an immersed swimmer that self-propels, R103 evolve the swimming gait.
 
-An evolving artificial-life ecosystem built from zero over 99 autonomous rounds. The full stated
+Public README was restructured at R91 per CEO: project description + deploy + block diagram only;
+per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
+
+An evolving artificial-life ecosystem built from zero over 100 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness

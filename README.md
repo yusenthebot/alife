@@ -25,7 +25,7 @@ Each model is one self-contained Python module with its own tests and a reproduc
    └───────────────────────────────┬──────────────────────────────┘
                                     │  + 1 self-contained model per round
    ┌──────────────────────────────────────────────────────────────┐
-   │  MODEL CATALOG    alife/<topic>.py    (~60 models, R1 → Rn)    │
+   │  MODEL CATALOG    alife/<topic>.py    (~70 models, R1 → Rn)    │
    │  flocking · selection · neural brains · predator–prey · 3D     │
    │  ecosystems · open-endedness · evolving bodies · origin-of-    │
    │  life · networks · criticality · reaction–diffusion /          │
@@ -38,7 +38,7 @@ Each model is one self-contained Python module with its own tests and a reproduc
    │ brain · sensors  │   │ per-model        │   │   → runs/r<N>_<x>/  │
    │ particlelife     │   │ metrics &        │   │      *.png figures  │
    │ CA grids ·       │   │ red-team checks  │   │ tests/test_<topic>  │
-   │ networks         │   │                  │   │   (463 pytest)      │
+   │ networks         │   │                  │   │   (511 pytest)      │
    │ numpy · scipy ·  │   └──────────────────┘   └─────────────────────┘
    │ moderngl GPU     │
    └──────────────────┘
@@ -83,7 +83,7 @@ model — browse them, or see [`QUICKSTART.md`](QUICKSTART.md) for a guided tour
 Run the test suite:
 
 ```bash
-scripts/test.sh                              # full suite (463 tests)
+scripts/test.sh                              # full suite (511 tests)
 scripts/test.sh tests/test_excitable.py      # a single model
 ```
 

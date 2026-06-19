@@ -8,7 +8,7 @@ see [`QUICKSTART.md`](QUICKSTART.md).
 
 ```
 alife/        one Python module per model + the shared substrate (~85 modules)
-tests/        pytest — one tests/test_<topic>.py per model (463 tests)
+tests/        pytest — one tests/test_<topic>.py per model (511 tests)
 scripts/      one scripts/run_<topic>.py per model; writes a figure to runs/
 runs/         generated figures/videos: runs/r<N>_<topic>/<topic>.png  (gitignored)
 requirements.txt   numpy, scipy, matplotlib, pillow, imageio(+ffmpeg), moderngl, pytest
