@@ -1,15 +1,16 @@
 # alife — progress
 
-## Current state (Round 106 — 2026-06-19)
+## Current state (Round 107 — 2026-06-19)
 
-R106 added KPZ surface growth (`alife/kpz.py`): ballistic deposition (particles stick on first
-lateral contact) roughens the interface in the Kardar-Parisi-Zhang universality class — growth
-exponent β≈1/3 and roughness α≈1/2 — versus uncorrelated random deposition (β=1/2, the control).
-R105 added explosive synchronization (`alife/explosivesync.py`): Kuramoto on a scale-free network with
-frequency=degree → a first-order hysteretic sync transition vs the smooth one when the correlation is
-shuffled away. R104 added granular media (`alife/granular.py`): a DEM hopper with constant-rate
-discharge, Beverloo's law, and jamming. (R104 originally aimed at Neural Cellular Automata, but a CPU
-torch install never converged; `alife/nca.py` is scaffolded for a later round once torch is available.)
+Recent rounds (all numpy/scipy, real-physics/complex-systems): R107 Olami-Feder-Christensen
+earthquakes (`alife/earthquake.py`) — non-conservative self-organized criticality producing the
+Gutenberg-Richter power law, with conservation tuning the catalogue from small quakes to
+system-spanning ruptures (distinct from R74's conservative sandpile). R106 KPZ surface growth
+(`alife/kpz.py`, ballistic deposition → β≈1/3, α≈1/2 vs random β=1/2). R105 explosive synchronization
+(`alife/explosivesync.py`, Kuramoto on scale-free + frequency=degree → first-order hysteretic sync).
+R104 granular DEM hopper (`alife/granular.py`, constant-rate discharge / Beverloo / jamming). (R104
+originally aimed at Neural Cellular Automata, but a CPU torch install never converged; `alife/nca.py`
+is scaffolded for a later round once torch is available.)
 
 ### The evolved-swimming arc (R101–R103)
 
@@ -35,7 +36,7 @@ flows, R102 an immersed swimmer that self-propels, R103 evolve the swimming gait
 Public README was restructured at R91 per CEO: project description + deploy + block diagram only;
 per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 106 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 107 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -81,9 +82,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R103: Evolving a swimming stroke — a GA discovers fast locomotion in a real fluid**, and
 **R104: Granular media (DEM) — constant-rate hopper discharge & Beverloo's law**, and
 **R105: Explosive synchronization — frequency-degree correlation turns sync into a first-order switch**, and
-**R106: KPZ surface growth — ballistic deposition bends the growth exponent to 1/3**.
-**547 tests pass.** PUBLISHED & SYNCED through R106 on public
-github.com/yusenthebot/alife (origin/master = 59214fd). A real-fluid swimming arc runs R101
+**R106: KPZ surface growth — ballistic deposition bends the growth exponent to 1/3**, and
+**R107: Olami-Feder-Christensen earthquakes — non-conservative self-organized criticality (Gutenberg-Richter)**.
+**553 tests pass.** PUBLISHED & SYNCED through R107 on public
+github.com/yusenthebot/alife (origin/master = 0a56c32). A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
@@ -201,6 +203,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R104 | Granular media (soft-sphere DEM) — disks under gravity with linear spring-dashpot repulsion (scipy cKDTree contacts) draining through a gap in the floor. Real contact physics; granular signatures emerge: CONSTANT-rate discharge (cumulative-out is linear, R²=0.947 — unlike a liquid that slows as it empties; why an hourglass keeps time), Beverloo's law (rate rises super-linearly with opening, 0.064→0.724 over D=3..15), and JAMMING (a few-grain opening chokes flow to ~0). Honest: velocity-based friction (no static friction) → angle-of-repose abandoned for the hopper |
 | R105 | Explosive synchronization — Kuramoto oscillators on a Barabási-Albert scale-free network with natural frequency = node degree (hubs beat fastest). CONTROL-verified: correlated freq=degree → coherence jumps abruptly (forward step ~0.79) and the backward sweep returns lower → a HYSTERESIS loop (area 0.52), a first-order switch-like transition (Gómez-Gardeñes 2011); shuffling the frequencies (same distribution, correlation destroyed) → smooth reversible 2nd-order (step ~0.22, area 0.06). Connects R96 (Kuramoto) + R83 (scale-free) |
 | R106 | KPZ surface growth (ballistic vs random deposition) — particles falling on a 1D substrate. CONTROL random deposition (independent columns) → width w~t^0.5 (β=0.502), never saturates; BALLISTIC deposition (sticks on first lateral contact → column correlations) → Kardar-Parisi-Zhang roughening w~t^β with β=0.31±0.09 (seed-averaged ~1/3; single seeds noisy from corrections-to-scaling) and saturation w_sat~L^α, α=0.47 (KPZ ~1/2). One of the deepest non-equilibrium universality classes from one sticking rule |
+| R107 | Olami-Feder-Christensen earthquakes — a spring-block fault grid loaded to threshold; a slip resets to 0 and gives α·stress to each of 4 neighbours (NON-conservative: 4α<1 loses stress), triggering avalanches. SOC survives despite dissipation: at α=0.22 the earthquake sizes follow a Gutenberg-Richter power law (τ≈1.9) over ~2 decades; strong dissipation (α=0.10) → only tiny quakes; conservation tunes the catalogue (big-quake fraction 0→0.98 as α 0.12→0.25). Distinct from R74 conservative abelian sandpile |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
