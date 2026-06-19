@@ -1,6 +1,18 @@
 # alife — progress
 
-## Current state (Round 127 — 2026-06-19)
+## Current state (Round 128 — 2026-06-19)
+
+R128 added lane formation (`alife/lanes.py`): two crowds driven in opposite directions through the same
+space spontaneously segregate into LANES — non-equilibrium self-organisation (Helbing pedestrian
+dynamics / driven binary colloids). Overdamped particles in a periodic box, each driven ±x by its
+species, with soft neighbour repulsion + noise: a walker straying into the on-coming stream is bumped
+sideways more than among its own kind, so same-direction walkers accrete into stripes parallel to the
+flow. The lane order parameter (species purity within transverse y-stripes, control-validated: clean
+lanes ~0.84, mix ~0.2) rises ~0.1→0.89 with the drive; without drive it stays mixed (~0.10); noise
+melts the lanes above a critical value. Neighbour repulsion via a periodic KD-tree (O(N log N), fast).
+Diverse from the recent PDE-pattern streak — active-matter agents; distinct from boids (alignment),
+mips (same-species phase separation), selfpropelled (mill/flock). Visual round: mixed→lanes snapshots +
+order-vs-time + noise-melting transition + lanes-forming GIF.
 
 R127 added Swift-Hohenberg convection (`alife/swifthohenberg.py`): the Rayleigh-Bénard patterns —
 parallel rolls and honeycomb hexagons — from the simplest equation with a BUILT-IN wavelength:
@@ -307,8 +319,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R124: Complex Ginzburg-Landau — rainbow spiral pinwheels (topological defects) breaking into defect turbulence across the Benjamin-Feir line**, and
 **R125: Cahn-Hilliard spinodal decomposition — a quenched mixture unmixes into domains that coarsen as L(t)~t^(1/3)**, and
 **R126: Animal coat geometry — domain width sculpts Turing spots into stripes (Murray; leopard spots & striped tails)**, and
-**R127: Swift-Hohenberg convection — built-in wavelength + one knob: parallel ROLLS vs honeycomb HEXAGONS (Bénard cells)**.
-**696 tests pass.** PUBLISHED & SYNCED through R127 on public
+**R127: Swift-Hohenberg convection — built-in wavelength + one knob: parallel ROLLS vs honeycomb HEXAGONS (Bénard cells)**, and
+**R128: Lane formation — counter-flowing crowds spontaneously segregate into lanes (active matter / pedestrians)**.
+**704 tests pass.** PUBLISHED & SYNCED through R128 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -446,6 +459,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R125 | Cahn-Hilliard spinodal decomposition (cahnhilliard.py), "Model B" conserved-order-parameter phase separation. dc/dt=M∇²μ, μ=−ε²∇²c+c³−c. Quenched mixture unmixes into ±1 domains that COARSEN (small dissolve to feed big). Conserved order parameter (Laplacian out front → mean exactly conserved) → distinct from non-conserved RD Turing (gierermeinhardt/reactiondiff). Domain size follows Lifshitz-Slyozov-Wagner L(t)~t^(1/3) — measured n=0.33. Convex-splitting semi-implicit Fourier scheme (unconditionally stable any ε; naive semi-implicit blows up for small ε — needs the A·k² stabilizer). Length metric (structure-factor 1st moment) validated on a stripe control. VISUAL: coarsening sequence + log-log L(t) on t^(1/3) + unmixing GIF |
 | R126 | Animal coat geometry (coatpattern.py) — Murray's rule that DOMAIN GEOMETRY selects the Turing pattern; "how the leopard gets its spots". Gray-Scott spot-regime (F=0.030,k=0.062): wide 2D sheet → spot lattice; narrow strip → spots lose rows + ELONGATE toward stripes; sub-wavelength → blank. Quantified (control-validated blob metrics): spot count 115→25→0, elongation 1.25→~2 as width shrinks. No-flux masked Laplacian (validated: uniform→0) on a tapering body+tail domain → spotted body thinning down the tail. ADVANCES the R92 gierermeinhardt honest-negative (GM went blank when narrowed) by mapping the geometry gradient with Gray-Scott + reaching the blank threshold cleanly. HONEST: clean transverse stripes still a delicate sub-regime (continuous taper gives thinning spot-rows, not a sharp striped tail) — not a full resolution. VISUAL: leopard tapering creature + width-sweep gallery + elongation/count curves |
 | R127 | Swift-Hohenberg / Rayleigh-Bénard convection (swifthohenberg.py). du/dt=ru−(1+∇²)²u+g u²−u³. (1+∇²)² minimised at k=1 → BUILT-IN wavelength (measured dom_k≈1.0; growth rate r−(1−k²)² peaks at k=1), no diffusion-ratio tuning unlike Turing. r=drive (flat for r<0); g=up/down asymmetry: g=0 → ROLLS (stripes), g>0 near onset → HEXAGONS (Bénard honeycomb cells). Read by eye + cell elongation (control-validated: rolls 2.4, hexagons ~1.15 / ~880 cells); FFT ring shows 6 spots@60° for hexagons, diffuse ring for labyrinth rolls. Fourier integrating-factor split (4th-order linear exact). Reliable clean visual. VISUAL: rolls + hexagons fields + FFT 6-fold + g-transition + dispersion curve |
+| R128 | Lane formation (lanes.py) — counter-flowing active matter self-organising into lanes (Helbing pedestrians / driven binary colloids). Overdamped particles in a periodic box, driven ±x by species, soft neighbour repulsion + noise; a walker straying into the on-coming stream gets bumped sideways more than among its own kind -> same-direction walkers accrete into stripes ∥ flow. Lane order parameter = species purity within transverse y-stripes (control-validated: clean lanes ~0.84, mix ~0.2); rises 0.1->0.89 with drive, stays ~0.10 with NO drive, melts above a critical noise. Periodic KD-tree neighbours (O(N log N)). Distinct from boids (alignment) / mips (same-species) / selfpropelled (mill). VISUAL: mixed->lanes snapshots + order-vs-time (+ no-drive control) + noise-melting transition + GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
