@@ -1,6 +1,24 @@
 # alife — progress
 
-## Current state (Round 133 — 2026-06-19)
+## Current state (Round 134 — 2026-06-19)
+
+R134 added murmuration vs a predator (`alife/murmuration.py`): a starling murmuration boiling away from
+a hawk is collective ANTI-PREDATOR behaviour — no bird sees the whole flock, yet the group flows around
+the predator and it mostly goes hungry. On top of plain boids (cohesion + alignment + separation) sits a
+FLEE response: a prey within sense range steers directly away from the predator, and because neighbours
+align with it the turn spreads through the flock. The predator chases the nearest prey; a catch respawns
+that bird (holding the flock size). The pay-off is dramatic and control-validated: zeroing the flee
+weight (same flock, prey just ignore the hawk) lets the predator park in the herd and feed — ON vs OFF
+catch counts differ 80×/52×/167× across seeds 0/1/2 (robustly large, never marginal), and fleeing keeps
+the hawk ~3.2 cells from the nearest bird vs ~2.2 when ignored. Neighbour queries via a periodic KD-tree
+(`cKDTree(boxsize=L)`) + a per-agent boids loop. Honest: a loose agitated flock (polarization ~0.35, not
+a tight band — the hawk keeps it stirred), and the alignment-propagated turning WAVE is the model
+mechanism, not a separately measured headline (tests assert against random baselines: spread < L/√6,
+polarization > 2/√N). Agent-based predator evasion, distinct from boids/boids3d/swarm3d (no predator) and
+predprey (population dynamics, not spatial evasion). VISUAL: flock streaming away from the hawk (heading
+arrows) + flee-ON-vs-OFF catch bar + hawk-distance-over-time + a 126-frame evasion GIF.
+
+### R133 details
 
 R133 added termite construction (`alife/termites.py`): stigmergy — structure with no blueprint (Grassé
 1959). Random-walking termites deposit cement whose pheromone makes other termites more likely to
@@ -391,8 +409,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R129: Chladni figures — sand self-assembles onto the nodal lines of a vibrating plate's modes**, and
 **R131: Excitable media (Barkley) — BZ-type rotating spiral waves & concentric pacemaker target rings**, and
 **R132: Wolf-Sheep-Grass — a 3-level agent food chain falls into predator-prey boom-bust cycles (predator lags prey)**, and
-**R133: Termite construction (stigmergy) — builders with no blueprint self-organise material into mounds**.
-**734 tests pass.** PUBLISHED & SYNCED through R133 on public
+**R133: Termite construction (stigmergy) — builders with no blueprint self-organise material into mounds**, and
+**R134: Murmuration vs a predator — a flock that flees as one starves the hawk (100×+ fewer catches)**.
+**738 tests pass.** PUBLISHED & SYNCED through R134 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -535,6 +554,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R131 | Excitable media (barkley.py) — BZ-type spiral & target waves. Barkley continuum RD: du/dt=D∇²u+(1/ε)u(1-u)(u−(v+b)/a), dv/dt=u−v. Stable rest, fires past threshold (v+b)/a, refractory recovery. Broken front → re-entrant SPIRALS; periodic pacemaker → concentric TARGET rings (iconic BZ). Verified: rest stable, threshold ~b/a (sub-kick dies/supra propagates), constant wave speed ~3.85 cells/time (linear 1D front), spirals re-entrant, target rings form (no pacemaker→none). PIVOTED from Oregonator (self-ignited — rest unstable in our params) to robust Barkley reduction. Distinct from R88 excitable.py (discrete Greenberg-Hastings CA) + R124 cgle (complex PDE). VISUAL: spiral + target fields + threshold curve + wave-speed line + target GIF |
 | R132 | Wolf-Sheep-Grass (wolfsheep.py) — 3-level agent food chain (NetLogo classic). Grass regrows on a timer; sheep graze+breed+starve; wolves eat sheep+breed+starve; toroidal agent grid (arrays of pos+energy, grass regrow-timer grid). Emergent predator-prey BOOM-BUST cycles: coexistence over 1000s of steps, predator LAGS prey (cross-corr +86), sheep anti-correlate grass (−0.86 overgraze), grass essential (no regrow→collapse). Lag metric validated on synthetic shifted signal. Honest: sheep grass-limited in this regime (removing wolves doesn't boom them). Coexistence params L=45,move=1,w_gain=25 (delicate — sweep found it; too-sparse grid→wolves starve). Agent-based, distinct from ODE predprey / RD spatialpredprey / brain-evo ecosim. VISUAL: world snapshot + pop cycles + phase loop + cross-corr lag + world GIF |
 | R133 | Termite construction / stigmergy (termites.py) — Grassé (1959): builders with no blueprint. Random-walking termites deposit cement; the cement's pheromone (diffuse+evaporate) raises nearby deposit probability -> positive feedback ("work begets work") -> from a flat floor, material self-organises into MOUNDS. Verified: clustering var/mean ~5 with feedback (k=6) vs ~1 random (k=0), clustering switches on as k rises; metric validated on poisson/clumpy controls; pheromone field diffuses from mounds. Distinct from antcolony (foraging) + gpuslime (transport) — CONSTRUCTION/accretion. HONEST: 2D feedback COARSENS to irregular mounds, not regular 3D-nest pillars (activator-inhibitor frontier). VISUAL: mounds + termites + pheromone + clustering-vs-k + build GIF |
+| R134 | Murmuration vs a predator (murmuration.py) — collective anti-predator evasion. Boids prey (cohesion+alignment+separation) + a hawk chasing the nearest bird; a prey within sense range adds a strong FLEE force away from the predator, and alignment spreads the turn through the flock. Caught prey respawn (flock size held). CONTROL = zero the flee weight (same flock, prey ignore the hawk) → the hawk parks in the herd and feeds: ON vs OFF catches differ 80×/52×/167× across seeds 0/1/2 (robust), and fleeing holds the hawk ~3.2 cells off the nearest bird vs ~2.2. Emergent catch-count metric, single-variable ablation. Periodic cKDTree(boxsize=L) neighbours + per-agent boids loop. HONEST: loose agitated flock (polariz ~0.35, predator keeps it stirred); the alignment-propagated turning wave is the mechanism, not a separately measured claim (tests assert vs random baselines: spread<L/√6, pol>2/√N). Distinct from boids/boids3d/swarm3d (no predator) + predprey (population, not spatial evasion). VISUAL: flock streaming from the hawk + flee-on/off catch bar + hawk-distance curve + 126-frame evasion GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Viscous fingering / Saffman-Taylor via discrete DBM + surface tension did NOT work (R133).** Adding a neighbour-count "surface tension" bonus to the dielectric (DBM) growth weight barely changed the morphology — all stayed DLA-fractal (D~1.6), because the harmonic-field SCREENING of fjords dominates the local curvature bonus. Proper Saffman-Taylor needs a continuum phase-field / curvature-based interface advance, not a discrete-DBM tweak. PIVOTED to termite stigmergy. (Viscous fingering deferred — needs a real moving-interface solver.)
