@@ -1,6 +1,17 @@
 # alife — progress
 
-## Current state (Round 111 — 2026-06-19)
+## Current state (Round 112 — 2026-06-19)
+
+R112 added Keller-Segel chemotactic aggregation (`alife/kellersegel.py`): the original 1970 model of
+Dictyostelium slime-mold aggregation. Cells secrete a diffusing chemoattractant and crawl up its
+gradient — a positive feedback that, above a critical sensitivity chi_c, makes a uniform cell lawn
+linearly unstable and collapses it into mounds ("chemotactic collapse"). A pattern-forming instability
+driven not by reaction kinetics (R45 Gray-Scott) but by nonlinear ADVECTION, and distinct from R55
+Physarum networks / R95 single-cell chemotaxis. Conservative finite-volume + upwind scheme: cell mass
+conserved to machine precision, density stays non-negative. The headline is verified RIGOROUSLY — the
+measured single-mode (k_min) linear growth rate lies exactly on the dispersion-relation prediction and
+crosses zero at the predicted chi_c≈1.03 (the end-state onset sits higher due to critical
+slowing-down — an honest finite-time nuance). 10 tests.
 
 R111 added spatial rock-paper-scissors (`alife/rpsmobility.py`): cyclic competition on a lattice
 where MOBILITY decides survival — low mobility keeps three species coexisting in cyclic spiral
@@ -101,9 +112,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R107: Olami-Feder-Christensen earthquakes — non-conservative self-organized criticality (Gutenberg-Richter)**, and
 **R108: Synthetic gene circuits — the repressilator clock & the toggle switch (loop parity decides)**, and
 **R109: Spatial predator-prey — reaction-diffusion shows space rescues coexistence from boom-bust**, and
-**R111: Spatial rock-paper-scissors — mobility destroys biodiversity past a threshold (RMF 2007)**.
-**571 tests pass.** PUBLISHED & SYNCED through R111 on public
-github.com/yusenthebot/alife (origin/master = 18c565c). A real-fluid swimming arc runs R101
+**R111: Spatial rock-paper-scissors — mobility destroys biodiversity past a threshold (RMF 2007)**, and
+**R112: Keller-Segel chemotactic aggregation — a cell lawn collapses into mounds above a predicted chi_c (KS 1970)**.
+**581 tests pass.** PUBLISHED & SYNCED through R112 on public
+github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
@@ -225,6 +237,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R108 | Synthetic gene circuits (Hill-repression ODEs) — designed gene-regulatory dynamics, distinct from R94's random Boolean nets. The REPRESSILATOR (3-gene repression ring) sustains oscillations (a genetic clock, period ~12, three phase-shifted proteins); LOOP PARITY decides — odd rings (3,5,7) oscillate, even rings (2,4,6) are silent; oscillation needs COOPERATIVITY (Hill ≳ 2); the TOGGLE SWITCH (2 mutually-repressing genes) is bistable — initial bias selects one of two stable states (a one-bit cellular memory) |
 | R109 | Spatial predator-prey (Rosenzweig-MacArthur reaction-diffusion) — a continuum field formulation (distinct from agent-based R5/R15/R34). CONTROL well-mixed 0D: boom-bust limit cycle, prey crashes to min ~0.011 (paradox of enrichment), global fluctuation std ~0.26; SPATIAL 2D: asynchronous patches form pursuit waves (field std ~0.14), the global population averages out-of-phase oscillators → fluctuation ~4× smaller (~0.06) and minimum ~10× higher (~0.10, far from extinction). Space turns a fragile boom-bust system into a persistent one |
 | R111 | Spatial rock-paper-scissors (cyclic competition + mobility) — A beats B beats C beats A on a lattice with reaction (predation + reproduction) and conservative domino-swap EXCHANGE mobility. Distinct from R39's well-mixed RPS. Reichenbach-Mobilia-Frey (2007): low mobility → three species coexist in cyclic spiral domains (3 survivors); above a critical mobility the spirals merge until one wavelength exceeds the system → biodiversity collapses to 1 survivor; the survival curve drops 3→1 across the threshold. Honest: finite-size means strong seed fluctuation near threshold (averaged collapse is clean) |
+| R112 | Keller-Segel chemotactic aggregation (Dictyostelium slime-mold, 1970) — cells secrete a diffusing chemoattractant and crawl up its gradient; the positive feedback destabilises a uniform lawn above a critical sensitivity chi_c, collapsing it into mounds (chemotactic collapse). A Turing-type instability driven by nonlinear ADVECTION (chi·rho·∇c), not reaction kinetics — distinct from R45 Gray-Scott, R55 Physarum networks, R95 single-cell chemotaxis. Conservative finite-volume + upwind: cell mass conserved to machine precision (drift ~1e-16), density non-negative. RIGOROUS verification: measured single-mode (k_min) linear growth rate lies exactly on the dispersion-relation prediction and crosses zero at the predicted chi_c≈1.03; theory = measured. Honest: the finite-time end-state onset sits above chi_c (critical slowing-down — σ→0 at threshold so a finite run can't resolve the marginal band) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
