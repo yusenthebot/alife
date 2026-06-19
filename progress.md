@@ -1,6 +1,22 @@
 # alife — progress
 
-## Current state (Round 119 — 2026-06-19)
+## Current state (Round 120 — 2026-06-19)
+
+### R120 milestone review
+
+R120 milestone review: all eight R112–R119 headline claims re-verified with FRESH seeds — R112
+Keller-Segel growth-rate crosses zero at the predicted chi_c; R113 3D Ising chi-peak T_c≈4.50 (>2D
+2.269); R114 somitogenesis size=2πv/ω (0.1%); R115 chimera coherent+incoherent coexist (controls
+full-sync); R116 May transition at σ√(SC)=1 + predator-prey stabilises (pp>rand); R117 growing-Turing
+n∝L (corr 0.967); R118 phyllotaxis packing peak at exactly the golden angle + emergence; R119 snowflake
+six-fold symmetry + compactness↓ with humidity — all hold, zero regressions. Full suite backstop: 642
+pass. Milestone gallery (R111–R119) at `runs/r120_review/gallery.png`. Workspace tidy (root docs =
+README/QUICKSTART/CODEBASE_GUIDE + progress/STATUS state); README + CODEBASE_GUIDE counts refreshed to
+~112 models / 642 tests. **Ambition critic:** the project is now a very broad catalog (~112 isolated
+models); the next frontier is depth/composition — a COMPOSED multi-model "world" (couple existing parts
+into one emergent ecology), the deferred ambitious fluid round (viscous fingering / Laplacian growth),
+and a few candidates not yet built (forest-fire SOC, gLV many-species dynamics, French-flag positional
+information). Build resumes at R121.
 
 R119 added snowflake growth (`alife/snowflake.py`): six-fold snow crystals from a one-rule cellular
 automaton on a hexagonal lattice (Reiter 2005). Water vapour diffuses across the plane; wherever the

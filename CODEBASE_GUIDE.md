@@ -7,8 +7,8 @@ see [`QUICKSTART.md`](QUICKSTART.md).
 ## Directory layout
 
 ```
-alife/        one Python module per model + the shared substrate (~93 modules)
-tests/        pytest — one tests/test_<topic>.py per model (565 tests)
+alife/        one Python module per model + the shared substrate (~112 modules)
+tests/        pytest — one tests/test_<topic>.py per model (642 tests)
 scripts/      one scripts/run_<topic>.py per model; writes a figure to runs/
 runs/         generated figures/videos: runs/r<N>_<topic>/<topic>.png  (gitignored)
 requirements.txt   numpy, scipy, matplotlib, pillow, imageio(+ffmpeg), moderngl, pytest
