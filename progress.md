@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 86 — 2026-06-18)
+## Current state (Round 87 — 2026-06-18)
 
-An evolving artificial-life ecosystem built from zero over 86 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 87 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -30,9 +30,11 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R83: Network science — scale-free networks & their Achilles heel**, and
 **R84: Epidemics on networks — the vanishing threshold of scale-free topology**, and
 **R85: The Ising model — spontaneous magnetisation & the order-disorder phase transition**, and
-**R86: Nagel-Schreckenberg traffic — phantom jams emerge from local rules, propagate backward**.
-**439 tests pass.** PUBLISHED & SYNCED through R86 on public
-github.com/yusenthebot/alife (origin/master = a6e5c78). An origin-of-life arc runs
+**R86: Nagel-Schreckenberg traffic — phantom jams emerge from local rules, propagate backward**, and
+**R87: Watts-Strogatz small-world networks — a few shortcuts collapse path length, clustering survives**.
+**445 tests pass.** PUBLISHED & SYNCED through R87 on public
+github.com/yusenthebot/alife (origin/master = 636d623). A network-science arc runs R83 (scale-free)
+→ R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -130,6 +132,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R84 | Epidemics on networks (SIR, Pastor-Satorras-Vespignani) — builds on R83: scale-free nets have a VANISHING epidemic threshold (BA ignites at β~0.05-0.08 where ER fizzles); hubs are super-spreaders (P(infected) rises with degree); TARGETED hub immunization crushes the epidemic (5%→0.005) where random barely helps (0.37) |
 | R85 | The Ising model (Metropolis MC) — the canonical EQUILIBRIUM phase transition (vs R74 SOC): spontaneous magnetisation |M| collapses 0.99→0.03 at T_c≈2.269 (Onsager, symmetry breaking); susceptibility peaks at T_c (critical fluctuations); ordered/critical-fractal/disordered spin fields. Vectorized checkerboard |
 | R86 | Nagel-Schreckenberg traffic — self-organized phantom jams on a ring from 4 local rules (accelerate / brake-to-gap / random-dawdle p / move): jams nucleate above a critical density with NO bottleneck and propagate BACKWARD at −1 cell/step (measured by stopped-field cross-correlation, 94% of steps) while cars move forward +1.47; triangular fundamental diagram peaks at ρ_c≈0.10-0.14 then collapses; control p=0 → fewer jams (the random slowdown is the cause) |
+| R87 | Watts-Strogatz small-world networks — completes the network arc (the other pillar vs R83 scale-free): rewiring a ring lattice by a tiny fraction p collapses average path length while clustering survives. Matches closed-form theory (ring C0=0.600=3(k-2)/(4(k-1)), L0=50=n/2k); at p=0.01 path length → 0.32 of ring but clustering stays 0.98 (decoupling of scales); random graph C~0.01 L~3.8. Dynamical payoff: rounds to inform whole net drop 100→8 with shortcuts |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
