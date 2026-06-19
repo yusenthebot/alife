@@ -1,15 +1,16 @@
 # alife — progress
 
-## Current state (Round 108 — 2026-06-19)
+## Current state (Round 109 — 2026-06-19)
 
-Recent rounds (all numpy/scipy): R108 synthetic gene circuits (`alife/genecircuit.py`) — the
-repressilator (3-gene repression ring → a genetic oscillator), the loop-parity rule (odd rings
-oscillate, even are bistable), the Hill-cooperativity threshold, and the toggle switch (2-gene → a
-one-bit memory). R107 Olami-Feder-Christensen earthquakes (non-conservative SOC → Gutenberg-Richter).
-R106 KPZ surface growth (ballistic deposition → β≈1/3 vs random 1/2). R105 explosive synchronization
-(Kuramoto on scale-free + frequency=degree → first-order hysteretic sync). R104 granular DEM hopper
-(constant-rate discharge / Beverloo / jamming). (R104 aimed at Neural Cellular Automata but a CPU
-torch install never converged; `alife/nca.py` is scaffolded for a later round once torch is available.)
+Recent rounds (all numpy/scipy): R109 spatial predator-prey (`alife/spatialpredprey.py`) — a
+reaction-diffusion predator-prey where space rescues coexistence (asynchronous pursuit waves keep the
+global population off the extinction floor that the well-mixed boom-bust cycle skims). R108 synthetic
+gene circuits (`alife/genecircuit.py`, repressilator clock + loop-parity rule + toggle switch). R107
+Olami-Feder-Christensen earthquakes (non-conservative SOC → Gutenberg-Richter). R106 KPZ surface
+growth (ballistic deposition → β≈1/3). R105 explosive synchronization (Kuramoto on scale-free +
+frequency=degree → first-order hysteretic sync). R104 granular DEM hopper (Beverloo / jamming). (R104
+aimed at Neural Cellular Automata but a CPU torch install never converged; `alife/nca.py` is scaffolded
+and untracked — its fate is decided at the R110 review.)
 
 ### The evolved-swimming arc (R101–R103)
 
@@ -35,7 +36,7 @@ flows, R102 an immersed swimmer that self-propels, R103 evolve the swimming gait
 Public README was restructured at R91 per CEO: project description + deploy + block diagram only;
 per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 108 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 109 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -83,9 +84,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R105: Explosive synchronization — frequency-degree correlation turns sync into a first-order switch**, and
 **R106: KPZ surface growth — ballistic deposition bends the growth exponent to 1/3**, and
 **R107: Olami-Feder-Christensen earthquakes — non-conservative self-organized criticality (Gutenberg-Richter)**, and
-**R108: Synthetic gene circuits — the repressilator clock & the toggle switch (loop parity decides)**.
-**559 tests pass.** PUBLISHED & SYNCED through R108 on public
-github.com/yusenthebot/alife (origin/master = 053df7c). A real-fluid swimming arc runs R101
+**R108: Synthetic gene circuits — the repressilator clock & the toggle switch (loop parity decides)**, and
+**R109: Spatial predator-prey — reaction-diffusion shows space rescues coexistence from boom-bust**.
+**565 tests pass.** PUBLISHED & SYNCED through R109 on public
+github.com/yusenthebot/alife (origin/master = 29442a9). A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
@@ -205,6 +207,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R106 | KPZ surface growth (ballistic vs random deposition) — particles falling on a 1D substrate. CONTROL random deposition (independent columns) → width w~t^0.5 (β=0.502), never saturates; BALLISTIC deposition (sticks on first lateral contact → column correlations) → Kardar-Parisi-Zhang roughening w~t^β with β=0.31±0.09 (seed-averaged ~1/3; single seeds noisy from corrections-to-scaling) and saturation w_sat~L^α, α=0.47 (KPZ ~1/2). One of the deepest non-equilibrium universality classes from one sticking rule |
 | R107 | Olami-Feder-Christensen earthquakes — a spring-block fault grid loaded to threshold; a slip resets to 0 and gives α·stress to each of 4 neighbours (NON-conservative: 4α<1 loses stress), triggering avalanches. SOC survives despite dissipation: at α=0.22 the earthquake sizes follow a Gutenberg-Richter power law (τ≈1.9) over ~2 decades; strong dissipation (α=0.10) → only tiny quakes; conservation tunes the catalogue (big-quake fraction 0→0.98 as α 0.12→0.25). Distinct from R74 conservative abelian sandpile |
 | R108 | Synthetic gene circuits (Hill-repression ODEs) — designed gene-regulatory dynamics, distinct from R94's random Boolean nets. The REPRESSILATOR (3-gene repression ring) sustains oscillations (a genetic clock, period ~12, three phase-shifted proteins); LOOP PARITY decides — odd rings (3,5,7) oscillate, even rings (2,4,6) are silent; oscillation needs COOPERATIVITY (Hill ≳ 2); the TOGGLE SWITCH (2 mutually-repressing genes) is bistable — initial bias selects one of two stable states (a one-bit cellular memory) |
+| R109 | Spatial predator-prey (Rosenzweig-MacArthur reaction-diffusion) — a continuum field formulation (distinct from agent-based R5/R15/R34). CONTROL well-mixed 0D: boom-bust limit cycle, prey crashes to min ~0.011 (paradox of enrichment), global fluctuation std ~0.26; SPATIAL 2D: asynchronous patches form pursuit waves (field std ~0.14), the global population averages out-of-phase oscillators → fluctuation ~4× smaller (~0.06) and minimum ~10× higher (~0.10, far from extinction). Space turns a fragile boom-bust system into a persistent one |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
