@@ -1,8 +1,16 @@
 # alife — progress
 
-## Current state (Round 109 — 2026-06-19)
+## Current state (Round 110 — 2026-06-19, review)
 
-Recent rounds (all numpy/scipy): R109 spatial predator-prey (`alife/spatialpredprey.py`) — a
+R110 milestone review: all nine R101–R109 headline claims re-verified with fresh seeds (Poiseuille +
+Kármán, swimmer-vs-control, granular Beverloo/jamming, explosive-sync hysteresis, KPZ β<½, OFC
+Gutenberg-Richter, repressilator parity, space-stabilizes-coexistence) — all hold; R101–R109 gallery
+at `runs/r110_review/gallery.png`; workspace tidy; the untracked `nca.py` scaffold was deleted (the
+CPU torch install never converged — re-creatable if torch ever lands).
+
+### Recent build rounds (R104–R109)
+
+All numpy/scipy: R109 spatial predator-prey (`alife/spatialpredprey.py`) — a
 reaction-diffusion predator-prey where space rescues coexistence (asynchronous pursuit waves keep the
 global population off the extinction floor that the well-mixed boom-bust cycle skims). R108 synthetic
 gene circuits (`alife/genecircuit.py`, repressilator clock + loop-parity rule + toggle switch). R107
