@@ -1,6 +1,29 @@
 # alife — progress
 
-## Current state (Round 138 — 2026-06-19)
+## Current state (Round 139 — 2026-06-19)
+
+R139 added dendritic solidification (`alife/dendrite.py`): a snowflake crystal grows from an undercooled
+melt. Freeze a pure liquid below its melting point and the crystal does not grow as a smooth ball — it
+throws out sharp branching arms (the shape inside every snowflake and most cast metals). Modelled with
+the Kobayashi (1993) phase field: a phase p (1=solid, 0=liquid) couples to a temperature T; the gradient-
+energy coefficient ε(θ)=ε̄(1+δ cos(j(θ-θ0))) depends on the interface-normal angle (this is the lattice
+ANISOTROPY), and latent heat K·∂p/∂t reheats the surrounding melt. Two physical ingredients combine: the
+Mullins-Sekerka tip instability (a protruding tip sheds its latent heat faster, stays colder, grows
+faster — runaway sharpening) and the anisotropy (which pins the runaway to j preferred directions). The
+result, eye- and data-checked: a six-fold ice dendrite and a four-fold cubic-metal dendrite, with side
+branches when interface noise is added, and a clear latent-heat HALO of warm melt around the crystal.
+Quantitatively the number of primary arms equals the anisotropy mode j (measured from the angular Fourier
+spectrum of the tip-radius profile: j=4→4, j=6→6 — the measured count equals the set parameter), and the
+anisotropy DRIVES the growth (with δ=0.04 the solid fraction reaches 0.40 vs 0.10 for δ=0). Honest: these
+are relatively "fat" dendrites, not ultra-fine needles; the square-grid Laplacian is not perfectly
+isotropic, so the δ=0 case and j≥8 show a spurious grid 4-fold (I claim only j=4 and j=6, the physical
+cases); the equation signs were validated empirically against a saved probe image. Genuinely distinct in
+mechanism from snowflake.py (Reiter's hexagonal vapour-CA, a discrete rule) and dla.py (random-walk
+aggregation) — this is a continuum PDE with real latent-heat coupling and tunable anisotropy, and it
+retires the deferred dendrite frontier. VISUAL: six-fold + four-fold + side-branched crystals + the
+temperature halo + arm-count=j bars + growth-vs-anisotropy curve + a 35-frame growth GIF.
+
+### R138 details
 
 R138 added Turing patterns on a sphere (`alife/turingsphere.py`): how an animal gets its spots on a
 curved, CLOSED body rather than a flat sheet. The Gray-Scott reaction-diffusion system runs on the
@@ -499,8 +522,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R135: Faraday waves — a vibrated surface erupts into a subharmonic, drive-tuned standing-wave lattice**, and
 **R136: Grain growth — a polycrystal coarsens by curvature (Q-state Potts, soap-froth/metal grains)**, and
 **R137: Invasion fronts — Fisher-KPP pulled waves (c=2√rD) & the Allee extinction threshold**, and
-**R138: Turing patterns on a sphere — an animal coat on a curved closed surface (icosphere Gray-Scott)**.
-**771 tests pass.** PUBLISHED & SYNCED through R138 on public
+**R138: Turing patterns on a sphere — an animal coat on a curved closed surface (icosphere Gray-Scott)**, and
+**R139: Dendritic solidification — snowflake & cubic crystals from an undercooled melt (Kobayashi phase field)**.
+**778 tests pass.** PUBLISHED & SYNCED through R139 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -648,6 +672,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 | R137 | Invasion fronts (fisherfront.py) — Fisher-KPP pulled waves + the Allee extinction threshold. Logistic RD u_t=D u_xx+r u(1-u) → a PULLED travelling front at c=2√(rD) (speed set by the dilute leading edge). Allee term r u(1-u)(u-a) → a PUSHED front c=√(rD/2)(1-2a) with an EXTINCTION THRESHOLD: a<½ invade, a=½ stall, a>½ RETREAT (founder population dies). Matches CLOSED-FORM theory: Fisher c on the 2√(rD) line across r,D (slightly below = Bramson log correction); Allee velocity on √(rD/2)(1-2a) to <1%, zero-crossing exactly at a=½. 2D: Fisher colony 15→51 (invades) vs Allee a=0.7 colony 28→8 (extinct), same seed. Deterministic/reproducible. DISTINCT from barkley/excitable (excitable PULSE w/ refractory rest, not monostable invasion) + Gray-Scott/Turing (standing patterns). VISUAL: 2D invasion-vs-extinction snapshots + Fisher speed law + Allee velocity-vs-a zero-crossing + shape-invariant profiles + 38-frame side-by-side GIF |
 | R138 | Turing patterns on a sphere (turingsphere.py) — an animal coat on a curved CLOSED surface. Gray-Scott RD on an ICOSPHERE mesh (icosahedron subdivided n times → unit sphere; no lat-lon pole singularity, near-uniform resolution). Diffusion = row-normalized graph Laplacian (Lap u = mean(nbrs)−u, eigvals [−2,0] → standard GS step stable; conserves constants, |L·1|<1e-16). Three eyeball coat regimes by (F,k): isolated SPOTS (~41, leopard ball), LABYRINTH, CORAL. Sphere-specific QUANT: closed geometry quantises the pattern — spot count grows with sphere size (subdiv 3/4/5 → 0/18/41 spots, ∝ area/λ²; mesh refine = larger R/λ since normalized Laplacian sets λ in edge units). HONEST: spot-count only meaningful in the isolated-spots regime (size-law uses that; labyrinth/coral not counted as spots); graph Laplacian ≈ Laplace-Beltrami → qualitative pattern + size-scaling, not precise λ. DISTINCT from coatpattern (flat 2D taper) + reactiondiff (flat GS) — closed curved manifold + topological quantization. VISUAL: 3 coat-regime 3D balls (Poly3DCollection) + spot-count-vs-size + lon-lat unwrap + far side + 30-frame rotating GIF |
+| R139 | Dendritic solidification (dendrite.py) — a snowflake crystal from an undercooled melt (Kobayashi 1993 phase field). Phase p (1=solid) couples to temperature T; anisotropic gradient energy ε(θ)=ε̄(1+δ cos(j(θ-θ0))) + latent heat K∂p/∂t; Mullins-Sekerka tip instability + lattice anisotropy → j sharp primary arms + side branches. Eye+data: 6-fold (ice) + 4-fold (cubic) dendrites + side-branched (noise) crystal + latent-heat HALO in T. QUANT: arm count = anisotropy mode j (angular-FFT of tip-radius profile; j=4→4, j=6→6 = measured equals set parameter); anisotropy DRIVES growth (δ=0.04 solid-frac 0.40 vs δ=0 0.10). HONEST: 'fat' dendrites not fine needles; square-grid Laplacian → spurious 4-fold at δ=0 and j≥8 (claim only j=4,6 physical cases); signs validated empirically vs saved probe. DISTINCT mechanism from snowflake (Reiter hexagonal vapour-CA) + dla (random-walk aggregation) — continuum PDE w/ latent-heat coupling + tunable anisotropy; retires deferred dendrite frontier. VISUAL: 6-fold+4-fold+side-branched crystals + T halo + arm=j bars + growth-vs-δ + 35-frame growth GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Liesegang periodic precipitation rings — clean Jablczynski spacing law would NOT form robustly (R136, 3 probes, PIVOTED to grain growth).** The Ostwald supersaturation / Keller-Rubinow model (outer ion a diffuses into gel of inner ion b, a+b→c, c precipitates above a nucleation threshold then grows) is notoriously parameter-sensitive. With weak autocatalysis + easy nucleation I got ~5 bands but BUNCHED near the source with irregular spacing (ratios 0.22/1/1, not the increasing geometric progression); with strong autocatalysis + hard nucleation the first band's growth consumed the whole moving reaction front → 1-2 continuous bands, no banding. The clean √t time-law + geometric spacing regime is narrow and likely needs a better-formulated model (explicit moving-front + Ostwald ripening, or the 2D radial induced-precipitation model). DEFERRED — revisit with a literature-faithful precipitation model, not the simple autocatalytic-deposition tweak.
