@@ -1,6 +1,16 @@
 # alife — progress
 
-## Current state (Round 114 — 2026-06-19)
+## Current state (Round 115 — 2026-06-19)
+
+R115 added chimera states (`alife/chimera.py`): identical phase oscillators on a ring, coupled
+symmetrically through a NONLOCAL kernel with a small phase lag, spontaneously break into a coherent
+(phase-locked) domain coexisting with an incoherent (drifting) one — the symmetry is broken by the
+dynamics alone (Kuramoto-Battogtokh 2002; Abrams-Strogatz). Coupling sum = circular convolution via
+FFT. Verified: the local order parameter shows a plateau (R≈1) beside a dip (R<1), global order is
+partial (~0.72, neither full sync nor incoherence), and the split persists in space-time. Robust
+across seeds. Controls: all-to-all coupling OR zero phase-lag → full sync, no chimera. Distinct from
+kuramoto.py (global sync) and explosivesync.py. Honest finite-N nuance: on finite rings chimeras are
+extremely long-lived (lifetime grows with N) rather than strictly eternal.
 
 R114 added somitogenesis (`alife/somitogenesis.py`): the clock-and-wavefront model of vertebrate
 segmentation (Cooke-Zeeman 1976; the her1/her7 segmentation clock). Every presomitic-mesoderm cell
@@ -135,8 +145,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R111: Spatial rock-paper-scissors — mobility destroys biodiversity past a threshold (RMF 2007)**, and
 **R112: Keller-Segel chemotactic aggregation — a cell lawn collapses into mounds above a predicted chi_c (KS 1970)**, and
 **R113: 3D Ising model — dimensionality (coordination z:4→6) lifts the critical temperature 2.27→4.51**, and
-**R114: Somitogenesis (clock-and-wavefront) — a genetic oscillator's period becomes the body's segment size (2πv/ω)**.
-**599 tests pass.** PUBLISHED & SYNCED through R114 on public
+**R114: Somitogenesis (clock-and-wavefront) — a genetic oscillator's period becomes the body's segment size (2πv/ω)**, and
+**R115: Chimera states — identical nonlocally-coupled oscillators split into coexisting coherent + incoherent domains**.
+**608 tests pass.** PUBLISHED & SYNCED through R115 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -262,6 +273,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R112 | Keller-Segel chemotactic aggregation (Dictyostelium slime-mold, 1970) — cells secrete a diffusing chemoattractant and crawl up its gradient; the positive feedback destabilises a uniform lawn above a critical sensitivity chi_c, collapsing it into mounds (chemotactic collapse). A Turing-type instability driven by nonlinear ADVECTION (chi·rho·∇c), not reaction kinetics — distinct from R45 Gray-Scott, R55 Physarum networks, R95 single-cell chemotaxis. Conservative finite-volume + upwind: cell mass conserved to machine precision (drift ~1e-16), density non-negative. RIGOROUS verification: measured single-mode (k_min) linear growth rate lies exactly on the dispersion-relation prediction and crosses zero at the predicted chi_c≈1.03; theory = measured. Honest: the finite-time end-state onset sits above chi_c (critical slowing-down — σ→0 at threshold so a finite run can't resolve the marginal band) |
 | R113 | 3D Ising model — dimensionality lifts the critical temperature. 3D analogue of R85's 2D Ising (Onsager T_c=2/ln(1+√2)≈2.269, z=4). On a cubic lattice each spin has z=6 neighbours, so order survives to T_c≈4.5115 (no closed form in 3D). Vectorized 3D checkerboard Metropolis ((i+j+k) parity splits the lattice into two sublattices whose 6 neighbours are all opposite colour → parallel update). T_c located THREE independent ways: magnetisation collapse, susceptibility peak (measured ≈4.5), size-independent Binder-cumulant crossing (≈4.43–4.45) — each contrasted with 2D. Mean-field T_c=z (=4,6) overestimates both (ignores fluctuations, worse in low-D) but gets the dimension trend. Confirmed across independent seeds. Coordination number is the knob: more neighbours → higher T_c. (3D critical exponents also differ: β≈0.326 vs 2D exact 1/8 — noted, not fitted) |
 | R114 | Somitogenesis — the clock-and-wavefront model (Cooke-Zeeman 1976; her1/her7 segmentation clock). Each presomitic-mesoderm cell runs a phase oscillator; a determination wavefront recedes along the AP axis and FREEZES each cell's phase as it passes, turning a temporal rhythm into a periodic spatial pattern of somites. Geometry forced: somite size = front speed × clock period = 2πv/ω, verified EXACTLY (max rel err 0.2%, emergent from integrating clocks not plugged back in). Controls: omega=0 → 1 segment; instant front → no pattern. Posterior frequency gradient → travelling kinematic phase waves (as in real PSM) arresting into graded somites (anterior larger). Distinct route to pattern from Turing/RD (wavelength SET by clock+moving boundary, no diffusion instability) and from Kuramoto sync. Kymograph + size-law + zebra-segment figure |
+| R115 | Chimera states (Kuramoto-Battogtokh 2002; Abrams-Strogatz) — a ring of IDENTICAL phase oscillators, symmetrically coupled via a NONLOCAL kernel (exp decay) with phase lag α just below π/2, spontaneously breaks into a coherent (phase-locked) domain coexisting with an incoherent (drifting) one. Coupling sum = circular convolution via FFT (O(N log N)): dθ_i/dt = ω − Σ_j G(i−j) sin(θ_i−θ_j+α). Verified at κ=4, α=1.46: local order R has a plateau (≈1) beside a dip (<0.5), global order partial (~0.72), split persists in space-time, robust across 5 seeds (coherent fraction ~0.3). Controls: all-to-all coupling OR α=0 → full sync (R≡1), no chimera. Distinct from kuramoto.py (global sync) + explosivesync.py. Honest: regime is narrow in (κ,α); on finite rings chimeras are extremely long-lived (lifetime grows with N), not strictly eternal. Figure: phase snapshot + local-order profile + 2 space-time kymographs |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
