@@ -1,8 +1,8 @@
 # alife — progress
 
-## Current state (Round 83 — 2026-06-18)
+## Current state (Round 84 — 2026-06-19)
 
-An evolving artificial-life ecosystem built from zero over 83 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 84 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -27,9 +27,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R78: Diffusion-limited aggregation — Brownian growth into a fractal**, **R79: Cellular Potts model — tissue sorts itself by differential adhesion**, and
 **R81: Restricted Boltzmann machine — a neural network learns to dream**, and
 **R82: The voter model — coarsening with and without surface tension**, and
-**R83: Network science — scale-free networks & their Achilles heel**.
-**421 tests pass.** PUBLISHED & SYNCED through R83 on public
-github.com/yusenthebot/alife (origin/master = c8e606c). An origin-of-life arc runs
+**R83: Network science — scale-free networks & their Achilles heel**, and
+**R84: Epidemics on networks — the vanishing threshold of scale-free topology**.
+**427 tests pass.** PUBLISHED & SYNCED through R84 on public
+github.com/yusenthebot/alife (origin/master = bd721f1). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
 Status: well past the stated goal and into a long frontier tail (running divergently under standing
@@ -124,6 +125,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R81 | Restricted Boltzmann machine — generative neural net (completes trilogy w/ R69 recall, R73 prediction). CD-1 on bars-and-stripes; trained net DREAMS valid patterns 78% (21/30 distinct, no mode collapse) vs untrained 0.2% / random 0.05%; hidden weights = bar/stripe detectors; valid-dream fraction rises with training |
 | R82 | The voter model — consensus dynamics: VOTER rule coarsens into rough fractal domains with NO surface tension (interface 0.21, driftless martingale mean opinion); MAJORITY rule has surface tension (smooth round domains, interface collapses to 0.107). Same lattice, two universality classes (honest: exact consensus=density needs async) |
 | R83 | Network science (Barabási-Albert) — new substrate (topology): growth + preferential attachment → SCALE-FREE degree distribution (CCDF power law slope -1.82, hubs max-degree 151) vs Erdős-Rényi Poisson (slope -4.13, max 14). Robustness/fragility (Albert-Jeong-Barabási): BA robust to random failure (giant 0.8 @15%) but FRAGILE to targeted hub attack (→0); ER degrades alike |
+| R84 | Epidemics on networks (SIR, Pastor-Satorras-Vespignani) — builds on R83: scale-free nets have a VANISHING epidemic threshold (BA ignites at β~0.05-0.08 where ER fizzles); hubs are super-spreaders (P(infected) rises with degree); TARGETED hub immunization crushes the epidemic (5%→0.005) where random barely helps (0.37) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
