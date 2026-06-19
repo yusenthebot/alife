@@ -1,6 +1,22 @@
 # alife — progress
 
-## Current state (Round 129 — 2026-06-19)
+## Current state (Round 130 — 2026-06-19)
+
+### R130 milestone review
+
+R130 milestone review (the R123-R129 VISUAL streak). Adversarial re-verify with FRESH seeds: R121
+flowforage (chemotaxis selected + flow reduces it), R122 dielectric (D(η) decreasing 1.69→0.95), R123
+selfpropelled (mill M=0.96/P=0.01 + flock P=1.0), R124 cgle (defects 26→102 across BF line), R125
+cahnhilliard (t^0.35 coarsening), R127 swifthohenberg (dom_k=0.99, rolls>hex elongation), R128 lanes
+(drive 0.70 vs no-drive 0.20), R129 chladni (sand |φ| 0.062 vs 0.613) — all hold. R126 coatpattern:
+the narrowing-elongates DIRECTION reproduces (1.18→1.43) but the effect size is seed-sensitive/weak
+(1.21× this seed, below the 1.3× bar) — consistent with the already-recorded honesty that the coat
+geometry effect is delicate; not a regression. Full-suite backstop run ALONE (per the R120 concurrent-
+crash lesson). Milestone gallery R121-R129 at `runs/r130_review/gallery.png`. Workspace tidy; README +
+CODEBASE_GUIDE counts refreshed to ~121 models / 712 tests. **Ambition critic:** seven visual rounds
+(R123-R129) cover pattern-PDEs, active matter, and eigenmode self-assembly; the visual frontier still
+has BZ target waves, a rendered creature-ecosystem mp4, SmoothLife, double-mill, and a proper viscous-
+fingering animation. Build resumes (visually-first) at R131.
 
 R129 added Chladni figures (`alife/chladni.py`): sand self-assembling onto the nodal lines of a
 vibrating plate. A square plate's normal modes φ_{m,n}=sin(mπx)sin(nπy) have nodal lines where the
