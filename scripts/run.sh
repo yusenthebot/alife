@@ -3,4 +3,6 @@
 # Example: scripts/run.sh scripts/run_boids.py --n 700 --steps 450 --name demo
 set -euo pipefail
 cd "$(dirname "$0")/.."
-env -u PYTHONPATH .venv/bin/python "$@"
+# -u drops a sourced ROS2 PYTHONPATH; PYTHONPATH=. then puts the repo root on the
+# path so `import alife` works whether we run `-m`, `-c`, or a scripts/*.py file.
+env -u PYTHONPATH PYTHONPATH=. .venv/bin/python "$@"
