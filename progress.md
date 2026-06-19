@@ -1,11 +1,14 @@
 # alife — progress
 
-## Current state (Round 104 — 2026-06-19)
+## Current state (Round 105 — 2026-06-19)
 
-R104 added granular media (`alife/granular.py`): a soft-sphere DEM hopper showing constant-rate
-discharge (an hourglass keeps time), Beverloo's law, and jamming — real contact physics, verified.
-(R104 originally aimed at Neural Cellular Automata, but a CPU torch install never converged on this
-network; `alife/nca.py` is scaffolded for a later round once torch is available.)
+R105 added explosive synchronization (`alife/explosivesync.py`): Kuramoto oscillators on a scale-free
+network with frequency set to node degree undergo a first-order, hysteretic ("switch-like") sync
+transition — versus the smooth, reversible transition when the frequency-degree correlation is
+shuffled away (the control). Connects R96 (Kuramoto) + R83 (scale-free networks). R104 added granular
+media (`alife/granular.py`): a soft-sphere DEM hopper with constant-rate discharge (the hourglass
+principle), Beverloo's law, and jamming. (R104 originally aimed at Neural Cellular Automata, but a CPU
+torch install never converged; `alife/nca.py` is scaffolded for a later round once torch is available.)
 
 ### The evolved-swimming arc (R101–R103)
 
@@ -31,7 +34,7 @@ flows, R102 an immersed swimmer that self-propels, R103 evolve the swimming gait
 Public README was restructured at R91 per CEO: project description + deploy + block diagram only;
 per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 104 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 105 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -75,9 +78,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R101: A real fluid — D2Q9 lattice-Boltzmann verified against Poiseuille flow & the Kármán vortex street**, and
 **R102: A swimmer in a real fluid — self-propulsion emerges from an undulatory gait**, and
 **R103: Evolving a swimming stroke — a GA discovers fast locomotion in a real fluid**, and
-**R104: Granular media (DEM) — constant-rate hopper discharge & Beverloo's law**.
-**535 tests pass.** PUBLISHED & SYNCED through R104 on public
-github.com/yusenthebot/alife (origin/master = 99bd93e). A real-fluid swimming arc runs R101
+**R104: Granular media (DEM) — constant-rate hopper discharge & Beverloo's law**, and
+**R105: Explosive synchronization — frequency-degree correlation turns sync into a first-order switch**.
+**541 tests pass.** PUBLISHED & SYNCED through R105 on public
+github.com/yusenthebot/alife (origin/master = 22fc3da). A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
@@ -193,6 +197,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R102 | A swimmer in a real fluid (fluid-structure interaction) — a flexible body with a fish-like travelling-wave gait dropped into the R101 LBM fluid as a moving velocity source. The body is FREE; in the periodic box from rest, momentum conservation gives the recoil V_cm=−P_fluid/M, so the swim speed EMERGES (not prescribed). CONTROL: undulating (A=6) → net displacement 22.6 (steady directed swim) vs rigid (A=0) → 0.000; amplitude controls speed; tail sheds wake vorticity. Honest: momentum-conservation recoil model + feq velocity-source coupling; gait velocity kept below the LBM low-Mach limit |
 | R103 | Evolving a swimming stroke (capstone) — a GA over the gait genome (amplitude, frequency, wavelength; low-Mach stability constraint enforced) scored purely on the swim speed that EMERGES from the LBM simulation, no fitness formula handed in. Best fitness climbs 10.7→12.8 (×10⁻³/step), population mean 6.6→12; the evolved gait beats the entire random-gait distribution (1.3× the best of 14 random, ~2-3× the mean); the evolved champion swims net 53.5 vs R102's hand-set 22.6. Honest: the optimum sits at the search-box corner (max amp/wavelength, freq capped) — a wider gait space would be faster |
 | R104 | Granular media (soft-sphere DEM) — disks under gravity with linear spring-dashpot repulsion (scipy cKDTree contacts) draining through a gap in the floor. Real contact physics; granular signatures emerge: CONSTANT-rate discharge (cumulative-out is linear, R²=0.947 — unlike a liquid that slows as it empties; why an hourglass keeps time), Beverloo's law (rate rises super-linearly with opening, 0.064→0.724 over D=3..15), and JAMMING (a few-grain opening chokes flow to ~0). Honest: velocity-based friction (no static friction) → angle-of-repose abandoned for the hopper |
+| R105 | Explosive synchronization — Kuramoto oscillators on a Barabási-Albert scale-free network with natural frequency = node degree (hubs beat fastest). CONTROL-verified: correlated freq=degree → coherence jumps abruptly (forward step ~0.79) and the backward sweep returns lower → a HYSTERESIS loop (area 0.52), a first-order switch-like transition (Gómez-Gardeñes 2011); shuffling the frequencies (same distribution, correlation destroyed) → smooth reversible 2nd-order (step ~0.22, area 0.06). Connects R96 (Kuramoto) + R83 (scale-free) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
