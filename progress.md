@@ -39,7 +39,7 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R89: A major transition — the evolution of division of labor (Jensen: specialise iff returns accelerate)**, and
 **R91: Evolved Particle Life — selection discovers self-propelled matter (the asymmetry is the engine)**.
 **463 tests pass.** PUBLISHED & SYNCED through R91 on public
-github.com/yusenthebot/alife (origin/master = R91). A network-science arc runs R83 (scale-free)
+github.com/yusenthebot/alife (origin/master = 78f15df). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
