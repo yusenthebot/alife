@@ -1,6 +1,28 @@
 # alife — progress
 
-## Current state (Round 135 — 2026-06-19)
+## Current state (Round 136 — 2026-06-19)
+
+R136 added grain growth (`alife/graingrowth.py`): a polycrystal coarsens by curvature, the same way a
+soap froth or an annealed metal does — small grains shrink and vanish, big grains swallow them, the mean
+grain grows without bound. Modelled with the Q-state Potts model (Anderson-Srolovitz-Grest 1984): each
+lattice site carries one of Q grain orientations, the energy counts unlike-neighbour bonds (= boundary
+length), and a low-temperature Metropolis update (vectorised checkerboard) lets curved boundaries migrate
+toward their centre of curvature (von Neumann-Mullins). Results, eye- and data-checked: the mosaic
+visibly coarsens (fine salt-and-pepper → big grains); the total boundary length per area decays as a
+power law (∝ t^-0.39) while the grain count falls (∝ t^-0.76) and the mean grain area grows ×33. The
+TWO independently-measured quantities are mutually consistent — boundary ∝ 1/R and grain count ∝ 1/area
+with area ∝ R², so the grain-count exponent should be twice the boundary exponent, and it is (ratio
+1.93) — a built-in, non-circular validation. CONTROL: a greedy (strictly-downhill, no thermal noise)
+update PINS — the boundaries freeze at bond density ~0.49 — showing thermal annealing is required to beat
+lattice pinning. Robust across seeds 0/1/2. Honest: lattice Potts gives reduced exponents (R ∝ t^0.39
+rather than the ideal parabolic 0.5; area ∝ t^0.78 not t^1) — the well-known lattice-pinning correction;
+I do NOT claim the ideal n=1. Mechanically a Potts/Metropolis model but phenomenologically DISTINCT from
+cellsort.py (the cellular Potts model: cell SORTING by differential adhesion with an area constraint, no
+grains vanish) — here there is no area constraint and grain count collapses 8587→258 by pure boundary
+minimisation. VISUAL: 3-time coarsening mosaic gallery + boundary power-law (vs pinned control) +
+grain-count/area laws + final polycrystal + a 32-frame coarsening GIF.
+
+### R135 details
 
 R135 added Faraday waves (`alife/faraday.py`): vibrate a dish of liquid up and down and, above a
 critical amplitude, the flat surface spontaneously erupts into a regular lattice of standing waves
@@ -431,8 +453,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R132: Wolf-Sheep-Grass — a 3-level agent food chain falls into predator-prey boom-bust cycles (predator lags prey)**, and
 **R133: Termite construction (stigmergy) — builders with no blueprint self-organise material into mounds**, and
 **R134: Murmuration vs a predator — a flock that flees as one starves the hawk (100×+ fewer catches)**, and
-**R135: Faraday waves — a vibrated surface erupts into a subharmonic, drive-tuned standing-wave lattice**.
-**746 tests pass.** PUBLISHED & SYNCED through R135 on public
+**R135: Faraday waves — a vibrated surface erupts into a subharmonic, drive-tuned standing-wave lattice**, and
+**R136: Grain growth — a polycrystal coarsens by curvature (Q-state Potts, soap-froth/metal grains)**.
+**754 tests pass.** PUBLISHED & SYNCED through R136 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -577,8 +600,10 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R133 | Termite construction / stigmergy (termites.py) — Grassé (1959): builders with no blueprint. Random-walking termites deposit cement; the cement's pheromone (diffuse+evaporate) raises nearby deposit probability -> positive feedback ("work begets work") -> from a flat floor, material self-organises into MOUNDS. Verified: clustering var/mean ~5 with feedback (k=6) vs ~1 random (k=0), clustering switches on as k rises; metric validated on poisson/clumpy controls; pheromone field diffuses from mounds. Distinct from antcolony (foraging) + gpuslime (transport) — CONSTRUCTION/accretion. HONEST: 2D feedback COARSENS to irregular mounds, not regular 3D-nest pillars (activator-inhibitor frontier). VISUAL: mounds + termites + pheromone + clustering-vs-k + build GIF |
 | R134 | Murmuration vs a predator (murmuration.py) — collective anti-predator evasion. Boids prey (cohesion+alignment+separation) + a hawk chasing the nearest bird; a prey within sense range adds a strong FLEE force away from the predator, and alignment spreads the turn through the flock. Caught prey respawn (flock size held). CONTROL = zero the flee weight (same flock, prey ignore the hawk) → the hawk parks in the herd and feeds: ON vs OFF catches differ 80×/52×/167× across seeds 0/1/2 (robust), and fleeing holds the hawk ~3.2 cells off the nearest bird vs ~2.2. Emergent catch-count metric, single-variable ablation. Periodic cKDTree(boxsize=L) neighbours + per-agent boids loop. HONEST: loose agitated flock (polariz ~0.35, predator keeps it stirred); the alignment-propagated turning wave is the mechanism, not a separately measured claim (tests assert vs random baselines: spread<L/√6, pol>2/√N). Distinct from boids/boids3d/swarm3d (no predator) + predprey (population, not spatial evasion). VISUAL: flock streaming from the hawk + flee-on/off catch bar + hawk-distance curve + 126-frame evasion GIF |
 | R135 | Faraday waves (faraday.py) — a vertically vibrated fluid surface erupts into a standing-wave lattice (Faraday 1831). Spectral surface field; vibration modulates effective gravity g→g−a cos(Ωt) so each Fourier mode is a damped Mathieu (parametric) oscillator, cubic −βh³ saturates. (1) PARAMETRIC ONSET — above threshold rms ×544, sub-threshold a=0.2 DECAYS ×0.18 (a-only ablation; the decay proves growth is real pumping not numerical blow-up). (2) SUBHARMONIC — surface oscillates at Ω/2 (measured 3.14 vs 3.16, NOT Ω — the parametric-resonance signature). (3) DRIVE-TUNED WAVELENGTH — selected k* (emergent FFT) lands on gravity-capillary dispersion ω0(k*)=Ω/2; shake faster → finer lattice (Ω×0.7/1.0/1.5 → k 1.42/1.94/2.59 vs theory 1.50/2.00/2.71). Robust seeds 0/1/2. HONEST: isotropic cubic → cellular/labyrinth lattice, no square/hex symmetry claimed. Fresh — distinct from chladni (plate NODAL lines, not parametric) + swifthohenberg (autonomous, no temporal subharmonic). VISUAL: 3-Ω gallery coarse→fine + rms-vs-control + subharmonic FFT + k*(Ω) dispersion match + 60-frame eruption GIF |
+| R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
+- **Liesegang periodic precipitation rings — clean Jablczynski spacing law would NOT form robustly (R136, 3 probes, PIVOTED to grain growth).** The Ostwald supersaturation / Keller-Rubinow model (outer ion a diffuses into gel of inner ion b, a+b→c, c precipitates above a nucleation threshold then grows) is notoriously parameter-sensitive. With weak autocatalysis + easy nucleation I got ~5 bands but BUNCHED near the source with irregular spacing (ratios 0.22/1/1, not the increasing geometric progression); with strong autocatalysis + hard nucleation the first band's growth consumed the whole moving reaction front → 1-2 continuous bands, no banding. The clean √t time-law + geometric spacing regime is narrow and likely needs a better-formulated model (explicit moving-front + Ostwald ripening, or the 2D radial induced-precipitation model). DEFERRED — revisit with a literature-faithful precipitation model, not the simple autocatalytic-deposition tweak.
 - **Viscous fingering / Saffman-Taylor via discrete DBM + surface tension did NOT work (R133).** Adding a neighbour-count "surface tension" bonus to the dielectric (DBM) growth weight barely changed the morphology — all stayed DLA-fractal (D~1.6), because the harmonic-field SCREENING of fjords dominates the local curvature bonus. Proper Saffman-Taylor needs a continuum phase-field / curvature-based interface advance, not a discrete-DBM tweak. PIVOTED to termite stigmergy. (Viscous fingering deferred — needs a real moving-interface solver.)
 - **Termite stigmergy gives irregular mounds, not regular pillars (R133).** Pure positive-feedback deposition COARSENS (rich-get-richer) into irregular mounds; height-saturation to force lateral spacing instead went uniform. Regular 3D-nest pillars need an activator-inhibitor (short-range build + long-range inhibit) — frontier. The clumping-vs-flat (stigmergy on/off) result is solid and shipped.
 - **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
