@@ -1,6 +1,18 @@
 # alife — progress
 
-## Current state (Round 130 — 2026-06-19)
+## Current state (Round 131 — 2026-06-19)
+
+R131 added excitable media (`alife/barkley.py`): BZ-type spiral & target waves from the Barkley model
+(continuum reaction-diffusion), du/dt=D∇²u+(1/ε)u(1-u)(u-(v+b)/a), dv/dt=u-v. An excitable medium sits
+at a stable rest state, ignores sub-threshold kicks, but fires past the threshold (v+b)/a and propagates
+the pulse; a broken front winds into re-entrant SPIRAL waves, and a periodic pacemaker emits concentric
+TARGET rings (the iconic BZ petri-dish visual). Verified: rest state stable (no spontaneous firing),
+firing threshold ~b/a (sub-threshold kick dies, supra ignites a wave), constant wave speed (~3.85
+cells/time, front advances linearly in a 1D cable), spirals re-entrant, targets form rings. Honestly
+PIVOTED from the Oregonator (the BZ-specific kinetics self-ignited in our parameterisation — rest state
+unstable) to the robust Barkley reduction (the standard fast excitable model). Distinct from R88
+excitable.py (a discrete Greenberg-Hastings CA, one spiral) and R124 cgle (complex amplitude PDE).
+Visual round: spiral field + target rings + threshold curve + wave-speed line + target-wave GIF.
 
 ### R130 milestone review
 
@@ -347,8 +359,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R126: Animal coat geometry — domain width sculpts Turing spots into stripes (Murray; leopard spots & striped tails)**, and
 **R127: Swift-Hohenberg convection — built-in wavelength + one knob: parallel ROLLS vs honeycomb HEXAGONS (Bénard cells)**, and
 **R128: Lane formation — counter-flowing crowds spontaneously segregate into lanes (active matter / pedestrians)**, and
-**R129: Chladni figures — sand self-assembles onto the nodal lines of a vibrating plate's modes**.
-**712 tests pass.** PUBLISHED & SYNCED through R129 on public
+**R129: Chladni figures — sand self-assembles onto the nodal lines of a vibrating plate's modes**, and
+**R131: Excitable media (Barkley) — BZ-type rotating spiral waves & concentric pacemaker target rings**.
+**719 tests pass.** PUBLISHED & SYNCED through R131 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -488,6 +501,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R127 | Swift-Hohenberg / Rayleigh-Bénard convection (swifthohenberg.py). du/dt=ru−(1+∇²)²u+g u²−u³. (1+∇²)² minimised at k=1 → BUILT-IN wavelength (measured dom_k≈1.0; growth rate r−(1−k²)² peaks at k=1), no diffusion-ratio tuning unlike Turing. r=drive (flat for r<0); g=up/down asymmetry: g=0 → ROLLS (stripes), g>0 near onset → HEXAGONS (Bénard honeycomb cells). Read by eye + cell elongation (control-validated: rolls 2.4, hexagons ~1.15 / ~880 cells); FFT ring shows 6 spots@60° for hexagons, diffuse ring for labyrinth rolls. Fourier integrating-factor split (4th-order linear exact). Reliable clean visual. VISUAL: rolls + hexagons fields + FFT 6-fold + g-transition + dispersion curve |
 | R128 | Lane formation (lanes.py) — counter-flowing active matter self-organising into lanes (Helbing pedestrians / driven binary colloids). Overdamped particles in a periodic box, driven ±x by species, soft neighbour repulsion + noise; a walker straying into the on-coming stream gets bumped sideways more than among its own kind -> same-direction walkers accrete into stripes ∥ flow. Lane order parameter = species purity within transverse y-stripes (control-validated: clean lanes ~0.84, mix ~0.2); rises 0.1->0.89 with drive, stays ~0.10 with NO drive, melts above a critical noise. Periodic KD-tree neighbours (O(N log N)). Distinct from boids (alignment) / mips (same-species) / selfpropelled (mill). VISUAL: mixed->lanes snapshots + order-vs-time (+ no-drive control) + noise-melting transition + GIF |
 | R129 | Chladni figures (chladni.py) — sand self-assembling onto a vibrating plate's nodal lines. Square-membrane modes φ_{m,n}=sin(mπx)sin(nπy), freq ∝√(m²+n²); (m,n)&(n,m) DEGENERATE → combinations φ_{m,n}±φ_{n,m} give the rich diagonal Chladni patterns. Grains drift down grad(φ²) (off antinodes) + noise → settle on nodes (|φ|=0). Verified: sand |φ|≈0.061 vs 0.608 random (~10× lower, grains find nodes); boundary φ=0; degeneracy; +combo symmetric / −combo antisymmetric under x↔y; higher mode → more nodal lines. Fresh KIND (eigenmode self-assembly). VISUAL: 6-mode freq-ordered gallery + sand-assembly GIF |
+| R131 | Excitable media (barkley.py) — BZ-type spiral & target waves. Barkley continuum RD: du/dt=D∇²u+(1/ε)u(1-u)(u−(v+b)/a), dv/dt=u−v. Stable rest, fires past threshold (v+b)/a, refractory recovery. Broken front → re-entrant SPIRALS; periodic pacemaker → concentric TARGET rings (iconic BZ). Verified: rest stable, threshold ~b/a (sub-kick dies/supra propagates), constant wave speed ~3.85 cells/time (linear 1D front), spirals re-entrant, target rings form (no pacemaker→none). PIVOTED from Oregonator (self-ignited — rest unstable in our params) to robust Barkley reduction. Distinct from R88 excitable.py (discrete Greenberg-Hastings CA) + R124 cgle (complex PDE). VISUAL: spiral + target fields + threshold curve + wave-speed line + target GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
