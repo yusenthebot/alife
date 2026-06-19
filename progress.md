@@ -1,14 +1,11 @@
 # alife — progress
 
-## Current state (Round 90 — 2026-06-18, review)
+## Current state (Round 91 — 2026-06-18)
 
 R90 was a review round: adversarial re-verification (fresh seeds/params) confirmed all four recent
-headline claims hold (R86 backward jams + triangular fundamental diagram, R87 small-world decoupling +
-exact closed-form match, R88 spiral re-entry for k=6 and k=12 with uncut-wave control, R89 Jensen
-threshold at α=1); workspace tidy (no slop, root 2 docs + 2 state files); R81–R89 milestone gallery at
-`runs/r90_review/gallery.png`; README + roadmap refreshed.
+headline claims hold; workspace tidy; R81–R89 milestone gallery at `runs/r90_review/gallery.png`.
 
-An evolving artificial-life ecosystem built from zero over 90 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 91 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -39,9 +36,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R86: Nagel-Schreckenberg traffic — phantom jams emerge from local rules, propagate backward**, and
 **R87: Watts-Strogatz small-world networks — a few shortcuts collapse path length, clustering survives**, and
 **R88: Excitable media — self-sustaining spiral waves & re-entry (Greenberg-Hastings)**, and
-**R89: A major transition — the evolution of division of labor (Jensen: specialise iff returns accelerate)**.
-**457 tests pass.** PUBLISHED & SYNCED through R89 on public
-github.com/yusenthebot/alife (origin/master = cd7ebd4). A network-science arc runs R83 (scale-free)
+**R89: A major transition — the evolution of division of labor (Jensen: specialise iff returns accelerate)**, and
+**R91: Evolved Particle Life — selection discovers self-propelled matter (the asymmetry is the engine)**.
+**463 tests pass.** PUBLISHED & SYNCED through R91 on public
+github.com/yusenthebot/alife (origin/master = R91). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
@@ -143,6 +141,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R87 | Watts-Strogatz small-world networks — completes the network arc (the other pillar vs R83 scale-free): rewiring a ring lattice by a tiny fraction p collapses average path length while clustering survives. Matches closed-form theory (ring C0=0.600=3(k-2)/(4(k-1)), L0=50=n/2k); at p=0.01 path length → 0.32 of ring but clustering stays 0.98 (decoupling of scales); random graph C~0.01 L~3.8. Dynamical payoff: rounds to inform whole net drop 100→8 with shortcuts |
 | R88 | Excitable media / spiral waves (Greenberg-Hastings CA) — new flavor (not RD R45, not life-like CA R46): cells cycle rest→excited→refractory→rest, fire when ≥thresh neighbours excited. Planar wave constant speed 1.0 cell/step; colliding waves ANNIHILATE on refractory tails (240→0, unlike linear waves); a BROKEN wavefront curls into a self-sustaining SPIRAL (re-entry, activity sustains forever, period~k); CONTROL: same medium uncut planar wave dies to 0 (no re-entry). Models BZ spirals & cardiac arrhythmia. Square geometry = Moore Chebyshev metric |
 | R89 | A major transition — the evolution of division of labor. Colony-level (group) selection over members' effort split θ; sweep convexity α of task function g(x)=xᵅ. Confirms Jensen exactly: specialists beat generalists iff convex (α>1: g(1)/2 > g(0.5) ⇔ 0.5 > 0.5ᵅ). Evolve convex α=3 → BIMODAL castes (~32% pure task-A, ~32% pure task-B, ~1% generalist), spec index 0.82, productivity ~3× (superadditive); CONTROL concave α=0.5 stays generalist (spec 0.27, flat); α-sweep crosses spec 0.5 at α=1.00, exactly the Jensen threshold. Distinct from R42 group selection |
+| R91 | Evolved Particle Life — a GA on R61's asymmetric force matrix maximising MOTILITY (net centre-of-mass drift). Because the matrix is asymmetric, interactions break Newton's 3rd law → net momentum → self-propulsion. Two controls: SYMMETRIC matrices drift exactly 0 (momentum conserved); symmetrizing the evolved champion kills its drift (580→0). Random asymmetric matrices already self-propel (mean ~55, max ~300); evolution amplifies it ~6× (147→~700), beating the random max ~2×. Active matter evolved from the rules up. Eye-verified: long directed CoM path vs random's wander vs symmetric's stillness |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
