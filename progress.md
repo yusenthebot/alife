@@ -1,6 +1,21 @@
 # alife — progress
 
-## Current state (Round 131 — 2026-06-19)
+## Current state (Round 132 — 2026-06-19)
+
+R132 added Wolf-Sheep-Grass (`alife/wolfsheep.py`): the classic 3-level agent food chain (NetLogo "Wolf
+Sheep Predation") — grass regrows on a timer, SHEEP graze+breed+starve, WOLVES eat sheep+breed+starve,
+all on a toroidal agent grid. Nothing is tuned to oscillate, yet the three populations fall into the
+textbook predator-prey BOOM-BUST: sheep multiply on grass, wolves on sheep, sheep crash, wolves starve,
+grass recovers. Verified: 3-way coexistence over thousands of steps; the predator LAGS the prey
+(cross-correlation peak +86 — wolves follow sheep, the Lotka-Volterra phase relation); sheep
+anti-correlate with grass (corr −0.86, overgrazing); grass is the essential base (no regrowth → the
+whole chain collapses). Honest: in this regime sheep are GRASS-limited, so removing wolves doesn't boom
+them (the wolves crop the surplus). The most "alive"/on-brand visual of the streak — a living world you
+watch. Agent-based, distinct from ODE predprey / RD spatialpredprey / brain-evolution ecosim. Visual:
+world snapshot (grass/sheep/wolves) + population cycles + predator-prey phase loop + cross-correlation
+lag + a world GIF.
+
+### R131 details
 
 R131 added excitable media (`alife/barkley.py`): BZ-type spiral & target waves from the Barkley model
 (continuum reaction-diffusion), du/dt=D∇²u+(1/ε)u(1-u)(u-(v+b)/a), dv/dt=u-v. An excitable medium sits
@@ -360,8 +375,9 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R127: Swift-Hohenberg convection — built-in wavelength + one knob: parallel ROLLS vs honeycomb HEXAGONS (Bénard cells)**, and
 **R128: Lane formation — counter-flowing crowds spontaneously segregate into lanes (active matter / pedestrians)**, and
 **R129: Chladni figures — sand self-assembles onto the nodal lines of a vibrating plate's modes**, and
-**R131: Excitable media (Barkley) — BZ-type rotating spiral waves & concentric pacemaker target rings**.
-**719 tests pass.** PUBLISHED & SYNCED through R131 on public
+**R131: Excitable media (Barkley) — BZ-type rotating spiral waves & concentric pacemaker target rings**, and
+**R132: Wolf-Sheep-Grass — a 3-level agent food chain falls into predator-prey boom-bust cycles (predator lags prey)**.
+**726 tests pass.** PUBLISHED & SYNCED through R132 on public
 github.com/yusenthebot/alife. A real-fluid swimming arc runs R101
 (lattice-Boltzmann) → R102 (undulatory swimmer) → R103 (evolved gait). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
@@ -502,6 +518,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R128 | Lane formation (lanes.py) — counter-flowing active matter self-organising into lanes (Helbing pedestrians / driven binary colloids). Overdamped particles in a periodic box, driven ±x by species, soft neighbour repulsion + noise; a walker straying into the on-coming stream gets bumped sideways more than among its own kind -> same-direction walkers accrete into stripes ∥ flow. Lane order parameter = species purity within transverse y-stripes (control-validated: clean lanes ~0.84, mix ~0.2); rises 0.1->0.89 with drive, stays ~0.10 with NO drive, melts above a critical noise. Periodic KD-tree neighbours (O(N log N)). Distinct from boids (alignment) / mips (same-species) / selfpropelled (mill). VISUAL: mixed->lanes snapshots + order-vs-time (+ no-drive control) + noise-melting transition + GIF |
 | R129 | Chladni figures (chladni.py) — sand self-assembling onto a vibrating plate's nodal lines. Square-membrane modes φ_{m,n}=sin(mπx)sin(nπy), freq ∝√(m²+n²); (m,n)&(n,m) DEGENERATE → combinations φ_{m,n}±φ_{n,m} give the rich diagonal Chladni patterns. Grains drift down grad(φ²) (off antinodes) + noise → settle on nodes (|φ|=0). Verified: sand |φ|≈0.061 vs 0.608 random (~10× lower, grains find nodes); boundary φ=0; degeneracy; +combo symmetric / −combo antisymmetric under x↔y; higher mode → more nodal lines. Fresh KIND (eigenmode self-assembly). VISUAL: 6-mode freq-ordered gallery + sand-assembly GIF |
 | R131 | Excitable media (barkley.py) — BZ-type spiral & target waves. Barkley continuum RD: du/dt=D∇²u+(1/ε)u(1-u)(u−(v+b)/a), dv/dt=u−v. Stable rest, fires past threshold (v+b)/a, refractory recovery. Broken front → re-entrant SPIRALS; periodic pacemaker → concentric TARGET rings (iconic BZ). Verified: rest stable, threshold ~b/a (sub-kick dies/supra propagates), constant wave speed ~3.85 cells/time (linear 1D front), spirals re-entrant, target rings form (no pacemaker→none). PIVOTED from Oregonator (self-ignited — rest unstable in our params) to robust Barkley reduction. Distinct from R88 excitable.py (discrete Greenberg-Hastings CA) + R124 cgle (complex PDE). VISUAL: spiral + target fields + threshold curve + wave-speed line + target GIF |
+| R132 | Wolf-Sheep-Grass (wolfsheep.py) — 3-level agent food chain (NetLogo classic). Grass regrows on a timer; sheep graze+breed+starve; wolves eat sheep+breed+starve; toroidal agent grid (arrays of pos+energy, grass regrow-timer grid). Emergent predator-prey BOOM-BUST cycles: coexistence over 1000s of steps, predator LAGS prey (cross-corr +86), sheep anti-correlate grass (−0.86 overgraze), grass essential (no regrow→collapse). Lag metric validated on synthetic shifted signal. Honest: sheep grass-limited in this regime (removing wolves doesn't boom them). Coexistence params L=45,move=1,w_gain=25 (delicate — sweep found it; too-sparse grid→wolves starve). Agent-based, distinct from ODE predprey / RD spatialpredprey / brain-evo ecosim. VISUAL: world snapshot + pop cycles + phase loop + cross-corr lag + world GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **Couzin (2002) zonal model would NOT mill (R123).** 3 parameter sweeps (zoo/zoa/θ_max, then + a rear blind-spot perception cone) never produced a coherent milling torus — got cohesive disordered swarms or fragmentation (best M~0.18). The Couzin torus is a genuinely narrow/finicky regime (depends on N, density, exact params). PIVOTED to the D'Orsogna self-propelled-particle model which mills robustly (M~0.96 across params) — use that for milling, not Couzin.
