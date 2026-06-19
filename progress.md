@@ -1,12 +1,14 @@
 # alife — progress
 
-## Current state (Round 101 — 2026-06-19)
+## Current state (Round 102 — 2026-06-19)
 
-R101 begins the evolved-swimming-in-a-real-fluid arc: a D2Q9 lattice-Boltzmann solver
-(`alife/fluid.py`), verified against textbook flows — a parabolic Poiseuille profile (shape RMSE
-0.005) and a Kármán vortex street past a cylinder at Re=108 with Strouhal St=0.20. The first real
-fluid dynamics in the repo; substrate for R102 (immersed self-propelling swimmer) and R103 (evolve
-the gait).
+The evolved-swimming-in-a-real-fluid arc: R101 built a D2Q9 lattice-Boltzmann solver
+(`alife/fluid.py`, verified vs a parabolic Poiseuille profile and a Kármán vortex street at Re=108,
+St=0.20). R102 drops a flexible undulatory swimmer into that fluid (`alife/swimmer.py`): with the box
+periodic and starting from rest, momentum conservation makes the body recoil, so the swim speed
+EMERGES (not prescribed) — net displacement 22.6 for the undulating body vs exactly 0 for the rigid
+A=0 control. Next R103 evolves the gait. First real fluid dynamics + fluid-structure interaction in
+the repo.
 
 ### R100 milestone review (2026-06-18)
 
@@ -62,9 +64,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R97: Percolation — a spanning cluster is born at the critical density p_c ≈ 0.593**, and
 **R98: Axelrod culture dissemination — why contact doesn't always erase differences**, and
 **R99: Motility-induced phase separation — activity alone makes clusters (no attractive force)**, and
-**R101: A real fluid — D2Q9 lattice-Boltzmann verified against Poiseuille flow & the Kármán vortex street**.
-**517 tests pass.** PUBLISHED & SYNCED through R101 on public
-github.com/yusenthebot/alife (origin/master = 8b8de96). A network-science arc runs R83 (scale-free)
+**R101: A real fluid — D2Q9 lattice-Boltzmann verified against Poiseuille flow & the Kármán vortex street**, and
+**R102: A swimmer in a real fluid — self-propulsion emerges from an undulatory gait**.
+**523 tests pass.** PUBLISHED & SYNCED through R102 on public
+github.com/yusenthebot/alife (origin/master = 81c8196). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
@@ -176,6 +179,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R98 | Axelrod culture dissemination — homophily (interact ∝ cultural overlap) + social influence (copy a differing feature); F=10 features, q traits each. CONTROL low q=5 → MONOCULTURE (largest domain 100%, 1 region); high q=120 → frozen MULTICULTURE (551 regions, largest 1%); diversity transition in q is monotone — flat ~1.0 for q≤20 then collapses sharply at q_c≈40 to ~0.02. Diversity survives because similarity is required to influence. Distinct from R82 voter (binary) & R93 Schelling (spatial sorting) |
 | R99 | Motility-induced phase separation (MIPS, active matter) — active Brownian particles with density-dependent speed v(ρ)=v0·max(0,1−ρ/ρ*); slow-in-crowds creates a runaway that phase-separates into dense clusters + a dilute gas with NO attraction. TWO controls: density-dependent CV=7.5 (clustered) vs constant-speed active gas CV=0.4 vs passive CV=0.4 (both homogeneous); onset monotone with activity (CV 0.4→10.7 vs v0). Honest: multiple finite-time domains (slow coarsening); too-dense kills MIPS (mean ρ→ρ* stalls uniformly). Distinct from R61/R91/R79 |
 | R101 | A real fluid — D2Q9 lattice-Boltzmann (BGK), the first true fluid solver and the substrate for the evolved-swimming arc. Verified vs textbook physics: force-driven channel → parabolic Poiseuille profile (peak-normalized shape RMSE 0.005; magnitude within ~20% of the naive analytic, a forcing-scheme prefactor); flow past a cylinder at Re=108 → a Kármán vortex street with periodic shedding at Strouhal St=0.20 (textbook ~0.16-0.18, mildly raised by channel blockage). Symmetry-breaking (cylinder offset + initial noise) needed to trigger shedding |
+| R102 | A swimmer in a real fluid (fluid-structure interaction) — a flexible body with a fish-like travelling-wave gait dropped into the R101 LBM fluid as a moving velocity source. The body is FREE; in the periodic box from rest, momentum conservation gives the recoil V_cm=−P_fluid/M, so the swim speed EMERGES (not prescribed). CONTROL: undulating (A=6) → net displacement 22.6 (steady directed swim) vs rigid (A=0) → 0.000; amplitude controls speed; tail sheds wake vorticity. Honest: momentum-conservation recoil model + feq velocity-source coupling; gait velocity kept below the LBM low-Mach limit |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
