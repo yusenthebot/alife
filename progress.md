@@ -1,12 +1,12 @@
 # alife — progress
 
-## Current state (Round 96 — 2026-06-18)
+## Current state (Round 97 — 2026-06-18)
 
 R90 was a review round (all R86–R89 claims re-verified; R81–R89 gallery at
 `runs/r90_review/gallery.png`). Public README restructured at R91 per CEO: project description +
 deploy + block diagram only; per-round catalog lives here, repo layout in `CODEBASE_GUIDE.md`.
 
-An evolving artificial-life ecosystem built from zero over 96 autonomous rounds. The full stated
+An evolving artificial-life ecosystem built from zero over 97 autonomous rounds. The full stated
 goal is realized — **Boids flocking → natural selection → neural-network brains → predator–prey →
 energy/reproduction → a 3D ecosystem you watch evolve** — plus deep stretch work: ~10k-creature
 scale, atmospheric GPU rendering, a dozen+ classic evolutionary phenomena, an open-endedness
@@ -43,9 +43,10 @@ transition**, **R63: Hypercycles (Eigen-Schuster) — limit cycle, parasite, spi
 **R93: Schelling segregation — mild individual preferences make extreme separation nobody chose**, and
 **R94: Kauffman random Boolean networks — order, chaos, and the critical edge at K=2**, and
 **R95: Bacterial chemotaxis — run-and-tumble climbs a gradient with no sense of direction**, and
-**R96: Kuramoto oscillators — spontaneous synchronization above a critical coupling**.
-**493 tests pass.** PUBLISHED & SYNCED through R96 on public
-github.com/yusenthebot/alife (origin/master = 12349a1). A network-science arc runs R83 (scale-free)
+**R96: Kuramoto oscillators — spontaneous synchronization above a critical coupling**, and
+**R97: Percolation — a spanning cluster is born at the critical density p_c ≈ 0.593**.
+**499 tests pass.** PUBLISHED & SYNCED through R97 on public
+github.com/yusenthebot/alife (origin/master = adc0d2a). A network-science arc runs R83 (scale-free)
 → R84 (epidemics) → R87 (small-world). An origin-of-life arc runs
 R44 (error threshold) → R62 (autocatalytic sets) → R63 (hypercycles, Eigen's answer).
 
@@ -153,6 +154,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R94 | Kauffman random Boolean networks (gene-regulatory DYNAMICS, vs R76 static NK fitness) — N genes, each a random Boolean function of K others, synchronous updates → cyclic attractors ("cell types"). Connectivity K drives an order→chaos transition, verified vs theory: Derrida sensitivity = K/2 exactly (crosses 1 at critical K=2); one flipped gene HEALS at K=1 (→0), marginal at K=2, AVALANCHES at K≥3 (→0.46); attractor cycle length 1→7→never-closes as K goes 1→2→≥3 |
 | R95 | Bacterial chemotaxis (run-and-tumble, Berg) — a cell too small to sense gradient direction climbs by biasing a random walk in TIME: straight runs + reorienting tumbles, with tumbling SUPPRESSED while concentration is improving. CONTROL α=0 (no temporal modulation) → pure diffusion (conc flat 0.25, 14% near source); α=10 climbs (conc 0.25→0.44, 37% accumulate near source); dose-response monotone (final conc 0.25→0.58 as α 0→16). Distinct from R65 ant stigmergy & R55/R68 Physarum |
 | R96 | Kuramoto coupled oscillators — spontaneous synchronization with no leader or clock. N phase oscillators with spread-out natural frequencies, each pulled toward the mean phase. Verified vs theory: critical coupling Kc = 2/(πg(0)) = 1.596σ exactly; CONTROL K=0.5Kc incoherent (r≈0.05) vs K=2.5Kc synced (r→0.97); sharp monotone transition across Kc; partial sync just above Kc = a locked plateau (central frequencies pinned to the mean, 68% at 1.1Kc) flanked by drifting oscillators. Distinct from R88 excitable spatial waves |
+| R97 | Percolation (2D site, geometric/connectivity transition) — fill cells with probability p, find clusters (scipy.ndimage). CONTROL p=0.55<p_c only small clusters (no spanning) vs p=0.62>p_c a giant spanning cluster; spanning probability jumps sharply across p_c=0.5927 and sharpens with size L (finite-size scaling, ~0.5 at p_c); largest-cluster fraction (order parameter) jumps ~0→0.7; cluster sizes have a cutoff below p_c but are SCALE-FREE at p_c (power law slope τ≈1.9, Fisher ~2.05) |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
 - **In-situ ecosystem selection on brains (R3 negative — RESOLVED in R33).** R3 found in-situ
