@@ -261,6 +261,105 @@ def test_predator_prey_coexist():
     assert w.pred.n_alive > 0                              # predators not starved out
 
 
+# ---------- R144: emergent signalling channel ----------
+def test_signalling_off_is_byte_identical():
+    # signalling=False keeps the R143 brain shape and adds no dynamics: two runs match bit-for-bit,
+    # and the utterance state stays exactly zero (no extra RNG draws, no channel).
+    a = GenesisWorld(replace(fast_cfg(), n_predators0=10), seed=3)
+    b = GenesisWorld(replace(fast_cfg(), n_predators0=10), seed=3)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.vel, b.pop.vel)
+    assert a.spec.n_in == 13 and a.spec.n_out == 3        # unchanged from R143
+    assert np.abs(a.pop.utterance).max() == 0.0           # mute world
+
+
+def test_signalling_on_adds_channels():
+    w = GenesisWorld(replace(fast_cfg(), n_predators0=10, signalling=True, prey_pred_range=12.0), seed=0)
+    assert w.spec.n_in == 14                              # food4 + neighbour4 + predator4 + heard1 + energy1
+    assert w.spec.n_out == 4                              # 3D accel + 1 utterance
+    # without predators the channel still attaches (food-signalling substrate): n_in 9->10
+    w2 = GenesisWorld(replace(fast_cfg(), signalling=True), seed=0)
+    assert w2.spec.n_in == 10 and w2.spec.n_out == 4
+
+
+def test_utterance_is_emitted_and_bounded():
+    w = GenesisWorld(replace(fast_cfg(n0=120), n_predators0=10, signalling=True, prey_pred_range=12.0), seed=1)
+    for _ in range(40):
+        w.step()
+    act = w.pop.active()
+    u = w.pop.utterance[act]
+    assert (np.abs(u) > 1e-6).any()                       # somebody is signalling
+    assert np.abs(u).max() <= 1.0 + 1e-9                  # tanh-bounded
+
+
+def test_heard_channel_reads_nearest_neighbour():
+    # the heard signal equals the nearest neighbour's last-step utterance, gated to 0 out of range
+    w = GenesisWorld(replace(fast_cfg(n0=30), n_predators0=4, signalling=True), seed=2)
+    for _ in range(5):
+        w.step()
+    act = w.pop.active()
+    pos = w.pop.pos[act]
+    from alife.evolve3d import _body_frame
+    r, u, f = _body_frame(w.pop.vel[act])
+    ns, ni, nprox = w._sense_neighbours(pos, r, u, f, w.cfg.sense_range)
+    heard = w._heard(act, ni, nprox)
+    expected = (w.pop.utterance[act][ni] * (nprox > 0)).reshape(-1, 1)
+    assert np.allclose(heard, expected)
+    assert (heard[nprox == 0] == 0).all()                 # no neighbour in range -> hears silence
+
+
+def test_newborns_start_mute():
+    w = GenesisWorld(replace(fast_cfg(n0=40), n_predators0=4, signalling=True), seed=0)
+    w.pop.utterance[:] = 0.7                               # poison every slot, including the free ones
+    for _ in range(30):
+        w.step()
+    # a slot reused by birth must have been reset (not carry the 0.7 from a dead occupant); the only
+    # way utterance gets a fresh non-trivial value is via _emit -> values are in [-1,1], never stuck 0.7
+    act = w.pop.active()
+    assert not np.any(np.isclose(w.pop.utterance[act], 0.7, atol=1e-6) & (w.pop.generation[act] > 0))
+
+
+def test_causal_listening_test_shape():
+    w = GenesisWorld(replace(fast_cfg(n0=120), n_predators0=20, signalling=True, prey_pred_range=12.0), seed=0)
+    for _ in range(60):
+        w.step()
+    out = w.signal_causal_test(np.random.default_rng(0))
+    assert {"daccel", "flee_intact", "flee_deaf", "n_alarmed"} <= set(out)
+    assert out["daccel"] >= 0.0
+    # a mute world (signalling off) returns no causal result
+    assert GenesisWorld(replace(fast_cfg(), n_predators0=10), seed=0).signal_causal_test() == {}
+
+
+# ---------- R144: signal-information metrics ----------
+def test_signal_world_mi_detects_coupling():
+    rng = np.random.default_rng(0)
+    n = 4000
+    state = rng.integers(0, 2, n)
+    coupled = state + rng.normal(0, 0.05, n)              # signal tracks the state almost perfectly
+    randsig = rng.normal(0, 1, n)                         # signal independent of the state
+    assert metrics.signal_world_mi(coupled, state, 4) > 0.8     # near the 1-bit ceiling
+    assert metrics.signal_world_mi(randsig, state, 4) < 0.02    # ~0
+    assert metrics.signal_world_mi(coupled, np.zeros(n, int), 4) == 0.0   # constant state -> undefined -> 0
+
+
+def test_signal_mi_null_is_a_zero_baseline():
+    rng = np.random.default_rng(1)
+    n = 4000
+    state = rng.integers(0, 2, n)
+    coupled = state + rng.normal(0, 0.05, n)
+    mean, std = metrics.signal_mi_null(coupled, state, rng, n_bins=4, n_perm=64)
+    assert mean < 0.02 and std < 0.02                     # scrambling the labels destroys the information
+    assert metrics.signal_world_mi(coupled, state, 4) > mean + 5 * max(std, 1e-9)
+
+
+def test_danger_state_binary():
+    prey = np.array([[0, 0, 0.0], [50, 50, 50.0]])
+    pred = np.array([[2, 0, 0.0]])
+    assert list(metrics.danger_state(prey, pred, 5.0)) == [1, 0]
+    assert metrics.danger_state(prey, np.empty((0, 3)), 5.0).tolist() == [0, 0]
+
+
 # ---------- 3D render smoke (headless moderngl) ----------
 def test_render_smoke():
     from alife.world3d import World3D as W3

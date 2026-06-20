@@ -12,8 +12,9 @@ foraging skill should rise under evolution and stay near the random baseline whe
 
 The world is checkpointable (save/load_checkpoint) and resumable, so it runs unattended for >=1e5
 steps. Body parameters are fixed and identical for all agents (the neuro.py discipline), so any gain
-is attributable to the brain. Reserved hooks (an utterance output, a terraform action) are inert in
-R141 so Stages 2-4 activate a slot rather than rewrite the substrate.
+is attributable to the brain. Stage 2 (R144) activates an emergent SIGNALLING channel — with
+`signalling=True` each prey emits an evolved scalar utterance and hears its nearest neighbour's, so
+predator-alarm communication can evolve from scratch (see signal_causal_test + metrics.signal_world_mi).
 """
 
 from __future__ import annotations
@@ -94,6 +95,21 @@ class GenesisConfig:
     catch_radius: float = 3.5
     prey_energy_value: float = 42.0    # a catch's energy: enough to persist, low conversion = Type-II
     pred_handling: int = 38            # digestion cooldown (Type-II stabilizer)
+    # emergent signalling (R144 — Stage 2): signalling=True activates a communication channel — each
+    # prey emits a scalar UTTERANCE (an evolved extra brain output) and senses its nearest neighbour's
+    # previous-step utterance as a NEW input. Over the existing kin-adjacency this can evolve into
+    # honest predator-alarm signalling (Floreano/Mitri kin-selection route). signalling=False keeps the
+    # prey brain at its R143 shape, no utterance state, byte-identical.
+    signalling: bool = False
+    prey_pred_range: float = 0.0       # if >0, prey DIRECT predator-sense range, SHORTER than sense_range
+                                       # -> a neighbour closer to the predator can warn earlier (the
+                                       # sentinel value that makes an alarm call pay). 0 = full sense_range
+                                       # (R143 behaviour, byte-identical).
+    signal_bins: int = 4               # quantile bins for the signal-MI read-out
+    deaf: bool = False                 # functional control: channel present in the brain but heard is
+                                       # forced silent. Compared against signalling=True (intact), this
+                                       # is the ARTIFACT-IMMUNE test — does HEARING causally help, holding
+                                       # brain shape fixed? (MI alone is fooled by sensory-reaction mimicry.)
     # metric
     persist_steps: int = 200
 
@@ -104,8 +120,11 @@ class GenesisWorld:
         self.rng = np.random.default_rng(seed)
         self.evolve = evolve
         self.has_predators = self.cfg.n_predators0 > 0
-        prey_in = N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel
-        self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=N_OUT)
+        self.signalling = self.cfg.signalling
+        prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
+                   + (1 if self.signalling else 0))          # +heard-neighbour-utterance channel (R144)
+        prey_out = N_OUT + (1 if self.signalling else 0)     # +utterance output (R144); _act ignores it
+        self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=prey_out)
         self.pop = Population(PopConfig(self.cfg.capacity, self.spec.n_weights))
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
@@ -161,19 +180,31 @@ class GenesisWorld:
 
     # --- sensing ---
     def _sense_neighbours(self, pos, right, up, fwd, sense_range):
+        """Body-frame sense of the nearest neighbour -> (sense(P,4), neighbour-idx, proximity).
+
+        The neighbour index + proximity are returned so the signalling channel (R144) can read that
+        same nearest neighbour's utterance for free (no second KD-tree). idx indexes the active subset."""
         n = pos.shape[0]
         if n < 2:
-            return np.zeros((n, 4))
+            return np.zeros((n, 4)), None, np.zeros(n)
         dist, idx = cKDTree(pos).query(pos, k=2)        # k=2: self (col 0) + nearest other (col 1)
         nd, ni = dist[:, 1], idx[:, 1]
         nearest = pos[ni] - pos
         unit = nearest / np.maximum(np.linalg.norm(nearest, axis=1, keepdims=True), 1e-9)
         prox = np.where(nd < sense_range, 1.0 - nd / sense_range, 0.0)
-        return np.stack([(unit * right).sum(1) * prox, (unit * up).sum(1) * prox,
-                         (unit * fwd).sum(1) * prox, prox], axis=1)
+        sense = np.stack([(unit * right).sum(1) * prox, (unit * up).sum(1) * prox,
+                          (unit * fwd).sum(1) * prox, prox], axis=1)
+        return sense, ni, prox
 
     def _agent_types(self, act):
         return np.clip(np.round(self.pop.diet[act]).astype(int), 0, self.cfg.n_food_types - 1)
+
+    def _heard(self, act, ni, nprox):
+        """The signal each prey hears: its nearest neighbour's previous-step utterance, gated to 0 when
+        no neighbour is in range (R144). Returns (P,1). ni indexes the active subset (from _sense_neighbours)."""
+        if ni is None or self.cfg.deaf:               # deaf control: brain has the input, hears only silence
+            return np.zeros((act.size, 1))
+        return (self.pop.utterance[act][ni] * (nprox > 0)).reshape(-1, 1)
 
     def _sense_food(self, pos, r, u, f, act):
         """Nearest food in the body frame. With resource types each agent senses only its own type."""
@@ -189,12 +220,17 @@ class GenesisWorld:
                 out[am] = _sense_kd(pos[am], r[am], u[am], f[am], food_t, cfg.sense_range)
         return out
 
+    def _pred_detect_range(self) -> float:
+        """Prey direct predator-sense range. Shortened (prey_pred_range>0) in the signalling scenario so
+        a neighbour closer to the predator can warn earlier; 0 -> full sense_range (R143 byte-identical)."""
+        return self.cfg.prey_pred_range if self.cfg.prey_pred_range > 0 else self.cfg.sense_range
+
     def _sense_predators(self, pos, r, u, f):
         """Prey body-frame sense of the nearest predator (R143) -> (P,4). Drives evolved evasion."""
         if self.pred is None:
             return np.zeros((pos.shape[0], 4))
         pred_pos = self.pred.pos[self.pred.active()]
-        return _sense_kd(pos, r, u, f, pred_pos, self.cfg.sense_range)
+        return _sense_kd(pos, r, u, f, pred_pos, self._pred_detect_range())
 
     # --- the step ---
     def step(self) -> None:
@@ -204,16 +240,20 @@ class GenesisWorld:
             pos, vel = p.pos[act], p.vel[act]
             r, u, f = _body_frame(vel)
             fs = self._sense_food(pos, r, u, f, act)
-            ns = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
+            ns, ni, nprox = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
             e = (p.energy[act] / cfg.e_repro).reshape(-1, 1)
-            if self.has_predators:                          # +predator-sense channel -> n_in 13
-                x = np.concatenate([fs, ns, self._sense_predators(pos, r, u, f), e], axis=1)
-            else:
-                x = np.concatenate([fs, ns, e], axis=1)
-            out = brain.forward(p.brains[act], self.spec, x)
-            newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)
+            parts = [fs, ns]
+            if self.has_predators:                          # +predator-sense channel (R143)
+                parts.append(self._sense_predators(pos, r, u, f))
+            if self.signalling:                             # +heard-neighbour-utterance channel (R144)
+                parts.append(self._heard(act, ni, nprox))
+            parts.append(e)
+            out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
+            newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)  # _act reads out[:,:3]
             p.vel[act] = newvel
             p.pos[act] = w.clamp(pos + newvel)
+            if self.signalling:                             # the evolved extra output IS the utterance
+                p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
             speed = np.linalg.norm(newvel, axis=1)
             p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed), cfg.e_max)
             p.age[act] += 1
@@ -356,6 +396,8 @@ class GenesisWorld:
         p.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.min_speed
         p.lineage[slots] = p.lineage[parents]
         p.generation[slots] = p.generation[parents] + 1
+        if self.signalling:
+            p.utterance[slots] = 0.0                      # newborns start mute (don't inherit a stale slot's signal)
         if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
             p.diet[slots] = np.clip(p.diet[parents] + self.rng.normal(0, cfg.diet_mut_sigma, parents.size),
                                     0.0, cfg.n_food_types - 1e-6)
@@ -394,6 +436,71 @@ class GenesisWorld:
             "flee": (metrics.flee_directedness(p.pos[act], p.vel[act],
                      self.pred.pos[self.pred.active()], cfg.sense_range)
                      if self.pred is not None else 0.0),
+            "signal_mi": self._signal_mi(act),
+        }
+
+    def _danger(self, act):
+        """Binary per-prey world-state: a predator within the prey's DIRECT detect range (R144)."""
+        if self.pred is None:
+            return np.zeros(act.size, dtype=int)
+        return metrics.danger_state(self.pop.pos[act], self.pred.pos[self.pred.active()],
+                                    self._pred_detect_range())
+
+    def _signal_mi(self, act) -> float:
+        """In-situ I(utterance ; danger-state) in bits — the live signal-informativeness read-out (R144)."""
+        if not (self.signalling and self.has_predators) or act.size == 0:
+            return 0.0
+        return metrics.signal_world_mi(self.pop.utterance[act], self._danger(act), self.cfg.signal_bins)
+
+    def signal_causal_test(self, rng: np.random.Generator | None = None) -> dict:
+        """Causal LISTENING test: recompute every prey's action with the heard channel intact vs lesioned
+        (silenced to 0), on the SAME brains and state. If receivers actually USE the signal, lesioning
+        changes behaviour. The adaptive read-out: among prey hearing a loud alarm from a neighbour that is
+        itself near a predator, do they accelerate AWAY from that (alarming) neighbour MORE when they can
+        hear it than when deaf? +delta = the signal causally drives evasion. In situ; never feeds selection.
+        """
+        if not (self.signalling and self.has_predators):
+            return {}
+        p, cfg = self.pop, self.cfg
+        act = p.active()
+        if act.size < 2:
+            return {}
+        pos, vel = p.pos[act], p.vel[act]
+        r, u, f = _body_frame(vel)
+        fs = self._sense_food(pos, r, u, f, act)
+        ns, ni, nprox = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
+        ps = self._sense_predators(pos, r, u, f)
+        e = (p.energy[act] / cfg.e_repro).reshape(-1, 1)
+        heard = self._heard(act, ni, nprox)
+
+        def action(h):
+            out = brain.forward(p.brains[act], self.spec, np.concatenate([fs, ns, ps, h, e], axis=1))
+            return _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)
+
+        v_intact = action(heard)
+        v_deaf = action(np.zeros_like(heard))
+        daccel = float(np.linalg.norm(v_intact - v_deaf, axis=1).mean())
+        if ni is None:
+            return {"daccel": daccel, "flee_intact": 0.0, "flee_deaf": 0.0, "n_alarmed": 0}
+        # subset: neighbour is near a predator (honest alarm) AND prey hears it loudly
+        ndist = np.full(act.size, np.inf)
+        if self.pred.n_alive:
+            ndist, _ = cKDTree(self.pred.pos[self.pred.active()]).query(pos, k=1)
+        neigh_danger = ndist[ni] < self._pred_detect_range()
+        loud = (np.abs(heard[:, 0]) > 0.3) & (nprox > 0) & neigh_danger
+        # flee AWAY from the alarming neighbour = move opposite the neighbour bearing
+        ndir = pos[ni] - pos
+        ndir = ndir / np.maximum(np.linalg.norm(ndir, axis=1, keepdims=True), 1e-9)
+        def flee_away(v):
+            sp = np.maximum(np.linalg.norm(v, axis=1, keepdims=True), 1e-9)
+            return -((v / sp) * ndir).sum(1)              # +1 = straight away from neighbour
+        if loud.sum() < 5:
+            return {"daccel": daccel, "flee_intact": 0.0, "flee_deaf": 0.0, "n_alarmed": int(loud.sum())}
+        return {
+            "daccel": daccel,
+            "flee_intact": float(flee_away(v_intact)[loud].mean()),
+            "flee_deaf": float(flee_away(v_deaf)[loud].mean()),
+            "n_alarmed": int(loud.sum()),
         }
 
     def render_arrays(self):

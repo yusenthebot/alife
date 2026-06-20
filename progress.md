@@ -1,8 +1,40 @@
 # alife — progress
 
-## Current state (Round 143 — 2026-06-20) — GENESIS Stage 1 complete: co-evolutionary arms race
+## Current state (Round 144 — 2026-06-20) — GENESIS Stage 2: signalling substrate + an emergence protocol that caught the artifact
 
-**R143 adds a co-evolutionary PREDATOR** — a second evolved-neural species that hunts the prey. Prey gain
+**R144 builds the Stage-2 SIGNALLING substrate and — crucially — a red-team-grade protocol that REFUSED to
+declare false emergence.** Each prey now emits an evolved scalar **utterance** (one extra brain output) and
+senses its nearest neighbour's previous-step utterance as a **new input channel**, over the existing
+kin-adjacency. Additive: `signalling=False` keeps the R143 brain shape byte-identical (n_in 13, n_out 3);
+`signalling=True` → n_in 14, n_out 4. The hard part of Stage 2 is not *adding* a channel (trivial) but
+*proving* communication actually emerged rather than a sensory-reaction coincidence — so R144's real
+deliverable is a **FOUR-CONTROL emergence protocol**: (1) scrambled-channel MI null, (2) **frozen-genome
+control** (random brains — if they match the evolved MI, the signal is just the emitter reacting to its own
+predator-sense, not evolved meaning), (3) **causal lesion** (silence the heard channel on the same
+brains/state → does flee-from-alarmer behaviour change?), (4) **intact-vs-deaf survival** (artifact-immune:
+does *hearing* causally improve survival, brain shape held fixed?).
+
+**REAL-VERIFY (3 seeds × 3 conditions × 8000 steps, foreground; panel.png + utterance-coloured 3D GIF
+eye-verified):** the protocol caught the artifact and reported an **HONEST NEGATIVE** — genuine alarm
+communication did NOT emerge in the most-favourable config tested. Evolved signal-danger MI **0.0037 bits**
+≤ **frozen 0.0152 bits** (frozen ≥ evolved every comparison → sensory-reaction artifact, not meaning);
+HEAR pop 2002 vs DEAF pop 2086 (**ratio 0.96 → hearing gives no survival benefit**); causal flee intact
+0.148 vs deaf 0.149 (**no adaptive listening**); MI-over-time noisy around the null with no climb. The GIF
+shows prey almost entirely blue (silent) — utterances stay near-zero/uninformative. This is 禁止造假 working:
+a rigorous protocol that declines to fake a positive. 9 new tests (809 total).
+
+**Diagnosis → next frontier (why no emergence, and it's fixable):** the deaf control survives as well as the
+hearing population, so there is **no selective gradient for listening**; with no fitness reason to listen,
+there is no pressure for honest emission either — the classic signalling bootstrap/altruism problem. Missing
+ingredients for genuine emergence: (a) **hearing must genuinely improve survival** — a sender that detects
+danger the receiver truly cannot, where acting on the warning saves you (a real informational asymmetry, not
+the current redundant double-sensing); (b) **honest emission must pay** — via kin selection (spatially
+clustered clones + cheap signal, Hamilton) or a built-in emission cost. R145 = engineer these and re-run the
+**same** protocol; believe emergence only if it beats frozen AND deaf AND the causal test.
+
+### R143 arms race (previous round)
+
+**R143 added a co-evolutionary PREDATOR** — a second evolved-neural species that hunts the prey. Prey gain
 a predator-sense channel (brain n_in 9→13) and evolve **EVASION**. Additive; `n_predators0=0` is the exact
 R141/R142 prey-only world (byte-identical). REAL-VERIFY (16k-step run, 3D): a living predator-prey ecology
 with **boom-bust cycles** (prey & predators oscillating out of phase), **coexisting 3/3 seeds (no
@@ -727,6 +759,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 | R137 | Invasion fronts (fisherfront.py) — Fisher-KPP pulled waves + the Allee extinction threshold. Logistic RD u_t=D u_xx+r u(1-u) → a PULLED travelling front at c=2√(rD) (speed set by the dilute leading edge). Allee term r u(1-u)(u-a) → a PUSHED front c=√(rD/2)(1-2a) with an EXTINCTION THRESHOLD: a<½ invade, a=½ stall, a>½ RETREAT (founder population dies). Matches CLOSED-FORM theory: Fisher c on the 2√(rD) line across r,D (slightly below = Bramson log correction); Allee velocity on √(rD/2)(1-2a) to <1%, zero-crossing exactly at a=½. 2D: Fisher colony 15→51 (invades) vs Allee a=0.7 colony 28→8 (extinct), same seed. Deterministic/reproducible. DISTINCT from barkley/excitable (excitable PULSE w/ refractory rest, not monostable invasion) + Gray-Scott/Turing (standing patterns). VISUAL: 2D invasion-vs-extinction snapshots + Fisher speed law + Allee velocity-vs-a zero-crossing + shape-invariant profiles + 38-frame side-by-side GIF |
 | R138 | Turing patterns on a sphere (turingsphere.py) — an animal coat on a curved CLOSED surface. Gray-Scott RD on an ICOSPHERE mesh (icosahedron subdivided n times → unit sphere; no lat-lon pole singularity, near-uniform resolution). Diffusion = row-normalized graph Laplacian (Lap u = mean(nbrs)−u, eigvals [−2,0] → standard GS step stable; conserves constants, |L·1|<1e-16). Three eyeball coat regimes by (F,k): isolated SPOTS (~41, leopard ball), LABYRINTH, CORAL. Sphere-specific QUANT: closed geometry quantises the pattern — spot count grows with sphere size (subdiv 3/4/5 → 0/18/41 spots, ∝ area/λ²; mesh refine = larger R/λ since normalized Laplacian sets λ in edge units). HONEST: spot-count only meaningful in the isolated-spots regime (size-law uses that; labyrinth/coral not counted as spots); graph Laplacian ≈ Laplace-Beltrami → qualitative pattern + size-scaling, not precise λ. DISTINCT from coatpattern (flat 2D taper) + reactiondiff (flat GS) — closed curved manifold + topological quantization. VISUAL: 3 coat-regime 3D balls (Poly3DCollection) + spot-count-vs-size + lon-lat unwrap + far side + 30-frame rotating GIF |
+| R144 | **GENESIS Stage-2: signalling substrate + emergence protocol (honest NEGATIVE)** — each prey emits an evolved scalar UTTERANCE (one extra brain output) and senses its nearest neighbour's utterance (new input channel) over the kin-adjacency. Additive; `signalling=False` byte-identical to R143 (n_in 13/n_out 3 → 14/4 when on). The deliverable is a **four-control emergence protocol**: scrambled-MI null · **frozen-genome control** · **causal lesion** · **intact-vs-deaf survival**. REAL-VERIFY (3 seeds × 3 cond × 8000 steps, panel + utterance-coloured 3D GIF eye-verified): genuine alarm communication did NOT emerge — evolved signal-danger MI **0.0037 ≤ frozen 0.0152** (sensory-reaction artifact), HEAR pop 2002 vs DEAF 2086 (**ratio 0.96, no survival benefit**), causal flee intact 0.148 ≈ deaf 0.149 (no adaptive listening), MI flat over time. The protocol correctly CAUGHT the artifact (禁止造假 working). 9 tests (809 total). Diagnosis → R145: deaf survives as well as hearing ⇒ no listening gradient ⇒ no honest-emission pressure; need real informational asymmetry (sender sees danger receiver can't) + kin-selection/cost for honest emission, then re-run the SAME protocol. |
 | R143 | **GENESIS Stage-1: co-evolutionary ARMS RACE** — a second evolved-neural PREDATOR species hunts the prey; prey gain a predator-sense channel (brain n_in 9→13) and evolve EVASION. Additive; n_predators0=0 byte-identical to R141/R142. REAL-VERIFY (16k-step 3D run): living predator-prey ecology with **boom-bust cycles**, **coexists 3/3 seeds** (no extinction); prey flee-directedness evolves windowed **+0.231 vs +0.090 frozen** (every seed), foraging still evolves under predation. 4 tests (800 total). HONEST: coexistence is a knife-edge (cap 1200→prey extinct, 350→pred extinct, 550 coexists); arms race one-sided (predators pin at cap in prey-rich phases — R34 limit), prey evasion evolves but not a clean symmetric escalation. Stage 1 (foundation→niches→arms race) complete. |
 | R142 | **GENESIS Stage-1: monoculture BROKEN via resource niches** — `n_food_types` food types + heritable `diet` trait (each agent senses/eats only its own type = the trade-off) -> distinct specialist niches coexist (Gause competitive exclusion). Additive; n_food_types=1 byte-identical to R141. REAL-VERIFY: 16k-step K=3 run, **3D GIF eye-verified (red+green+blue diet specialists coexist)**, diet diversity locks at **3.00**, directedness still evolves to **+0.106**, lineage diversity ~1.9 (≈2× monoculture). RED-TEAM 3 seeds: K=1 diet-div 1.00/1.00/1.00 vs K=3 3.00/3.00/3.00. 4 tests (796 total). Seeds Stage-3 division of labour. HONEST negative: spatial food patchiness (food_mode="patches") tried FIRST and did NOT break monoculture (identical patches + migration → still swept) + broke the directedness readout; resource partitioning is what worked. |
 | R141 | **GENESIS Stage-1 foundation** (`alife/genesis/`) — a persistent, real 3D living world with embodied agents driven ENTIRELY by evolved `brain.py` genomes (no GA, no fitness function, no scripted movement); in-situ selection via food scarcity, kin-adjacent reproduction, fixed body, checkpoint/resumable. Built ON brain/world3d/render3d/bigworld3d(KD-tree)/coevo3d/evolve3d. REAL-VERIFY: 16k-step run, **3D GIF eye-verified** (lineage-coloured agents, diverse→monoculture colour-convergence), foraging directedness evolves 0→**+0.166**, food-limited pop ~2400 (<6000 cap), **65 generations** deep. RED-TEAM 3 seeds: evolve +0.170/+0.153/+0.211 vs frozen +0.063/+0.104/+0.078 (every seed positive, mean delta +0.096) — heritable, not a metric artifact. 11 tests (792 total). HONEST: evolution sweeps to MONOCULTURE (lineage diversity →1.0 vs frozen 2.8) — diversity/niches is R142's target. First rung of the staged ladder to civilization. |
@@ -773,20 +806,28 @@ R142 niches (resource partitioning → 3 coexisting diet specialists, monocultur
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
 patchiness alone fails (need DIFFERENT resources + a trade-off, Gause); predator coexistence is a knife-edge
 (cap ~0.2× prey); a clean two-sided arms race is hard (R34 limit).
-**Next: Stage 2 = EMERGENT SIGNALLING → language from scratch.** Add a cheap broadcast utterance (an evolved
-output neuron emitted, neighbours' utterance sensed — a new sense channel) over the EXISTING kin-adjacency
-(installed R141) which supplies the shared interest for honest signalling (Floreano/Mitri). First scenario:
-food-location or predator-alarm signalling. ACCEPTANCE (hard — signalling is easy to fake): mutual
-information I(signal;world) > scrambled-channel baseline AND a causal listening test (message intervention
-changes receiver behaviour) AND a no-scripting audit (no `if food: emit`). Red-team mandatory. Then Stage 3
+**Stage 2 = EMERGENT SIGNALLING → language from scratch. [R144: substrate + protocol built; emergence NOT
+yet achieved — honest negative.]** The channel exists (evolved utterance output + heard-neighbour input,
+additive/byte-identical off) and a **four-control emergence protocol** (scrambled null · frozen-genome
+control · causal lesion · intact-vs-deaf survival) is in place and verified to *catch the artifact*. In the
+most-favourable config tested, no genuine alarm communication emerged: evolved MI (0.0037) ≤ frozen (0.0152)
+→ sensory-reaction artifact; deaf survives as well as hearing → no listening gradient; causal lesion flat.
+**Next (R145): engineer the missing selective pressure, then re-run the SAME protocol.** Diagnosis: hearing
+must genuinely improve survival (a real informational asymmetry — sender detects danger the receiver cannot,
+acting on the warning saves you; NOT today's redundant double-sensing) AND honest emission must pay (kin
+selection — spatially clustered clones + cheap signal, Hamilton — or a built-in emission cost). Candidate
+levers: (a) lethal predator + short prey self-sense so an earlier neighbour-warning is the only escape;
+(b) explicit kin fitness coupling / clonal patches; (c) co-evolve emit+listen with a deceptive-signal guard.
+Believe emergence ONLY if it beats frozen AND deaf AND the causal test, ≥3 seeds, red-team. Then Stage 3
 division of labour (the R142 diet specialists already seed it), Stage 4 niche construction, Stage 5 culture.
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
   1. **Foundation + niches** [R141 foundation · R142 niches · R143 arms race DONE] — a persistent 3D world with embodied agents driven by **evolved neural brains**;
      sensing, movement, metabolism/energy, reproduction, death; behaviour genuinely EVOLVES as it runs.
-  2. **Emergent signalling → language** — agents evolve a shared communication code from scratch
-     (Lewis/Skyrms signalling, naming-game / iterated learning); measure mutual-information / compositionality rising.
+  2. **Emergent signalling → language** [R144: substrate + 4-control protocol built; emergence not yet — honest negative] —
+     agents evolve a shared communication code from scratch (Lewis/Skyrms signalling, naming-game / iterated
+     learning); measure mutual-information / compositionality rising above frozen+deaf+causal controls.
   3. **Cooperation + division of labour** — roles, group selection, specialisation emerge.
   4. **Building / niche construction / economy** — agents reshape the 3D world (gather, store, build,
      territory, trade); settlements appear (intentional niche construction, beyond R133 termite stigmergy).

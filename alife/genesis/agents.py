@@ -46,6 +46,7 @@ class Population:
         self.color = np.zeros((c, 3))
         self.diet = np.zeros(c)              # heritable food-type preference (R142 resource niches)
         self.cooldown = np.zeros(c, dtype=np.int32)   # predator digestion timer (R143); 0 for prey
+        self.utterance = np.zeros(c)         # last-step emitted signal (R144 emergent signalling); 0 if mute
         self.alive = np.zeros(c, dtype=bool)
 
     # --- queries ---
@@ -86,7 +87,8 @@ class Population:
         return {
             "pos": self.pos, "vel": self.vel, "energy": self.energy, "age": self.age,
             "brains": self.brains, "lineage": self.lineage, "generation": self.generation,
-            "color": self.color, "diet": self.diet, "cooldown": self.cooldown, "alive": self.alive,
+            "color": self.color, "diet": self.diet, "cooldown": self.cooldown,
+            "utterance": self.utterance, "alive": self.alive,
         }
 
     def load(self, st: dict) -> None:
