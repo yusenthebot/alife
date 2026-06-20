@@ -270,6 +270,20 @@ class GenesisConfig:
     recipe_level_step: int = 3        # tier t's recipe sits at tree-level >= recipe_level_step*t (deeper = harder)
     tier_value_bonus: float = 1.0     # a tier-t mote is worth food_value*(1+tier_value_bonus*t) (locked food is richer)
     tier0_frac: float = 0.4           # fraction of spawned food that is the free tier 0; the rest is locked tiers
+
+    # --- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape MOVEMENT + harvest REACH) ---
+    # R153 made culture gate ONE physical action (what an agent can EAT). R154 generalises that to a
+    # multi-dimensional capability VECTOR: deep tech-tree nodes also unlock LOCOMOTION (a higher max speed)
+    # and HARVEST REACH (a larger eat radius), so cultural depth reshapes the agent's whole physical
+    # phenotype — a tech-driven capability economy, not a single switch. Each axis is gated on its own deep
+    # node (combinatorial.capability_techniques, levels cap_level_step*1, *2, ...) and is categorically
+    # physical (you hold the node or you don't). Requires combinatorial=True. tech_capabilities=False is
+    # byte-identical (no nodes designated, speed cap = cfg.speed, reach = cfg.eat_radius, no extra RNG).
+    tech_capabilities: bool = False
+    n_capabilities: int = 2           # axis 0 = locomotion (max speed), axis 1 = harvest reach (eat radius)
+    cap_level_step: int = 4           # axis i's node sits at tree-level >= cap_level_step*(i+1) (deeper = harder)
+    cap_speed_mult: float = 1.0       # locomotion node -> max speed cfg.speed*(1+cap_speed_mult)
+    cap_reach_mult: float = 1.0       # reach node -> eat radius cfg.eat_radius*(1+cap_reach_mult)
     # metric
     persist_steps: int = 200
 
@@ -288,10 +302,13 @@ class GenesisWorld:
         self.culture = self.cfg.culture
         self.combinatorial = self.cfg.combinatorial
         self.tech_actions = self.cfg.tech_actions
+        self.tech_capabilities = self.cfg.tech_capabilities
         if self.combinatorial and not self.culture:
             raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
         if self.tech_actions and not self.combinatorial:
             raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
+        if self.tech_capabilities and not self.combinatorial:
+            raise ValueError("tech_capabilities (R154 culture-gated physical capabilities) requires combinatorial=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -330,6 +347,9 @@ class GenesisWorld:
                 self._recipe_tech = cb.recipe_techniques(
                     self._tree_level, ns, self.cfg.n_food_tiers, self.cfg.recipe_level_step)
                 self._tier_eat_count = np.zeros(self.cfg.n_food_tiers, dtype=np.int64)
+            if self.tech_capabilities:                       # R154: which deep node unlocks each PHYSICAL axis
+                self._cap_tech = cb.capability_techniques(
+                    self._tree_level, ns, self.cfg.n_capabilities, self.cfg.cap_level_step)
         elif self.culture:                                   # R149 scalar: founders are culturally NAIVE: one
             act = self.pop.active()                           # innovation each, no ancestors to copy -> start ~0
             self.pop.tech[act] = np.maximum(0.0, self.rng.normal(self.cfg.innov_mean, self.cfg.innov_sigma,
@@ -527,7 +547,8 @@ class GenesisWorld:
                 parts.append(self._sense_hearths(pos, r, u, f))
             parts.append(e)
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
-            newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)  # _act reads out[:,:3]
+            hi = self._cap_speed(act)                        # R154: per-agent max speed (culture-gated locomotion)
+            newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, hi)  # _act reads out[:,:3]
             p.vel[act] = newvel
             p.pos[act] = w.clamp(pos + newvel)
             emit = np.zeros(act.size)
@@ -581,6 +602,26 @@ class GenesisWorld:
         if self.culture:                                    # learned technique multiplies the harvest
             gain = gain * (1.0 + cfg.tech_gain * p.tech[eaters])
         return gain
+
+    def _cap_speed(self, act: np.ndarray):
+        """R154 locomotion axis: per-active-agent max speed. An agent whose repertoire holds the locomotion
+        node (self._cap_tech[0]) moves at cfg.speed*(1+cap_speed_mult); everyone else at cfg.speed. Returns a
+        scalar when tech_capabilities is off (byte-identical) or as a column vector for _limit_speed."""
+        cfg = self.cfg
+        if not self.tech_capabilities:
+            return cfg.speed
+        fast = self.rep[act, self._cap_tech[0]]              # bool per active agent (the locomotion node)
+        return (cfg.speed * (1.0 + cfg.cap_speed_mult * fast)).reshape(-1, 1)
+
+    def _cap_reach(self, eaters_act: np.ndarray):
+        """R154 harvest-reach axis: per-eater eat radius. An agent whose repertoire holds the reach node
+        (self._cap_tech[1]) harvests within cfg.eat_radius*(1+cap_reach_mult); others within cfg.eat_radius.
+        Returns the scalar cfg.eat_radius when off (byte-identical)."""
+        cfg = self.cfg
+        if not self.tech_capabilities or cfg.n_capabilities < 2:
+            return cfg.eat_radius
+        far = self.rep[eaters_act, self._cap_tech[1]]        # bool per candidate eater (the reach node)
+        return cfg.eat_radius * (1.0 + cfg.cap_reach_mult * far)
 
     def _eat(self) -> None:
         cfg, p = self.cfg, self.pop
@@ -656,7 +697,8 @@ class GenesisWorld:
             if elig.size == 0:
                 continue
             dist, idx = cKDTree(self.food[fm]).query(p.pos[act[elig]], k=1)
-            winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # winners index into elig; eaten into fm
+            reach = self._cap_reach(act[elig])               # R154: per-eater harvest reach (culture-gated)
+            winners, eaten = _resolve(dist, idx, reach)      # winners index into elig; eaten into fm
             if winners.size == 0:
                 continue
             eaters = act[elig[winners]]
@@ -830,6 +872,41 @@ class GenesisWorld:
             "mean_edible_tiers": mean_edible_tiers,
             "locked_food_frac": locked_food_frac,
             "tier_eats": self._tier_eat_count.tolist(),
+            "n": int(act.size),
+        }
+
+    def tech_capabilities_test(self) -> dict:
+        """The R154 read-out: how far culture has unlocked each PHYSICAL capability axis, and the REALIZED
+        physical phenotype it produces. In situ; never feeds selection.
+          - realized_axes      : number of capability axes >=1 LIVING agent has unlocked (the headline).
+          - n_axes             : the ceiling (n_capabilities).
+          - frac_unlocked      : per-axis fraction of living agents holding that node [list, len n_axes].
+          - mean_axes          : mean per-agent count of unlocked axes (capability breadth of an individual).
+          - mean_speed_cap     : mean per-agent MAX speed actually in force (physical: base when no locomotion).
+          - mean_reach         : mean per-agent eat radius actually in force (physical: base when no reach node).
+          - mean_realized_speed: mean per-agent realized |velocity| (the locomotion node should raise it).
+        """
+        if not self.tech_capabilities:
+            return {}
+        cfg, p = self.cfg, self.pop
+        act = p.active()
+        C = cfg.n_capabilities
+        if act.size == 0:
+            return {"realized_axes": 0, "n_axes": int(C), "frac_unlocked": [0.0] * C,
+                    "mean_axes": 0.0, "mean_speed_cap": cfg.speed, "mean_reach": cfg.eat_radius,
+                    "mean_realized_speed": 0.0, "n": 0}
+        held = self.rep[np.ix_(act, self._cap_tech)]             # [n, C] which axes each agent holds
+        frac = held.mean(axis=0)
+        speed_cap = np.asarray(self._cap_speed(act)).reshape(-1)  # per-agent max speed in force
+        reach = np.asarray(self._cap_reach(act)).reshape(-1) if C >= 2 else np.full(act.size, cfg.eat_radius)
+        return {
+            "realized_axes": int(held.any(axis=0).sum()),
+            "n_axes": int(C),
+            "frac_unlocked": [float(x) for x in frac],
+            "mean_axes": float(held.sum(axis=1).mean()),
+            "mean_speed_cap": float(speed_cap.mean()),
+            "mean_reach": float(reach.mean()),
+            "mean_realized_speed": float(np.linalg.norm(p.vel[act], axis=1).mean()),
             "n": int(act.size),
         }
 
@@ -1139,6 +1216,13 @@ class GenesisWorld:
             snap["realized_tiers"] = float(ta.get("realized_tiers", 0))
             snap["locked_food_frac"] = float(ta.get("locked_food_frac", 0.0))
             snap["mean_edible_tiers"] = float(ta.get("mean_edible_tiers", 0.0))
+        if self.tech_capabilities:                          # R154: culture-gated physical capability axes
+            tc = self.tech_capabilities_test()
+            snap["realized_axes"] = float(tc.get("realized_axes", 0))
+            snap["mean_axes"] = float(tc.get("mean_axes", 0.0))
+            snap["mean_speed_cap"] = float(tc.get("mean_speed_cap", cfg.speed))
+            snap["mean_reach"] = float(tc.get("mean_reach", cfg.eat_radius))
+            snap["mean_realized_speed"] = float(tc.get("mean_realized_speed", 0.0))
         return snap
 
     def caste_test(self) -> dict:

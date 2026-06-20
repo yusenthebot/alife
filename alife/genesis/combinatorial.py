@@ -121,6 +121,32 @@ def recipe_techniques(level: np.ndarray, n_seed: int, n_tiers: int, step: int) -
     return recipes
 
 
+def capability_techniques(level: np.ndarray, n_seed: int, n_caps: int, step: int) -> np.ndarray:
+    """Designate which deep tech-tree node UNLOCKS each PHYSICAL capability axis (R154 — culture gates a
+    multi-dimensional capability vector, not just diet).
+
+    Capability axis i (i in 0..n_caps-1) is unlocked by the LOWEST-index technique whose tree LEVEL is
+    >= step*(i+1) — so each successive axis sits strictly deeper in the combinatorial tree and is reachable
+    only as the learned repertoire climbs. Deterministic in the (fixed) tree, identical across simulation
+    seeds. Returns an int64 array of length n_caps of recipe-technique ids.
+
+    Raises if the tree is too shallow to place an axis (mirrors recipe_techniques). Distinct from the food
+    recipes so the same tree can carry both diet (recipe_techniques) and capability (this) gates.
+    """
+    if n_caps < 1:
+        return np.empty(0, dtype=np.int64)
+    caps = np.full(n_caps, -1, dtype=np.int64)
+    for i in range(n_caps):
+        target = step * (i + 1)
+        cand = np.where(level >= target)[0]
+        if cand.size == 0:
+            raise ValueError(
+                f"tech tree too shallow for capability axis {i}: needs a technique at level>={target}, "
+                f"deepest is {int(level.max())} (raise max_techniques or lower cap_level_step/n_capabilities)")
+        caps[i] = int(cand[0])
+    return caps
+
+
 def max_level_known(rep: np.ndarray, level: np.ndarray) -> np.ndarray:
     """Per-agent deepest technique level known (0 if it knows only seeds / nothing). This is the
     scalar `tech` that drives the harvest payoff — so deeper mastery is selected."""

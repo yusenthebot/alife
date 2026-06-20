@@ -1343,3 +1343,130 @@ def test_checkpoint_roundtrips_food_tier(tmp_path):
     w2.load_checkpoint(p)
     assert np.array_equal(w.food_tier, w2.food_tier)          # the tier of every standing mote survives a restart
     assert np.array_equal(w._recipe_tech, w2._recipe_tech)    # recipe table is deterministic from the fixed tree
+
+
+# ---------- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape movement + reach) ----------
+def _tccfg(**kw):
+    """The R154 regime: the R153 tech-actions world plus tech_capabilities — deep tech-tree nodes ALSO unlock
+    locomotion (a higher max speed) and harvest reach (a larger eat radius), so cultural depth reshapes the
+    agent's whole physical phenotype. Small cap_level_step so the test tree is deep enough to place both axes."""
+    return replace(_tacfg(**kw), tech_capabilities=True, n_capabilities=2, cap_level_step=2,
+                   cap_speed_mult=1.0, cap_reach_mult=1.0)
+
+
+def test_tech_capabilities_requires_combinatorial():
+    with pytest.raises(ValueError):
+        GenesisWorld(_ccfg(tech_capabilities=True), seed=0)    # tech_capabilities without combinatorial=True
+
+
+def test_tech_capabilities_off_is_byte_identical_to_r153():
+    a = GenesisWorld(_tacfg(n0=200), seed=4)                   # R153 tech-actions world
+    b = GenesisWorld(_tacfg(n0=200, tech_capabilities=False), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                # tech_capabilities=False draws no extra RNG / no effect
+    assert np.array_equal(a.pop.vel, b.pop.vel)               # movement is byte-identical (speed cap = cfg.speed)
+    assert np.array_equal(a.food, b.food)                      # eat reach unchanged -> food layout identical
+    assert not hasattr(a, "_cap_tech")                        # no capability table allocated on the off path
+
+
+def test_capability_techniques_deterministic_and_deepening():
+    from alife.genesis import combinatorial as cb
+    _, _, level = cb.build_tech_tree(400, 6)
+    c1 = cb.capability_techniques(level, 6, 3, 3)
+    c2 = cb.capability_techniques(level, 6, 3, 3)
+    assert np.array_equal(c1, c2)                              # deterministic in the fixed tree
+    levs = level[c1]
+    assert (levs >= np.array([3, 6, 9])).all()                # each axis sits at its required depth
+    assert levs[0] < levs[1] < levs[2]                        # a later axis needs a strictly deeper technique
+
+
+def test_capability_techniques_raises_when_tree_too_shallow():
+    from alife.genesis import combinatorial as cb
+    _, _, level = cb.build_tech_tree(30, 6)                    # a tiny, shallow tree
+    with pytest.raises(ValueError):
+        cb.capability_techniques(level, 6, 8, 5)              # demands level>=40, impossible
+
+
+def test_speed_node_caps_are_physical_and_categorical():
+    """The locomotion axis: an agent holding the speed node moves at a strictly higher MAX speed, and the cap
+    is physically enforced in the step (a non-holder's realized speed never exceeds the base cap)."""
+    w = GenesisWorld(_tccfg(n0=40), seed=0)
+    act = w.pop.active()
+    w.pop.energy[act] = 80.0; w.pop.age[act] = 0               # keep them all alive across the step
+    w.rep[act] = False
+    holders = act[: act.size // 2]
+    w.rep[holders, w._cap_tech[0]] = True                    # half hold the locomotion node
+    # force the speed limiter to bind: give everyone a velocity far above any cap
+    dirs = w.rng.normal(size=(act.size, 3)); dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
+    w.pop.vel[act] = dirs * 100.0
+    caps = np.asarray(w._cap_speed(act)).reshape(-1)
+    hold_mask = np.isin(act, holders)
+    assert np.allclose(caps[hold_mask], w.cfg.speed * 2.0)    # holder cap = speed*(1+cap_speed_mult)=6
+    assert np.allclose(caps[~hold_mask], w.cfg.speed)         # non-holder cap = base speed
+    w.step()
+    spd = np.linalg.norm(w.pop.vel[act], axis=1)              # realized speed right after the step
+    assert (spd[~hold_mask] <= w.cfg.speed + 1e-9).all()     # base cap physically enforced for non-holders
+    assert (spd[hold_mask] > w.cfg.speed + 1e-6).all()       # holders actually move faster than the base cap
+
+
+def test_reach_node_enlarges_eat_radius_categorically():
+    """The harvest-reach axis: a mote just BEYOND the base eat radius is harvestable ONLY by an agent holding
+    the reach node — a categorical physical capability, not a payoff scalar."""
+    w = GenesisWorld(_tccfg(n0=2), seed=0)
+    a, b = w.pop.active()[:2]
+    w.pop.energy[a] = w.pop.energy[b] = 50.0
+    w.pop.spec[a] = w.pop.spec[b] = 0.0; w.pop.tech[a] = w.pop.tech[b] = 0.0
+    w.rep[a] = w.rep[b] = False
+    w.rep[b, w._cap_tech[1]] = True                          # only b holds the reach node
+    d = w.cfg.eat_radius * 1.5                                # 4.5: beyond base radius (3), within reach cap (6)
+    off = np.array([d, 0.0, 0.0])
+    w.food = np.array([w.pop.pos[a] + off, w.pop.pos[b] + off])  # one tier-0 mote 4.5 from each agent
+    w.food_type = np.zeros(2, dtype=np.int64)
+    w.food_tier = np.zeros(2, dtype=np.int64)                 # tier 0 (free) -> isolate the reach effect, not diet
+    w.food_ripe = np.array([True, True]); w.ripe_age = np.zeros(2, dtype=np.int32)
+    w.food_proc = np.full(2, -1, dtype=np.int64)
+    w._eat()
+    assert w.pop.energy[a] == 50.0                            # a's base reach (3) can't touch a mote at 4.5
+    assert abs(w.pop.energy[b] - (50.0 + w.cfg.food_value)) < 1e-9   # b's reach node (6) harvests it
+
+
+def test_tech_capabilities_test_fields_and_off_empty():
+    w = GenesisWorld(_tccfg(n0=200), seed=0)
+    for _ in range(120):
+        w.step()
+    out = w.tech_capabilities_test()
+    assert {"realized_axes", "n_axes", "frac_unlocked", "mean_axes",
+            "mean_speed_cap", "mean_reach", "mean_realized_speed"} <= set(out)
+    assert out["n_axes"] == w.cfg.n_capabilities
+    assert len(out["frac_unlocked"]) == w.cfg.n_capabilities
+    assert out["mean_speed_cap"] >= w.cfg.speed and out["mean_reach"] >= w.cfg.eat_radius
+    assert GenesisWorld(_tacfg(), seed=0).tech_capabilities_test() == {}   # off -> empty
+
+
+def test_transmission_unlocks_capabilities_more_than_asocial():
+    """The R154 claim (smoke): with social learning the population climbs to the deep capability nodes and
+    physically realizes a faster, longer-reach phenotype; the asocial control stays at the base phenotype
+    (speed cap == cfg.speed, reach == cfg.eat_radius — exactly, categorically)."""
+    soc = GenesisWorld(_tccfg(n0=250, learn=True), seed=1)
+    aso = GenesisWorld(_tccfg(n0=250, learn=False), seed=1)
+    for _ in range(450):
+        soc.step(); aso.step()
+    s, a = soc.tech_capabilities_test(), aso.tech_capabilities_test()
+    assert s["realized_axes"] > a["realized_axes"]            # transmission unlocks strictly more capability axes
+    assert s["mean_speed_cap"] > a["mean_speed_cap"]          # the social population physically moves faster
+    assert a["mean_speed_cap"] == soc.cfg.speed               # asocial: nobody reaches the deep locomotion node
+    assert a["mean_reach"] == soc.cfg.eat_radius              # asocial: base harvest reach, categorically
+
+
+def test_checkpoint_preserves_capability_phenotype(tmp_path):
+    w = GenesisWorld(_tccfg(n0=150), seed=1)
+    for _ in range(120):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_tccfg(n0=150), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w._cap_tech, w2._cap_tech)          # capability table is deterministic from the fixed tree
+    assert np.allclose(w.tech_capabilities_test()["mean_speed_cap"],
+                       w2.tech_capabilities_test()["mean_speed_cap"])   # realized phenotype survives a restart
