@@ -191,10 +191,12 @@ def test_typed_agents_eat_only_their_type():
     w.food = np.array([w.pop.pos[a]])                     # one mote exactly on the agent
     w.food_type = np.array([1], dtype=np.int64)           # ...but it is type 1 (wrong)
     w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
     w._eat()
     assert w.pop.energy[a] == 50.0                        # mismatched type -> no food gained
     w.food = np.array([w.pop.pos[a]]); w.food_type = np.array([0], dtype=np.int64)
     w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
     w._eat()
     assert w.pop.energy[a] == 50.0 + w.cfg.food_value     # matching type -> eats
 
@@ -444,6 +446,7 @@ def test_only_ripe_food_is_edible():
     w.food = np.array([w.pop.pos[a]])                        # one mote exactly on the agent
     w.food_type = np.zeros(1, dtype=np.int64)
     w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
     w.food_ripe = np.array([False])                          # raw -> not edible
     w._eat()
     assert w.pop.energy[a] == 50.0
@@ -528,3 +531,123 @@ def test_render_smoke():
     assert frame.shape == (120, 160, 3)
     assert frame.dtype == np.uint8
     assert frame.max() > 0                      # something was drawn
+
+
+# ---------- R147: caste specialization (convex trade-off -> division of labour) ----------
+def test_specialize_requires_processing():
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(specialize=True), seed=0)        # no processing substrate -> rejected
+
+
+def test_specialize_off_is_byte_identical_to_r146():
+    # specialize=False over the processing substrate is the exact R146 world: two runs match bit-for-bit,
+    # the brain shape is unchanged, and spec stays all-zero (the trait is dormant, draws no RNG).
+    a = GenesisWorld(fast_cfg(processing=True), seed=3)
+    b = GenesisWorld(fast_cfg(processing=True), seed=3)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.brains, b.pop.brains)
+    assert a.spec.n_in == 13 and a.spec.n_out == 4            # R146 shape, no extra channels
+    assert not a.pop.spec.any()                               # caste trait dormant
+
+
+def test_specialize_seeds_standing_caste_variation():
+    w = GenesisWorld(fast_cfg(processing=True, specialize=True), seed=1)
+    s = w.pop.spec[w.pop.active()]
+    assert s.min() >= 0.0 and s.max() <= 1.0
+    assert s.std() > 0.2                                      # broad founding spread (uniform), not a point
+
+
+def test_convex_harvest_gain_penalises_generalists():
+    # harvest gain = food_value * (1-spec)^gamma: pure harvester full, generalist quartered, processor ~0
+    w = GenesisWorld(fast_cfg(n0=3, processing=True, specialize=True, spec_gamma=2.0), seed=0)
+    act = w.pop.active()
+    for slot, sp in zip(act[:3], (0.0, 0.5, 1.0)):
+        w.pop.spec[slot] = sp
+        w.pop.energy[slot] = 50.0
+        w.food = np.array([w.pop.pos[slot]])                  # a ripe mote on this agent only
+        w.food_type = np.zeros(1, dtype=np.int64)
+        w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+        w.food_proc = np.full(1, -1, dtype=np.int64)
+        w._eat()
+    fv = w.cfg.food_value
+    assert abs(w.pop.energy[act[0]] - (50.0 + fv)) < 1e-9             # spec 0 -> full value
+    assert abs(w.pop.energy[act[1]] - (50.0 + fv * 0.25)) < 1e-9      # spec .5 -> quarter (convex penalty)
+    assert abs(w.pop.energy[act[2]] - 50.0) < 1e-9                    # spec 1 -> ~nothing from harvesting
+
+
+def test_process_reach_scales_with_caste():
+    # a high-spec processor ripens a far mote a low-spec one cannot reach (reach = process_radius * spec)
+    w = GenesisWorld(fast_cfg(n0=1, processing=True, specialize=True), seed=0)
+    a = w.pop.active()[0]
+    base = w.pop.pos[a]
+    far = w.cfg.process_radius * 0.8                          # within full reach, outside a weak processor's
+    w.food = np.array([base + [far, 0, 0]])
+    w.food_type = np.zeros(1, dtype=np.int64)
+    w.food_ripe = np.zeros(1, dtype=bool); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
+    out = np.zeros((1, w.spec.n_out)); out[:, w._proc_out] = 1.0
+    w.pop.spec[a] = 0.3                                       # reach 0.3R < 0.8R -> cannot ripen it
+    w._process(np.array([a]), out)
+    assert not w.food_ripe[0]
+    w.pop.spec[a] = 1.0                                       # full reach -> ripens it, and is attributed
+    w._process(np.array([a]), out)
+    assert w.food_ripe[0] and w.food_proc[0] == a
+
+
+def test_processor_earns_wage_when_its_food_is_harvested():
+    # the trade: a processor that ripened a mote is paid process_payment when a DIFFERENT agent eats it
+    w = GenesisWorld(fast_cfg(n0=2, processing=True, specialize=True), seed=0)
+    proc, harv = w.pop.active()[:2]
+    w.pop.energy[proc] = 40.0; w.pop.energy[harv] = 40.0
+    w.pop.spec[harv] = 0.0                                    # full-value harvester
+    w.food = np.array([w.pop.pos[harv]])                      # ripe mote on the harvester, ripened by proc
+    w.food_type = np.zeros(1, dtype=np.int64)
+    w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.array([proc], dtype=np.int64)
+    w._eat()
+    assert abs(w.pop.energy[harv] - (40.0 + w.cfg.food_value)) < 1e-9   # harvester ate full value
+    assert abs(w.pop.energy[proc] - (40.0 + w.cfg.process_payment)) < 1e-9  # processor got its wage
+
+
+def test_force_generalist_pins_spec_at_half():
+    w = GenesisWorld(fast_cfg(processing=True, specialize=True, force_generalist=True), seed=2)
+    assert np.allclose(w.pop.spec[w.pop.active()], 0.5)       # founders all generalist
+    for _ in range(300):
+        w.step()
+    assert np.allclose(w.pop.spec[w.pop.active()], 0.5)       # offspring too -> monomorphic control
+
+
+def test_spec_is_heritable_and_mutates():
+    w = GenesisWorld(fast_cfg(n0=8, processing=True, specialize=True), seed=1)
+    pop = w.pop
+    parent = pop.active()[0]
+    pop.spec[parent] = 0.8
+    pop.energy[parent] = w.cfg.e_repro + 20.0
+    before = pop.alive.copy()
+    w._reproduce()
+    child = np.where(pop.alive & ~before)[0][0]
+    assert abs(pop.spec[child] - 0.8) < 0.5                   # inherits near parent, slightly mutated
+    assert 0.0 <= pop.spec[child] <= 1.0
+
+
+def test_bimodality_metric_separates_two_castes_from_uniform():
+    rng = np.random.default_rng(0)
+    uniform = rng.uniform(0, 1, 2000)
+    normalish = np.clip(rng.normal(0.5, 0.08, 2000), 0, 1)
+    two_caste = np.clip(np.concatenate([rng.normal(0.05, 0.04, 1000),
+                                        rng.normal(0.95, 0.04, 1000)]), 0, 1)
+    assert metrics.bimodality(two_caste) > metrics.bimodality(uniform)
+    assert metrics.bimodality(uniform) > metrics.bimodality(normalish)   # uniform > unimodal blob
+    assert metrics.bimodality(two_caste) > 0.7                           # near the bimodal ceiling
+
+
+def test_caste_test_reports_structure_and_determinism():
+    a = GenesisWorld(fast_cfg(n0=200, processing=True, specialize=True), seed=0)
+    b = GenesisWorld(fast_cfg(n0=200, processing=True, specialize=True), seed=0)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.spec, b.pop.spec)  # determinism
+    out = a.caste_test()
+    assert {"spec_mean", "bimodality", "frac_specialist", "proc_spec", "harv_spec", "n"} <= set(out)
+    assert GenesisWorld(fast_cfg(processing=True), seed=0).caste_test() == {}    # off -> empty

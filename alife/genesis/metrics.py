@@ -165,6 +165,49 @@ def point_biserial(x: np.ndarray, group: np.ndarray) -> float:
     return float(np.corrcoef(x, g)[0, 1])
 
 
+def bimodality(x: np.ndarray) -> float:
+    """Sarle's bimodality coefficient BC = (skew^2 + 1) / (excess-kurtosis + 3(n-1)^2/((n-2)(n-3))).
+
+    The R147 caste read-out over the heritable spec trait. BC in (0,1]: a uniform distribution sits ~0.55,
+    a unimodal (e.g. normal) blob ~0.33, and a clean two-mode split approaches 1.0. BC > 5/9 (~0.555) is the
+    conventional bimodality threshold. The division-of-labour claim is that BC RISES well above the founding
+    uniform under evolution (the population splits into processor and harvester castes) and stays ~uniform
+    for a frozen genome. 0.0 when undersized or degenerate."""
+    x = np.asarray(x, dtype=float)
+    n = x.shape[0]
+    if n < 4 or x.std() < 1e-12:
+        return 0.0
+    m = x.mean()
+    s = x.std()                                  # population std (ddof=0)
+    z = (x - m) / s
+    g1 = float((z ** 3).mean())                  # skewness
+    g2 = float((z ** 4).mean() - 3.0)            # excess kurtosis
+    denom = g2 + 3.0 * (n - 1) ** 2 / ((n - 2) * (n - 3))
+    if denom <= 0:
+        return 0.0
+    return (g1 ** 2 + 1.0) / denom
+
+
+def caste_metrics(spec: np.ndarray) -> dict:
+    """Caste-structure read-out over the heritable spec trait (R147). spec in [0,1]; 0=harvester, 1=processor.
+      - spec_mean       : population-mean caste (drift check; a balanced DoL sits ~0.5 but BIMODAL).
+      - bimodality      : Sarle's BC (see above) — the headline 'did it split into two castes' signal.
+      - frac_specialist : fraction with |spec-0.5| > 0.25 (committed processors or harvesters, not generalists).
+      - caste_balance   : min(n_proc, n_harv)/max(...) over the two halves — 1.0 = an even two-caste split.
+    In situ; never feeds selection."""
+    spec = np.asarray(spec, dtype=float)
+    if spec.shape[0] == 0:
+        return {"spec_mean": 0.0, "bimodality": 0.0, "frac_specialist": 0.0, "caste_balance": 0.0}
+    low = int((spec < 0.5).sum())
+    high = int((spec >= 0.5).sum())
+    return {
+        "spec_mean": float(spec.mean()),
+        "bimodality": bimodality(spec),
+        "frac_specialist": float((np.abs(spec - 0.5) > 0.25).mean()),
+        "caste_balance": float(min(low, high) / max(low, high)) if max(low, high) else 0.0,
+    }
+
+
 def diet_diversity(diet: np.ndarray, n_types: int) -> float:
     """Effective number of occupied diet niches = exp(Shannon) over the rounded-diet histogram.
 

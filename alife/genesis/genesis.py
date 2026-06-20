@@ -139,6 +139,26 @@ class GenesisConfig:
                                        # the population's CURRENT mean gate rate -> identical processing
                                        # BUDGET, but allocation conditioning destroyed. Isolates the value
                                        # of the division of labour (conditional allocation) on productivity.
+    # caste specialization (R147 — Stage 3, attempt 2). R146's honest negative diagnosed WHY no division of
+    # labour emerged: processing was cheap and non-exclusive, so generalists doing both were optimal — there
+    # was no SPECIALIZATION TRADE-OFF. specialize=True adds a heritable caste trait spec in [0,1] (0=pure
+    # harvester, 1=pure processor) with CONVEX (accelerating) returns to specialization, so a generalist is
+    # strictly worse at both than a mix of specialists (the condition for division of labour, à la Adam
+    # Smith / increasing returns):
+    #   - harvest gain  = food_value * (1-spec)^spec_gamma   (only pure harvesters eat at full value)
+    #   - process reach = process_radius * spec              (ripened-volume ~ spec^3 -> strongly convex)
+    #   - a processor earns process_payment when a HARVESTER eats a mote IT ripened (a wage / trade): so
+    #     processors live on wages, harvesters on food -> genuine economic interdependence, not a free public
+    #     good. With spec_gamma>1 individual selection under negative-frequency dependence should split the
+    #     population into a bimodal processor/harvester CASTE. specialize=False is the exact R146 world
+    #     (uniform efficiency, no spec, no caste), byte-identical. Requires processing=True.
+    specialize: bool = False
+    spec_gamma: float = 2.0            # convexity of the specialization returns (>1 = increasing returns)
+    spec_mut_sigma: float = 0.1        # gaussian mutation of the heritable caste trait on reproduction
+    process_payment: float = 11.0      # energy a processor earns per mote of ITS ripening that gets harvested
+    force_generalist: bool = False     # productivity control: freeze every agent's spec at 0.5 (a forced
+                                       # monomorphic generalist economy) -> isolates whether the EVOLVED
+                                       # bimodal caste out-produces a non-specialized population.
     # metric
     persist_steps: int = 200
 
@@ -151,8 +171,11 @@ class GenesisWorld:
         self.has_predators = self.cfg.n_predators0 > 0
         self.signalling = self.cfg.signalling
         self.processing = self.cfg.processing
+        self.specialize = self.cfg.specialize
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
+        if self.specialize and not self.processing:
+            raise ValueError("specialize (R147 caste trade-off) requires processing=True")
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (4 if self.processing else 0))          # +nearest-RAW-food sense channel (R146)
@@ -177,6 +200,8 @@ class GenesisWorld:
         self.food_ripe = np.zeros(self.food.shape[0], dtype=bool) if self.processing \
             else np.ones(self.food.shape[0], dtype=bool)
         self.ripe_age = np.zeros(self.food.shape[0], dtype=np.int32)
+        # which agent slot last ripened each mote (R147 caste wage attribution); -1 = none/raw
+        self.food_proc = np.full(self.food.shape[0], -1, dtype=np.int64)
         # predators (R143) — a second evolved-neural species; absent unless n_predators0>0
         self.pred_spec = BrainSpec(n_in=5, n_hidden=self.cfg.n_hidden, n_out=N_OUT)  # nearest prey(4)+energy(1)
         self.pred = None
@@ -210,6 +235,8 @@ class GenesisWorld:
             if cfg.n_food_types > 1:                                 # one diet per deme (specialist clones)
                 diets = self.rng.uniform(0, cfg.n_food_types, size=G)
                 p.diet[slots] = diets[deme]
+            if cfg.specialize:                                       # standing caste variation (R147)
+                p.spec[slots] = 0.5 if cfg.force_generalist else self.rng.uniform(0, 1, size=n0)
             self.lineage_first_step = {int(g): 0 for g in range(G)}
             return
         p.pos[slots] = self.rng.uniform(0, w.size, size=(n0, 3))
@@ -222,6 +249,8 @@ class GenesisWorld:
         p.color[slots] = self.rng.uniform(0.25, 1.0, size=(n0, 3))
         if cfg.n_food_types > 1:                          # founders spread across diet niches
             p.diet[slots] = self.rng.uniform(0, cfg.n_food_types, size=n0)
+        if cfg.specialize:                                # standing caste variation -> selection can split it
+            p.spec[slots] = 0.5 if cfg.force_generalist else self.rng.uniform(0, 1, size=n0)
         self.lineage_first_step = {int(i): 0 for i in range(n0)}
 
     def _seed_predators(self) -> None:
@@ -347,6 +376,7 @@ class GenesisWorld:
         self.food_type = self.food_type[keep]
         self.food_ripe = self.food_ripe[keep]
         self.ripe_age = self.ripe_age[keep]
+        self.food_proc = self.food_proc[keep]
 
     def _eat(self) -> None:
         cfg, p = self.cfg, self.pop
@@ -360,7 +390,12 @@ class GenesisWorld:
             dist, idx = cKDTree(self.food[edible]).query(p.pos[act], k=1)
             winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # eaten indexes into `edible`
             if winners.size:
-                p.energy[act[winners]] += cfg.food_value
+                eaters = act[winners]
+                if self.specialize:                         # convex harvest skill: pure harvesters eat full
+                    p.energy[eaters] += cfg.food_value * np.power(1.0 - p.spec[eaters], cfg.spec_gamma)
+                    self._pay_processors(edible[eaten])     # wage to whoever ripened each eaten mote (trade)
+                else:
+                    p.energy[eaters] += cfg.food_value
                 keep = np.ones(self.food.shape[0], dtype=bool)
                 keep[edible[eaten]] = False
                 self._keep_food(keep)
@@ -408,14 +443,28 @@ class GenesisWorld:
         if procs.size == 0 or raw.size == 0:
             return
         d, near = cKDTree(p.pos[act[procs]]).query(self.food[raw], k=1)  # nearest processor per raw mote
-        in_range = d < cfg.process_radius
+        if self.specialize:                                  # reach scales with caste -> ripened volume ~spec^3
+            reach = cfg.process_radius * p.spec[act[procs]]
+            in_range = d < reach[near]
+        else:
+            in_range = d < cfg.process_radius
         if not in_range.any():
             return
         ripened = raw[in_range]
         self.food_ripe[ripened] = True
         self.ripe_age[ripened] = 0
-        workers = np.unique(near[in_range])                  # processors that ripened >=1 mote -> pay
+        if self.specialize:                                  # record who ripened each mote (for the wage)
+            self.food_proc[ripened] = act[procs[near[in_range]]]
+        workers = np.unique(near[in_range])                  # processors that ripened >=1 mote -> pay cost
         p.energy[act[procs[workers]]] -= cfg.process_cost
+
+    def _pay_processors(self, eaten_global: np.ndarray) -> None:
+        """Pay the processor that ripened each just-harvested mote (R147 wage / trade). Processors live on
+        these wages, harvesters on the food itself -> genuine producer/consumer interdependence."""
+        proc = self.food_proc[eaten_global]
+        valid = proc[(proc >= 0) & self.pop.alive[proc]]    # only credit still-living processors
+        if valid.size:
+            np.add.at(self.pop.energy, valid, self.cfg.process_payment)
 
     def _decay_ripe(self) -> None:
         """Uneaten ripe food ages and reverts to raw after ripe_ttl — ripe food is a FLOW, not a stock."""
@@ -530,6 +579,14 @@ class GenesisWorld:
         if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
             p.diet[slots] = np.clip(p.diet[parents] + self.rng.normal(0, cfg.diet_mut_sigma, parents.size),
                                     0.0, cfg.n_food_types - 1e-6)
+        if cfg.specialize:                                # caste trait is heritable -> a DoL can evolve
+            if cfg.force_generalist:
+                p.spec[slots] = 0.5                       # monomorphic control: no caste innovation
+            elif self.evolve:
+                p.spec[slots] = np.clip(p.spec[parents]
+                                        + self.rng.normal(0, cfg.spec_mut_sigma, parents.size), 0.0, 1.0)
+            else:
+                p.spec[slots] = p.spec[parents]           # frozen: inherit exactly, standing variation only
 
     def _spawn_food(self, n: int) -> np.ndarray:
         """Place n food motes. Uniform (R141) or clumped in fixed patches (R142 niches)."""
@@ -549,6 +606,7 @@ class GenesisWorld:
             new_ripe = np.zeros(need, dtype=bool) if self.processing else np.ones(need, dtype=bool)
             self.food_ripe = np.concatenate([self.food_ripe, new_ripe])
             self.ripe_age = np.concatenate([self.ripe_age, np.zeros(need, dtype=np.int32)])
+            self.food_proc = np.concatenate([self.food_proc, np.full(need, -1, dtype=np.int64)])
 
     # --- read-outs (in situ, never feed selection) ---
     def snapshot(self) -> dict:
@@ -570,7 +628,26 @@ class GenesisWorld:
                      if self.pred is not None else 0.0),
             "signal_mi": self._signal_mi(act),
             "ripe_food": float(self.food_ripe.sum()) if self.processing else 0.0,
+            "spec_bimodality": (metrics.bimodality(p.spec[act]) if self.specialize and act.size else 0.0),
+            "spec_mean": (float(p.spec[act].mean()) if self.specialize and act.size else 0.0),
         }
+
+    def caste_test(self) -> dict:
+        """The R147 division-of-labour read-out: caste structure of the living population (bimodality of the
+        heritable spec trait) PLUS a behavioural check that the castes act their role — do high-spec agents
+        actually process more than low-spec ones? In situ; never feeds selection."""
+        if not self.specialize:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < 20:
+            return {}
+        out = metrics.caste_metrics(p.spec[act])
+        gate, _ = self._gate_decision(act)                  # recompute current process decisions
+        out["proc_spec"] = float(p.spec[act][gate].mean()) if gate.any() else 0.0   # caste of processors
+        out["harv_spec"] = float(p.spec[act][~gate].mean()) if (~gate).any() else 0.0
+        out["n"] = int(act.size)
+        return out
 
     def _danger(self, act):
         """Binary per-prey world-state: a predator within the prey's DIRECT detect range (R144)."""
@@ -707,6 +784,7 @@ class GenesisWorld:
             food_type=self.food_type,
             food_ripe=self.food_ripe,
             ripe_age=self.ripe_age,
+            food_proc=self.food_proc,
             evolve=np.bool_(self.evolve),
             rng=np.array(json.dumps(self.rng.bit_generator.state)),
             lin_keys=np.array(list(self.lineage_first_step.keys()), dtype=np.int64),
@@ -723,6 +801,8 @@ class GenesisWorld:
                           else np.ones(self.food.shape[0], dtype=bool))
         self.ripe_age = (d["ripe_age"] if "ripe_age" in d.files
                          else np.zeros(self.food.shape[0], dtype=np.int32))
+        self.food_proc = (d["food_proc"] if "food_proc" in d.files
+                          else np.full(self.food.shape[0], -1, dtype=np.int64))
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}

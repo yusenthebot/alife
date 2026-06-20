@@ -47,6 +47,7 @@ class Population:
         self.diet = np.zeros(c)              # heritable food-type preference (R142 resource niches)
         self.cooldown = np.zeros(c, dtype=np.int32)   # predator digestion timer (R143); 0 for prey
         self.utterance = np.zeros(c)         # last-step emitted signal (R144 emergent signalling); 0 if mute
+        self.spec = np.zeros(c)              # heritable caste trait in [0,1] (R147): 0=harvester, 1=processor
         self.alive = np.zeros(c, dtype=bool)
 
     # --- queries ---
@@ -88,7 +89,7 @@ class Population:
             "pos": self.pos, "vel": self.vel, "energy": self.energy, "age": self.age,
             "brains": self.brains, "lineage": self.lineage, "generation": self.generation,
             "color": self.color, "diet": self.diet, "cooldown": self.cooldown,
-            "utterance": self.utterance, "alive": self.alive,
+            "utterance": self.utterance, "spec": self.spec, "alive": self.alive,
         }
 
     def load(self, st: dict) -> None:
