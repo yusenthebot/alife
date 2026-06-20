@@ -1210,6 +1210,65 @@ def test_local_transmission_builds_structured_traditions():
     assert fl["n_distinct_traditions"] >= 2                        # demes carry different dominant techniques
 
 
+# ---------- R157: LOSSY / DECAYING cultural memory (cultural loss — the Tasmania / Henrich effect) ----------
+def test_culture_decay_requires_combinatorial():
+    with pytest.raises(ValueError):
+        GenesisWorld(_ccfg(culture_decay=True), seed=0)           # culture_decay without combinatorial=True
+
+
+def test_culture_decay_off_is_byte_identical():
+    a = GenesisWorld(_kcfg(n0=250), seed=3)
+    b = GenesisWorld(_kcfg(n0=250, culture_decay=False), seed=3)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.vel, b.pop.vel)
+    assert np.array_equal(a.rep, b.rep)                            # the union path draws no extra RNG, allocates nothing
+    assert not hasattr(b, "struct_memory")                        # struct_memory exists only when culture_decay=on
+
+
+def test_culture_decay_forgets_unmaintained_technique():
+    """The core R157 mechanism: a technique recorded at a hearth FADES out of the sensed record once it is no
+    longer re-deposited (memory decays below threshold), but stays while it is reinforced each step."""
+    w = GenesisWorld(_kcfg(n0=200, culture_decay=True, memory_decay=0.1, memory_threshold=0.5,
+                           memory_reinforce=1.0), seed=0)
+    h, forget_j, keep_j = 0, 7, 8
+    w.struct_alive[:] = False
+    w.struct_alive[h] = True
+    w.struct_memory[:] = 0.0
+    w.struct_memory[h, forget_j] = 1.0                            # deposited once, then never again
+    w.struct_memory[h, keep_j] = 1.0
+    for _ in range(12):                                           # 0.9**12 ~ 0.28 < 0.5 -> forget_j drops out
+        w.struct_memory[h, keep_j] += w.cfg.memory_reinforce     # keep_j is re-deposited every step
+        w._decay_memory()
+    assert not w.struct_rep[h, forget_j]                         # unmaintained knowledge is LOST
+    assert w.struct_rep[h, keep_j]                               # actively-practised knowledge persists
+
+
+def test_culture_decay_record_is_lossy_vs_union():
+    """Cultural loss at the population level: the decaying record holds FEWER techniques across strong hearths
+    than R156's never-forgetting union, because disused techniques fade out instead of accumulating forever."""
+    union = GenesisWorld(_kcfg(n0=300), seed=4)                  # R156: monotone bitwise-or union
+    decay = GenesisWorld(_kcfg(n0=300, culture_decay=True), seed=4)
+    for _ in range(250):
+        union.step(); decay.step()
+    u_rec = int(union.struct_rep[union._strong_hearths()].sum())
+    d_rec = int(decay.struct_rep[decay._strong_hearths()].sum())
+    assert d_rec < u_rec                                          # forgetting -> a strictly smaller cultural store
+    assert not np.array_equal(union.rep, decay.rep)              # lossy transmission -> a different culture
+
+
+def test_culture_decay_checkpoint_roundtrip(tmp_path):
+    w = GenesisWorld(_kcfg(n0=250, culture_decay=True), seed=1)
+    for _ in range(120):
+        w.step()
+    p = str(tmp_path / "decay.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_kcfg(n0=250, culture_decay=True), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w.struct_memory, w2.struct_memory)     # the decaying memory survives a restart
+    assert np.array_equal(w.struct_rep, w2.struct_rep)           # and the derived record
+
+
 # ---------- R151: the integrated capstone — every ladder stage coexisting in ONE world ----------
 def _capcfg(**kw):
     """The capstone regime: predator arms race + caste division of labour + niche-construction hearths +

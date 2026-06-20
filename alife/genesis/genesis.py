@@ -270,6 +270,23 @@ class GenesisConfig:
     # Requires combinatorial=True. panmictic_culture=False is byte-identical to R150 (exact nearest-hearth path).
     panmictic_culture: bool = False
 
+    # --- R157: LOSSY / DECAYING cultural MEMORY (cultural loss — the Tasmania / Henrich effect) ---
+    # R156 found traditions are real but MODEST (F_ST ~0.03). The cause: the hearth record is a UNION
+    # accumulator (struct_rep |= every deposited technique; never forgets), so over a long run any
+    # well-visited hearth drifts toward knowing the union of ALL branches -> the oblique channel HOMOGENIZES
+    # and washes regional divergence out. culture_decay=True replaces the boolean union with a per-technique
+    # floating MEMORY that DECAYS each step (memory_decay) and is REINFORCED (memory_reinforce) each time a
+    # builder re-deposits that technique; a technique stays in the sensed/copyable record only while its
+    # memory >= memory_threshold. So a hearth's record reflects what is ACTIVELY PRACTISED locally, not its
+    # entire accumulated history: knowledge that is not maintained is LOST (cultural loss). A region that keeps
+    # climbing branch A keeps A alive while a disused branch B fades below threshold, so local transmission
+    # SHARPENS into discrete divergent cultures instead of a homogenized union. Requires combinatorial=True.
+    # culture_decay=False is byte-identical to R156/R150 (the exact bitwise-or union path, no struct_memory).
+    culture_decay: bool = False
+    memory_decay: float = 0.02         # per-step fractional decay of each technique's hearth memory strength
+    memory_reinforce: float = 1.0      # strength added to a technique's memory each time a builder deposits it
+    memory_threshold: float = 0.5      # a technique is in the sensed/copyable record iff its memory >= this
+
     # --- R153: CULTURE UNLOCKS WORLD-ACTIONS (techniques gate what an agent can physically eat) ---
     # Until R153 the learned `tech` only multiplied a harvest SCALAR (1+tech_gain*tech): cultural depth
     # changed a number, not what an agent DID. R153 makes culture change a physical action: food spawns in
@@ -342,6 +359,7 @@ class GenesisWorld:
         self.tech_actions = self.cfg.tech_actions
         self.tech_capabilities = self.cfg.tech_capabilities
         self.cap_niches = self.cfg.cap_niches
+        self.culture_decay = self.cfg.culture_decay
         if self.combinatorial and not self.culture:
             raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
         if self.tech_actions and not self.combinatorial:
@@ -352,6 +370,8 @@ class GenesisWorld:
             raise ValueError("cap_niches (R155 capability specialization) requires tech_capabilities=True")
         if self.cfg.panmictic_culture and not self.combinatorial:
             raise ValueError("panmictic_culture (R156 traditions null) requires combinatorial=True")
+        if self.culture_decay and not self.combinatorial:
+            raise ValueError("culture_decay (R157 lossy cultural memory) requires combinatorial=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -439,6 +459,8 @@ class GenesisWorld:
                                                              # repository): the growing cultural record
         if self.combinatorial:                               # R150: each hearth stores an accumulating REPERTOIRE
             self.struct_rep = np.zeros((m, self.cfg.max_techniques), dtype=bool)  # (union of builders' techniques)
+            if self.culture_decay:                           # R157: a decaying per-technique cultural MEMORY backs
+                self.struct_memory = np.zeros((m, self.cfg.max_techniques), dtype=np.float32)  # the record (lossy)
         self.struct_alive = np.zeros(m, dtype=bool)
         self._death_age_sum = 0.0                            # realized-lifespan accumulator (R148 inheritance)
         self._death_count = 0
@@ -632,6 +654,7 @@ class GenesisWorld:
         if self.building:                                   # hearths ripen nearby raw food, then decay
             self._ripen_hearths()
             self._decay_structures()
+            self._decay_memory()                            # R157: cultural loss (before reproduction learns)
         self._eat()
         if self.processing:
             self._decay_ripe()
@@ -1230,8 +1253,11 @@ class GenesisWorld:
                 self.struct_last_builder[tgt] = act[builders[reinforce]]
             if self.culture:                                 # the hearth records the BEST technique deposited
                 np.maximum.at(self.struct_tech, tgt, btech[reinforce])
-            if self.combinatorial:                           # the hearth ACCUMULATES the union of deposited
-                np.bitwise_or.at(self.struct_rep, tgt, brep[reinforce])  # repertoires (a growing cultural store)
+            if self.combinatorial:                           # the hearth ACCUMULATES the deposited repertoires
+                if self.culture_decay:                       # R157: reinforce the per-technique decaying memory
+                    np.add.at(self.struct_memory, tgt, brep[reinforce] * self.cfg.memory_reinforce)
+                else:                                        # R150: a never-forgetting union (a growing store)
+                    np.bitwise_or.at(self.struct_rep, tgt, brep[reinforce])
         # FOUND new hearths for builders with no hearth nearby (bounded by free slots)
         founders = np.where(~reinforce)[0]
         if founders.size:
@@ -1249,8 +1275,11 @@ class GenesisWorld:
                 self.struct_max_gen[slots] = bgen[who]
                 if self.culture:
                     self.struct_tech[slots] = btech[who]     # a new hearth opens its record at the founder's tech
-                if self.combinatorial:
-                    self.struct_rep[slots] = brep[who]       # a new hearth opens with the founder's repertoire
+                if self.combinatorial:                       # a new hearth opens with the founder's repertoire
+                    if self.culture_decay:                   # R157: seed its memory at the founder's techniques
+                        self.struct_memory[slots] = brep[who].astype(np.float32) * self.cfg.memory_reinforce
+                    else:
+                        self.struct_rep[slots] = brep[who]
                 self.struct_alive[slots] = True
         p.energy[act[builders]] -= cfg.build_cost            # every build act pays, found or reinforce
 
@@ -1284,6 +1313,19 @@ class GenesisWorld:
         gone = live & (self.struct_strength <= 0.0)
         self.struct_alive[gone] = False
         self.struct_strength[gone] = 0.0
+
+    def _decay_memory(self) -> None:
+        """R157: cultural LOSS. Each hearth's per-technique memory decays (memory_decay/step); the sensed,
+        copyable record (struct_rep) is re-derived as memory >= memory_threshold. So a technique stays in a
+        hearth's record only while it is re-deposited often enough to hold its memory above threshold —
+        knowledge that is not actively practised is FORGOTTEN. This replaces R156's never-forgetting union,
+        letting disused branches fade locally so regional traditions sharpen into discrete cultures. Runs
+        before _reproduce so the oblique channel transmits the current record. No-op when culture_decay=off."""
+        if not self.culture_decay:
+            return
+        live = self.struct_alive
+        self.struct_memory[live] *= (1.0 - self.cfg.memory_decay)
+        self.struct_rep = self.struct_memory >= self.cfg.memory_threshold
 
     def _die(self) -> None:
         cfg, p = self.cfg, self.pop
@@ -1642,6 +1684,8 @@ class GenesisWorld:
     def save_checkpoint(self, path: str) -> None:
         st = self.pop.state()
         combo = {"rep": self.rep, "struct_rep": self.struct_rep} if self.combinatorial else {}
+        if self.culture_decay:                               # R157: the decaying memory backs the record
+            combo["struct_memory"] = self.struct_memory
         if self.cap_niches:                                  # R155 niche labels (kept in sync only when on)
             combo["food_niche"] = self.food_niche
         np.savez_compressed(
@@ -1698,6 +1742,9 @@ class GenesisWorld:
         if self.combinatorial and "rep" in d.files:          # R150 repertoire pools
             self.rep = d["rep"]
             self.struct_rep = d["struct_rep"]
+            if self.culture_decay:                           # R157: restore the decaying memory (record derives from it)
+                self.struct_memory = (d["struct_memory"] if "struct_memory" in d.files
+                                      else self.struct_rep.astype(np.float32) * self.cfg.memory_reinforce)
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}
