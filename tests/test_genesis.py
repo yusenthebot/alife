@@ -793,3 +793,142 @@ def test_checkpoint_roundtrip_with_hearths(tmp_path):
     assert np.array_equal(w.struct_alive, w2.struct_alive)
     assert np.allclose(w.struct_strength, w2.struct_strength)
     assert np.array_equal(w.struct_birth, w2.struct_birth)
+
+
+# ---------- R149: cumulative culture (Stage 5) ----------
+def _ccfg(**kw):
+    # a viable building regime (the real-run convex-reach params + denser food) so the population robustly
+    # survives even in the asocial / frozen-genome controls — needed to compare the technique level fairly.
+    kw.setdefault("n0", 250)
+    return _bcfg(culture=True, hearth_reach_per_strength=3.0, hearth_radius=12.0,
+                 food_cap=400, food_regrow=18, **kw)
+
+
+def test_culture_requires_building():
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(processing=True, culture=True), seed=0)   # culture without building
+
+
+def test_culture_off_is_byte_identical_to_r148():
+    a = GenesisWorld(_bcfg(n0=200), seed=3)                  # building, no culture
+    b = GenesisWorld(_bcfg(n0=200, culture=False), seed=3)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)              # culture=False draws no extra RNG, no perturbation
+
+
+def test_culture_keeps_same_brain_shape_as_building():
+    built = GenesisWorld(_bcfg(), seed=0)
+    cult = GenesisWorld(_ccfg(), seed=0)
+    assert cult.spec.n_in == built.spec.n_in                # tech is automatic, NOT a brain channel/output
+    assert cult.spec.n_out == built.spec.n_out
+
+
+def test_founders_are_culturally_naive():
+    w = GenesisWorld(_ccfg(innov_mean=0.15, innov_sigma=0.25), seed=0)
+    act = w.pop.active()
+    assert w.pop.tech[act].mean() < 0.6                      # ~one innovation step; nothing to copy yet
+
+
+def test_social_learning_copies_the_best_model():
+    w = GenesisWorld(_ccfg(culture_fidelity=1.0, innov_mean=0.0, innov_sigma=0.0), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0])          # a hearth carrying ancestral knowledge tech=10
+    w.struct_strength[0] = 2.0; w.struct_tech[0] = 10.0; w.struct_alive[0] = True
+    s = w.pop.alloc(1)                                       # a newborn slot in range of the hearth
+    w.pop.pos[s] = np.array([45.0, 45.0, 46.0])
+    par = w.pop.active()[0]; w.pop.tech[par] = 0.0
+    w._acquire_tech(s, np.array([par]))
+    assert abs(w.pop.tech[s[0]] - 10.0) < 1e-9              # copied the hearth record (fidelity 1, no innovation)
+
+
+def test_asocial_control_cannot_copy():
+    w = GenesisWorld(_ccfg(learn=False, culture_fidelity=1.0, innov_mean=0.0, innov_sigma=0.0), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0])
+    w.struct_strength[0] = 2.0; w.struct_tech[0] = 10.0; w.struct_alive[0] = True
+    s = w.pop.alloc(1); w.pop.pos[s] = np.array([45.0, 45.0, 46.0])
+    par = w.pop.active()[0]; w.pop.tech[par] = 7.0
+    w._acquire_tech(s, np.array([par]))
+    assert w.pop.tech[s[0]] < 1e-9                           # base forced to 0 -> reinvents from scratch
+
+
+def test_fidelity_loses_some_on_copy():
+    w = GenesisWorld(_ccfg(culture_fidelity=0.8, innov_mean=0.0, innov_sigma=0.0), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0])
+    w.struct_strength[0] = 2.0; w.struct_tech[0] = 10.0; w.struct_alive[0] = True
+    s = w.pop.alloc(1); w.pop.pos[s] = np.array([45.0, 45.0, 46.0])
+    par = w.pop.active()[0]; w.pop.tech[par] = 0.0
+    w._acquire_tech(s, np.array([par]))
+    assert abs(w.pop.tech[s[0]] - 8.0) < 1e-9               # 0.8 * 10 = imperfect transmission
+
+
+def test_build_records_best_technique():
+    w = GenesisWorld(_ccfg(n0=4), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act[0]] = np.array([20.0, 20.0, 20.0]); w.pop.tech[act[0]] = 5.0
+    out = np.zeros((act.size, w.spec.n_out)); out[0, w._proc_out] = 1.0
+    w._build(act, out)
+    assert abs(w.struct_tech[w.struct_alive][0] - 5.0) < 1e-9     # new hearth opens at the founder's tech
+    w.pop.tech[act[0]] = 8.0; w._build(act, out)                  # reinforce with a better technique
+    assert abs(w.struct_tech[w.struct_alive][0] - 8.0) < 1e-9     # record keeps the MAX
+    w.pop.tech[act[0]] = 3.0; w._build(act, out)
+    assert abs(w.struct_tech[w.struct_alive][0] - 8.0) < 1e-9     # a worse technique does not lower the record
+
+
+def test_tech_boosts_harvest_energy():
+    w = GenesisWorld(_ccfg(n0=2, tech_gain=0.5), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act[0]] = np.array([10.0, 10.0, 10.0]); w.pop.tech[act[0]] = 0.0
+    w.pop.pos[act[1]] = np.array([60.0, 60.0, 60.0]); w.pop.tech[act[1]] = 4.0
+    w.food = np.array([[10.0, 10.0, 10.5], [60.0, 60.0, 60.5]])   # a ripe mote at each agent
+    w.food_ripe = np.ones(2, dtype=bool); w.ripe_age = np.zeros(2, dtype=np.int32)
+    w.food_proc = np.full(2, -1, dtype=np.int64); w.food_type = np.zeros(2, dtype=np.int64)
+    e0, e1 = w.pop.energy[act[0]], w.pop.energy[act[1]]
+    w._eat()
+    g0 = w.pop.energy[act[0]] - e0; g1 = w.pop.energy[act[1]] - e1
+    assert g0 > 0 and g1 > 0
+    assert abs(g1 - g0 * (1.0 + 0.5 * 4.0)) < 1e-6               # tech 4 harvests 3x the energy of tech 0
+
+
+def test_culture_is_not_genetic_climbs_with_frozen_genes():
+    """The acid test that it's CULTURAL not genetic: with evolve=False the genome can't improve, yet the
+    learned technique still ratchets up across generations via social transmission through the built world."""
+    w = GenesisWorld(_ccfg(n0=250), seed=0, evolve=False)
+    founder = w.pop.tech[w.pop.active()].mean()
+    for _ in range(400):
+        w.step()
+    ct = w.culture_test()
+    assert ct and ct["mean_gen"] >= 2                            # generations turned over
+    assert ct["tech_mean"] > founder + 0.3                       # technique accumulated though genes are frozen
+
+
+def test_cumulative_beats_asocial_smoke():
+    """Headline smoke: WITH social learning the technique ratchets far above the ASOCIAL one-lifetime ceiling."""
+    cum = GenesisWorld(_ccfg(n0=250, learn=True), seed=1)
+    aso = GenesisWorld(_ccfg(n0=250, learn=False), seed=1)
+    for _ in range(450):
+        cum.step(); aso.step()
+    c, a = cum.culture_test(), aso.culture_test()
+    assert c and a
+    assert c["tech_max"] > 1.5 * a["tech_max"]                   # the ratchet exceeds asocial reinvention
+    assert c["hearth_tech_max"] > a["hearth_tech_max"]           # the cultural record accumulated
+
+
+def test_culture_test_reports_fields_and_off_empty():
+    w = GenesisWorld(_ccfg(n0=200), seed=0)
+    for _ in range(120):
+        w.step()
+    out = w.culture_test()
+    assert {"tech_mean", "tech_max", "hearth_tech_mean", "hearth_tech_max", "mean_gen"} <= set(out)
+    assert GenesisWorld(_bcfg(), seed=0).culture_test() == {}    # culture off -> empty
+
+
+def test_checkpoint_roundtrip_with_culture(tmp_path):
+    w = GenesisWorld(_ccfg(n0=150), seed=1)
+    for _ in range(150):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_ccfg(n0=150), seed=9)
+    w2.load_checkpoint(p)
+    assert np.allclose(w.struct_tech, w2.struct_tech)           # the cultural record survives a restart
+    assert np.allclose(w.pop.tech, w2.pop.tech)

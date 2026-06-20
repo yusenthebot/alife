@@ -196,6 +196,28 @@ class GenesisConfig:
     hearth_min_strength: float = 0.5   # below this a deposit is a dead ember: not sensed, ripens nothing
     build_persist: bool = True         # ablation: False -> hearths last a single step (NO ecological
                                        # inheritance) -> isolates the value of a PERSISTENT built environment.
+    # cumulative culture (R149 — Stage 5). The Stage-4 hearths become a CULTURAL REPOSITORY. culture=True gives
+    # each agent a LIFETIME-learned scalar `tech` (a foraging technique) that is NOT in the genome and is NOT
+    # inherited genetically: a newborn ACQUIRES it by SOCIAL LEARNING — it copies (with `culture_fidelity`) the
+    # best technique recorded at the nearest strong hearth (an artifact carrying ancestral knowledge) or its
+    # parent, then adds ONE innovation step (max(0, N(innov_mean, innov_sigma))). A higher tech multiplies the
+    # energy gained per mote (tech_gain), so good techniques are selected — but each generation must RE-LEARN
+    # them, so the accumulation lives in the built world + transmission, not in the genome. A build act also
+    # WRITES the builder's tech into the hearth's record (keeping the max), so hearths accumulate the best known
+    # technique = a growing cultural record. With high fidelity the recorded tech RATCHETS up across generations
+    # far beyond a single lifetime's innovation (Tomasello's ratchet) -> an OPEN-ENDED complexity metric that
+    # keeps climbing. Requires building=True (hearths are the repository). Brain shape is UNCHANGED vs building
+    # (tech is automatic, not a brain output), so culture=False is the R148 world byte-identical.
+    culture: bool = False
+    learn: bool = True                 # social-learning switch. False = ASOCIAL control: no copying (base tech
+                                       # forced to 0), so each agent reaches only its own one-lifetime innovation
+                                       # ceiling and the ratchet CANNOT form. The cumulative-culture acid test.
+    culture_fidelity: float = 0.97     # fraction of a model's tech retained on copy. The Lewis-Laland ratchet
+                                       # threshold: too low -> transmission loss > innovation -> no accumulation.
+    innov_mean: float = 0.15           # mean of the one per-lifetime innovation step (only the positive part is
+    innov_sigma: float = 0.25          # kept: tech = base + max(0, N(innov_mean, innov_sigma))).
+    tech_gain: float = 0.35            # energy-per-mote multiplier is (1 + tech_gain*tech): tech pays, so it is
+                                       # selected — but it must be re-learned each generation (it's not genetic).
     # metric
     persist_steps: int = 200
 
@@ -210,12 +232,15 @@ class GenesisWorld:
         self.processing = self.cfg.processing
         self.specialize = self.cfg.specialize
         self.building = self.cfg.building
+        self.culture = self.cfg.culture
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
             raise ValueError("specialize (R147 caste trade-off) requires processing=True")
         if self.building and not self.processing:
             raise ValueError("building (R148 niche construction) requires processing=True")
+        if self.culture and not self.building:
+            raise ValueError("culture (R149 cumulative culture) requires building=True (hearths = the repository)")
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (4 if self.processing else 0)           # +nearest-RAW-food sense channel (R146)
@@ -229,6 +254,10 @@ class GenesisWorld:
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
+        if self.culture:                                     # founders are culturally NAIVE: one innovation each,
+            act = self.pop.active()                           # no ancestors to copy -> the ratchet starts from ~0
+            self.pop.tech[act] = np.maximum(0.0, self.rng.normal(self.cfg.innov_mean, self.cfg.innov_sigma,
+                                                                 size=act.size))
         w = self.cfg.world
         self.patch_centers = None
         if self.cfg.food_mode == "patches":            # fixed clumps; drawn only in patch mode
@@ -257,6 +286,8 @@ class GenesisWorld:
         self.struct_birth = np.zeros(m, dtype=np.int64)     # step the hearth was founded (-> its age)
         self.struct_founder_gen = np.zeros(m, dtype=np.int32)
         self.struct_max_gen = np.zeros(m, dtype=np.int32)   # latest builder generation that maintained it
+        self.struct_tech = np.zeros(m)                       # best technique recorded at the hearth (R149 culture
+                                                             # repository): the growing cultural record
         self.struct_alive = np.zeros(m, dtype=bool)
         self._death_age_sum = 0.0                            # realized-lifespan accumulator (R148 inheritance)
         self._death_count = 0
@@ -453,6 +484,8 @@ class GenesisWorld:
                 if self.specialize:                         # convex harvest skill: pure harvesters eat full
                     p.energy[eaters] += cfg.food_value * np.power(1.0 - p.spec[eaters], cfg.spec_gamma)
                     self._pay_processors(edible[eaten])     # wage to whoever ripened each eaten mote (trade)
+                elif self.culture:                          # learned technique multiplies the harvest (R149)
+                    p.energy[eaters] += cfg.food_value * (1.0 + cfg.tech_gain * p.tech[eaters])
                 else:
                     p.energy[eaters] += cfg.food_value
                 keep = np.ones(self.food.shape[0], dtype=bool)
@@ -525,6 +558,54 @@ class GenesisWorld:
         if valid.size:
             np.add.at(self.pop.energy, valid, self.cfg.process_payment)
 
+    # --- cumulative culture (R149) ---
+    def _acquire_tech(self, slots: np.ndarray, parents: np.ndarray) -> None:
+        """A newborn ACQUIRES its lifetime technique (R149). Social learning: copy (with culture_fidelity) the best
+        model available — the technique recorded at the nearest STRONG hearth (an artifact carrying ancestral
+        knowledge) or the parent — then add ONE innovation step (only its positive part). learn=False is the
+        ASOCIAL control: base is forced to 0, so each agent reaches only its own one-lifetime innovation ceiling
+        and the cross-generation ratchet cannot form. tech is NOT genetic and NOT mutated from the genome."""
+        cfg, p = self.cfg, self.pop
+        n = slots.size
+        if cfg.learn:
+            source = p.tech[parents].copy()                  # vertical transmission baseline (the parent's tech)
+            strong = self._strong_hearths()
+            if strong.size:                                  # oblique transmission via the built world (hearths)
+                d, idx = cKDTree(self.struct_pos[strong]).query(p.pos[slots], k=1)
+                in_range = d < cfg.hearth_radius
+                hearth_tech = np.where(in_range, self.struct_tech[strong][idx], 0.0)
+                source = np.maximum(source, hearth_tech)     # copy the BEST model in reach
+            base = cfg.culture_fidelity * source             # imperfect copy -> transmission loss
+        else:
+            base = np.zeros(n)                               # asocial: no copying, reinvent from scratch
+        innov = np.maximum(0.0, self.rng.normal(cfg.innov_mean, cfg.innov_sigma, size=n))
+        p.tech[slots] = base + innov
+
+    def culture_test(self) -> dict:
+        """The R149 cumulative-culture read-out: how high has the learned technique RATCHETED, in the living
+        population and in the built cultural record (hearths). In situ; never feeds selection.
+          - tech_mean / tech_max          : the learned technique across the living population.
+          - hearth_tech_mean / _max       : the technique stored in the hearths = the cultural record (the
+                                            OPEN-ENDED metric that keeps climbing across generations).
+          - mean_gen                      : mean generation depth (the ratchet is read against this).
+        """
+        if not self.culture:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < 20:
+            return {}
+        strong = self._strong_hearths()
+        htech = self.struct_tech[strong]
+        return {
+            "tech_mean": float(p.tech[act].mean()),
+            "tech_max": float(p.tech[act].max()),
+            "hearth_tech_mean": float(htech.mean()) if htech.size else 0.0,
+            "hearth_tech_max": float(htech.max()) if htech.size else 0.0,
+            "mean_gen": float(p.generation[act].mean()),
+            "n": int(act.size),
+        }
+
     def _decay_ripe(self) -> None:
         """Uneaten ripe food ages and reverts to raw after ripe_ttl — ripe food is a FLOW, not a stock."""
         self.ripe_age[self.food_ripe] += 1
@@ -557,6 +638,7 @@ class GenesisWorld:
             return
         bpos = p.pos[act[builders]]
         bgen = p.generation[act[builders]]
+        btech = p.tech[act[builders]] if self.culture else None
         alive = np.where(self.struct_alive)[0]
         if alive.size:
             d, near = cKDTree(self.struct_pos[alive]).query(bpos, k=1)
@@ -570,6 +652,8 @@ class GenesisWorld:
             tgt = alive[near[reinforce]]
             np.add.at(self.struct_strength, tgt, cfg.build_gain)
             np.maximum.at(self.struct_max_gen, tgt, bgen[reinforce])
+            if self.culture:                                 # the hearth records the BEST technique deposited
+                np.maximum.at(self.struct_tech, tgt, btech[reinforce])
         # FOUND new hearths for builders with no hearth nearby (bounded by free slots)
         founders = np.where(~reinforce)[0]
         if founders.size:
@@ -583,6 +667,8 @@ class GenesisWorld:
                 self.struct_birth[slots] = self.step_count
                 self.struct_founder_gen[slots] = bgen[who]
                 self.struct_max_gen[slots] = bgen[who]
+                if self.culture:
+                    self.struct_tech[slots] = btech[who]     # a new hearth opens its record at the founder's tech
                 self.struct_alive[slots] = True
         p.energy[act[builders]] -= cfg.build_cost            # every build act pays, found or reinforce
 
@@ -730,6 +816,8 @@ class GenesisWorld:
                                         + self.rng.normal(0, cfg.spec_mut_sigma, parents.size), 0.0, 1.0)
             else:
                 p.spec[slots] = p.spec[parents]           # frozen: inherit exactly, standing variation only
+        if self.culture:                                  # ACQUIRE tech: social learning (copy a model) + innovate
+            self._acquire_tech(slots, parents)
 
     def _spawn_food(self, n: int) -> np.ndarray:
         """Place n food motes. Uniform (R141) or clumped in fixed patches (R142 niches)."""
@@ -774,6 +862,8 @@ class GenesisWorld:
             "spec_bimodality": (metrics.bimodality(p.spec[act]) if self.specialize and act.size else 0.0),
             "spec_mean": (float(p.spec[act].mean()) if self.specialize and act.size else 0.0),
             "n_hearths": float(self._strong_hearths().size) if self.building else 0.0,
+            "culture_tech": (float(self.struct_tech[self._strong_hearths()].max())
+                             if self.culture and self._strong_hearths().size else 0.0),
         }
 
     def caste_test(self) -> dict:
@@ -956,6 +1046,7 @@ class GenesisWorld:
             struct_birth=self.struct_birth,
             struct_founder_gen=self.struct_founder_gen,
             struct_max_gen=self.struct_max_gen,
+            struct_tech=self.struct_tech,
             struct_alive=self.struct_alive,
             evolve=np.bool_(self.evolve),
             rng=np.array(json.dumps(self.rng.bit_generator.state)),
@@ -981,6 +1072,8 @@ class GenesisWorld:
             self.struct_birth = d["struct_birth"]
             self.struct_founder_gen = d["struct_founder_gen"]
             self.struct_max_gen = d["struct_max_gen"]
+            self.struct_tech = (d["struct_tech"] if "struct_tech" in d.files
+                                else np.zeros(self.struct_pos.shape[0]))
             self.struct_alive = d["struct_alive"]
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
