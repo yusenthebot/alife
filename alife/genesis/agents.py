@@ -44,6 +44,7 @@ class Population:
         self.lineage = np.full(c, -1, dtype=np.int32)
         self.generation = np.zeros(c, dtype=np.int32)
         self.color = np.zeros((c, 3))
+        self.diet = np.zeros(c)              # heritable food-type preference (R142 resource niches)
         self.alive = np.zeros(c, dtype=bool)
 
     # --- queries ---
@@ -84,7 +85,7 @@ class Population:
         return {
             "pos": self.pos, "vel": self.vel, "energy": self.energy, "age": self.age,
             "brains": self.brains, "lineage": self.lineage, "generation": self.generation,
-            "color": self.color, "alive": self.alive,
+            "color": self.color, "diet": self.diet, "alive": self.alive,
         }
 
     def load(self, st: dict) -> None:

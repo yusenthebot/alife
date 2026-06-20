@@ -173,6 +173,54 @@ def test_checkpoint_roundtrip(tmp_path):
     assert np.allclose(a.pop.pos[a.pop.active()], b.pop.pos[b.pop.active()])
 
 
+# ---------- R142: resource partitioning breaks the monoculture ----------
+def test_diet_diversity_metric():
+    # two equally-occupied niches -> effective number 2; one niche -> 1; single resource (K<=1) -> 1
+    assert metrics.diet_diversity(np.array([0.0, 0.1, 1.9, 2.0]), 3) == pytest.approx(2.0)
+    assert metrics.diet_diversity(np.array([1.0, 1.1, 0.9]), 3) == pytest.approx(1.0)
+    assert metrics.diet_diversity(np.array([0.5, 1.5]), 1) == 1.0
+    assert metrics.diet_diversity(np.zeros(0), 3) == 0.0
+
+
+def test_typed_agents_eat_only_their_type():
+    # an agent eats food of its OWN diet type, gains nothing from a mismatched type (the trade-off)
+    w = GenesisWorld(replace(fast_cfg(n0=1), n_food_types=2), seed=0)
+    a = w.pop.active()[0]
+    w.pop.diet[a] = 0.0                                   # this agent eats type 0
+    w.pop.energy[a] = 50.0
+    w.food = np.array([w.pop.pos[a]])                     # one mote exactly on the agent
+    w.food_type = np.array([1], dtype=np.int64)           # ...but it is type 1 (wrong)
+    w._eat()
+    assert w.pop.energy[a] == 50.0                        # mismatched type -> no food gained
+    w.food = np.array([w.pop.pos[a]]); w.food_type = np.array([0], dtype=np.int64)
+    w._eat()
+    assert w.pop.energy[a] == 50.0 + w.cfg.food_value     # matching type -> eats
+
+
+def test_resource_partitioning_maintains_diversity():
+    # K=1 collapses to one strategy; K=3 sustains coexisting diet niches (observed diet_div ~3.0).
+    one = GenesisWorld(replace(GenesisConfig(), n_food_types=1), seed=0)
+    three = GenesisWorld(replace(GenesisConfig(), n_food_types=3), seed=0)
+    for _ in range(2500):
+        one.step(); three.step()
+    assert one.snapshot()["diet_diversity"] == 1.0        # single resource -> one niche
+    assert three.snapshot()["diet_diversity"] > 2.5       # three resources -> ~3 coexisting niches
+    assert three.snapshot()["directedness"] > 0.05        # foraging still evolves under partitioning
+
+
+def test_diet_is_heritable_and_mutates():
+    w = GenesisWorld(replace(fast_cfg(n0=8), n_food_types=3), seed=1)
+    pop = w.pop
+    parent = pop.active()[0]
+    pop.diet[parent] = 1.0
+    pop.energy[parent] = w.cfg.e_repro + 20.0
+    before = pop.alive.copy()
+    w._reproduce()
+    child = np.where(pop.alive & ~before)[0][0]
+    assert abs(pop.diet[child] - 1.0) < 0.6               # inherits near parent's diet, slightly mutated
+    assert 0.0 <= pop.diet[child] < 3.0                   # stays in range
+
+
 # ---------- 3D render smoke (headless moderngl) ----------
 def test_render_smoke():
     from alife.world3d import World3D as W3

@@ -64,6 +64,18 @@ class GenesisConfig:
     mut_rate: float = 0.2
     mut_sigma: float = 0.35
     n_hidden: int = 10
+    # food spatial structure: "uniform" (R141 baseline) or "patches" (R142 — clumped food at fixed
+    # centers regrowing locally; with kin-adjacent reproduction this makes semi-isolated demes so
+    # distinct lineages hold distinct patches -> a spatial mosaic instead of a monoculture sweep)
+    food_mode: str = "uniform"
+    n_patches: int = 10
+    patch_radius: float = 8.0
+    # resource partitioning (R142 — break the monoculture): n_food_types>1 splits food into types;
+    # each agent has a heritable diet preference and eats/senses only its own type (the trade-off),
+    # so distinct food types support distinct specialist lineages = coexisting niches (Gause). n=1
+    # is the exact R141 single-resource world (no diet, no extra RNG draws).
+    n_food_types: int = 1
+    diet_mut_sigma: float = 0.12
     # metric
     persist_steps: int = 200
 
@@ -79,7 +91,12 @@ class GenesisWorld:
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
         w = self.cfg.world
-        self.food = self.rng.uniform(0, w.size, size=(self.cfg.food_cap, 3))
+        self.patch_centers = None
+        if self.cfg.food_mode == "patches":            # fixed clumps; drawn only in patch mode
+            self.patch_centers = self.rng.uniform(w.size * 0.12, w.size * 0.88,
+                                                  size=(self.cfg.n_patches, 3))
+        self.food = self._spawn_food(self.cfg.food_cap)
+        self.food_type = self._food_types(self.cfg.food_cap)
 
     # --- setup ---
     def _seed_population(self) -> None:
@@ -94,7 +111,15 @@ class GenesisWorld:
         p.lineage[slots] = np.arange(n0, dtype=np.int32)        # each founder a distinct bloodline
         p.generation[slots] = 0
         p.color[slots] = self.rng.uniform(0.25, 1.0, size=(n0, 3))
+        if cfg.n_food_types > 1:                          # founders spread across diet niches
+            p.diet[slots] = self.rng.uniform(0, cfg.n_food_types, size=n0)
         self.lineage_first_step = {int(i): 0 for i in range(n0)}
+
+    def _food_types(self, n: int) -> np.ndarray:
+        """Type label per food mote. Single type (R142 off, no RNG draw) keeps R141 determinism."""
+        if self.cfg.n_food_types <= 1:
+            return np.zeros(n, dtype=np.int64)
+        return self.rng.integers(0, self.cfg.n_food_types, size=n)
 
     # --- sensing ---
     def _sense_neighbours(self, pos, right, up, fwd, sense_range):
@@ -109,6 +134,23 @@ class GenesisWorld:
         return np.stack([(unit * right).sum(1) * prox, (unit * up).sum(1) * prox,
                          (unit * fwd).sum(1) * prox, prox], axis=1)
 
+    def _agent_types(self, act):
+        return np.clip(np.round(self.pop.diet[act]).astype(int), 0, self.cfg.n_food_types - 1)
+
+    def _sense_food(self, pos, r, u, f, act):
+        """Nearest food in the body frame. With resource types each agent senses only its own type."""
+        cfg = self.cfg
+        if cfg.n_food_types <= 1:
+            return _sense_kd(pos, r, u, f, self.food, cfg.sense_range)
+        out = np.zeros((pos.shape[0], 4))
+        types = self._agent_types(act)
+        for t in range(cfg.n_food_types):
+            am = types == t
+            food_t = self.food[self.food_type == t]
+            if am.any() and food_t.shape[0]:
+                out[am] = _sense_kd(pos[am], r[am], u[am], f[am], food_t, cfg.sense_range)
+        return out
+
     # --- the step ---
     def step(self) -> None:
         cfg, w, p = self.cfg, self.cfg.world, self.pop
@@ -116,7 +158,7 @@ class GenesisWorld:
         if act.size:
             pos, vel = p.pos[act], p.vel[act]
             r, u, f = _body_frame(vel)
-            fs = _sense_kd(pos, r, u, f, self.food, cfg.sense_range)
+            fs = self._sense_food(pos, r, u, f, act)
             ns = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
             e = (p.energy[act] / cfg.e_repro).reshape(-1, 1)
             x = np.concatenate([fs, ns, e], axis=1)
@@ -138,13 +180,30 @@ class GenesisWorld:
         act = p.active()
         if act.size == 0 or self.food.shape[0] == 0:
             return
-        dist, idx = cKDTree(self.food).query(p.pos[act], k=1)
-        winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # winners index into `act`
-        if winners.size:
-            p.energy[act[winners]] += cfg.food_value
-            keep = np.ones(self.food.shape[0], dtype=bool)
-            keep[eaten] = False
-            self.food = self.food[keep]
+        if cfg.n_food_types <= 1:
+            dist, idx = cKDTree(self.food).query(p.pos[act], k=1)
+            winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # winners index into `act`
+            if winners.size:
+                p.energy[act[winners]] += cfg.food_value
+                keep = np.ones(self.food.shape[0], dtype=bool)
+                keep[eaten] = False
+                self.food, self.food_type = self.food[keep], self.food_type[keep]
+            return
+        # typed: each agent eats only food of its own diet type (the resource-partitioning trade-off)
+        types = self._agent_types(act)
+        keep = np.ones(self.food.shape[0], dtype=bool)
+        for t in range(cfg.n_food_types):
+            am = np.where(types == t)[0]                # rows in act
+            fm = np.where(self.food_type == t)[0]       # rows in food
+            if am.size == 0 or fm.size == 0:
+                continue
+            dist, idx = cKDTree(self.food[fm]).query(p.pos[act[am]], k=1)
+            winners, eaten = _resolve(dist, idx, cfg.eat_radius)
+            if winners.size:
+                p.energy[act[am[winners]]] += cfg.food_value
+                keep[fm[eaten]] = False
+        if not keep.all():
+            self.food, self.food_type = self.food[keep], self.food_type[keep]
 
     def _die(self) -> None:
         cfg, p = self.cfg, self.pop
@@ -182,12 +241,25 @@ class GenesisWorld:
         p.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.min_speed
         p.lineage[slots] = p.lineage[parents]
         p.generation[slots] = p.generation[parents] + 1
+        if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
+            p.diet[slots] = np.clip(p.diet[parents] + self.rng.normal(0, cfg.diet_mut_sigma, parents.size),
+                                    0.0, cfg.n_food_types - 1e-6)
+
+    def _spawn_food(self, n: int) -> np.ndarray:
+        """Place n food motes. Uniform (R141) or clumped in fixed patches (R142 niches)."""
+        cfg, w = self.cfg, self.cfg.world
+        if cfg.food_mode == "patches" and self.patch_centers is not None:
+            which = self.rng.integers(0, cfg.n_patches, size=n)
+            pts = self.patch_centers[which] + self.rng.normal(0, cfg.patch_radius, size=(n, 3))
+            return np.clip(pts, 0.0, w.size)
+        return self.rng.uniform(0, w.size, size=(n, 3))   # uniform: identical RNG call to R141
 
     def _regrow(self) -> None:
         cfg = self.cfg
         need = min(cfg.food_regrow, cfg.food_cap - self.food.shape[0])
         if need > 0:
-            self.food = np.vstack([self.food, self.rng.uniform(0, cfg.world.size, size=(need, 3))])
+            self.food = np.vstack([self.food, self._spawn_food(need)])
+            self.food_type = np.concatenate([self.food_type, self._food_types(need)])
 
     # --- read-outs (in situ, never feed selection) ---
     def snapshot(self) -> dict:
@@ -202,6 +274,7 @@ class GenesisWorld:
             "directedness": metrics.food_directedness(p.pos[act], p.vel[act], self.food, cfg.sense_range),
             "diversity": metrics.effective_lineages(p.lineage[act], self.lineage_first_step,
                                                     self.step_count, cfg.persist_steps),
+            "diet_diversity": metrics.diet_diversity(p.diet[act], cfg.n_food_types),
         }
 
     def render_arrays(self):
@@ -216,6 +289,7 @@ class GenesisWorld:
             path,
             step=np.int64(self.step_count),
             food=self.food,
+            food_type=self.food_type,
             evolve=np.bool_(self.evolve),
             rng=np.array(json.dumps(self.rng.bit_generator.state)),
             lin_keys=np.array(list(self.lineage_first_step.keys()), dtype=np.int64),
@@ -227,6 +301,7 @@ class GenesisWorld:
         d = np.load(path, allow_pickle=False)
         self.step_count = int(d["step"])
         self.food = d["food"]
+        self.food_type = d["food_type"]
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}

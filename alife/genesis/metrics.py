@@ -55,3 +55,19 @@ def effective_lineages(active_lineage: np.ndarray, first_step: dict,
     p = counts / counts.sum()
     h = -(p * np.log(p)).sum()
     return float(np.exp(h))
+
+
+def diet_diversity(diet: np.ndarray, n_types: int) -> float:
+    """Effective number of occupied diet niches = exp(Shannon) over the rounded-diet histogram.
+
+    The R142 headline: with resource partitioning this stays > 1 (coexisting specialist strategies),
+    where the single-resource R141 world collapses to one. 1.0 = a single strategy (monoculture)."""
+    if diet.shape[0] == 0:
+        return 0.0
+    if n_types <= 1:
+        return 1.0
+    bins = np.clip(np.round(diet).astype(int), 0, n_types - 1)
+    counts = np.bincount(bins, minlength=n_types)
+    counts = counts[counts > 0]
+    p = counts / counts.sum()
+    return float(np.exp(-(p * np.log(p)).sum()))
