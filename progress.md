@@ -1169,7 +1169,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked); now DEEPENING the integration (R153 culture gates diet → R154 multi-axis physical capabilities → R155 costly/bounded capabilities = a SECOND division of labour, this one through the TECH TREE).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
@@ -1308,14 +1308,38 @@ niche construction + open-ended culture DO coexist alive. The next leaps in KIND
   diet 4 vs 1; asocial EXACTLY at base (categorical); CONFOUND KILLED (cap_speed_mult=0 collapses the speed
   gap to ~10% → ~90% IS the cap, not a health confound). Byte-identical off. NOTE — convergent not divergent:
   with cheap, freely-transmitted capabilities everyone learns ALL axes (no specialization) → R155 below.
-- **(default next, R155) COSTLY/traded-off capabilities → emergent SPECIALIZATION.** R154 capabilities are
-  free, so transmission converges the whole population to the full vector (no division of labour — same
-  convergence the R152 negative hit). Make holding/using each axis COSTLY (a per-axis upkeep/energy tax, or a
-  repertoire-size cap so an agent can't hold all nodes) so different lineages specialize into different
-  capability profiles — a division of labour emerging through the TECH TREE itself, attacking the R152 negative
-  from a new door (excludable via a private capability rather than a shared-infra wage). Verify: cross-agent
-  variance in the capability vector RISES, distinct profiles coexist, and the mixed population out-survives a
-  forced-monoculture control. Build directly on `tech_capabilities` + the R147 convex-trade-off lesson.
+- **(R155, DONE — COSTLY/BOUNDED capabilities → emergent SPECIALIZATION).** R154's capabilities were FREE, so
+  transmission converged the whole population to the full vector (no division of labour — the R152 convergence).
+  R155 makes each capability EXCLUDABLE + BOUNDED: each tech node is the EXCLUSIVE harvesting KEY to one parallel
+  food NICHE (`cap_niches`; a free-niche fraction keeps naive founders alive; keyed motes richer), a somatic
+  BUDGET (`cap_budget`=1) caps keys held so an agent can't carry every key, and newborns keep the PARENT's key
+  first (`_enforce_cap_budget` → heritable profile). Resource depletion → negative frequency dependence → a
+  STABLE balanced polymorphism = a division of labour THROUGH the tech tree (attacks the R152 public-good
+  negative from the EXCLUDABLE door: a PRIVATE capability, not a free-rideable shared-infra wage). The keys were
+  made PURE symmetric niche tools (cap_speed_mult=cap_reach_mult=0) to isolate the niche effect from R154's
+  speed/reach bonuses. REAL-VERIFY (scripts/run_genesis_specialize.py, profile-coloured 3D + controls;
+  panel.png + specialize.gif EYE-VERIFIED — blue niche-0 and orange niche-1 specialists ~50/50 INTERMIXED, two
+  coexisting castes not one converged phenotype): MIXED frac_per_key [0.52,0.48], **profile_entropy 1.00 (the
+  MAX for two profiles)**, balance 0.98, mean_keys 1.00 (budget binds). **FREQUENCY-DEPENDENT SELECTION (the
+  headline, red-team's decider):** seeded skewed 0.9/0.1 the key fractions are pulled BACK to ~0.5 under REAL
+  niches (gap 0.04) but a NEUTRAL control with inert keys (niche_free_frac=1) keeps the initial skew (gap 0.63)
+  = a restoring force from excludable niches, not drift. ADAPTIVE: a forced MONOCULTURE (skew=1, cap_force_mono)
+  is driven toward EXTINCTION (24 agents, frac_keyed 1.0) while the mixed world holds carrying capacity.
+  **RED-TEAM (independent agent): ROBUST.** Claim1 CONFIRMED 5 seeds; Claim3 CONFIRMED via the neutral control
+  (selection not drift/seeding); Claim2 direction CONFIRMED & GENUINE (mono keeps key0 throughout and recovers
+  when free food is raised → the collapse is wasted niche-1 food, NOT a force_mono key-erosion artifact) — but
+  the MAGNITUDE is cap-bound (the niche-partitioned economy rides the `capacity` ceiling), so it is stated as
+  "monoculture driven toward extinction", NOT a fixed Nx ratio. No integrity bugs (determinism, budget,
+  key-gating, metrics all verified). **HONEST caveat:** the deep capability keys did NOT bootstrap from
+  culturally-NAIVE founders in 900 steps — a single deep node has no intermediate selective gradient (the same
+  bootstrap-deadlock as Stage-2 signalling), so the DYNAMICS were demonstrated with seeded keys; naive bootstrap
+  is the R156 frontier. Byte-identical off. cap_niches=False = R154.
+- **(default next, R156) NAIVE BOOTSTRAP of the deep capability keys.** R155 demonstrated the specialization
+  DYNAMICS via seeded keys but the keys did not emerge from naive founders (deep node, no gradient). Give
+  acquisition a graded ladder so partial cultural depth already pays toward a key (mirror R153's nested tiers
+  that bootstrapped), OR let the niche reward scale with proximity-to-key in the tree, so selection can climb to
+  the key. Then re-verify the WHOLE chain emerges from a naive start (the strongest possible claim). Build on
+  `_eat_cap_niches` + `capability_techniques`.
 - **More axes / generative effects:** longer SENSE range (needs threading a per-agent sense_range through all
   sense sites — _sense_food/_sense_neighbours/_sense_predators/_sense_hearths; invasive, deferred), culture-gated
   BUILD types (deep culture raises a taller/longer-lived hearth), new tools. Build on the capability_techniques map.

@@ -1,27 +1,30 @@
 # STATUS — main
-updated: 2026-06-20T26:00 · loop 154
+updated: 2026-06-20T28:00 · loop 155
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R154 ACHIEVED + red-teamed ROBUST: culture gates a MULTI-AXIS physical phenotype.
+phase:    review — R155 ACHIEVED + red-teamed ROBUST: costly/bounded culture-gated capabilities -> a DIVISION OF LABOUR.
 owns:     all of ~/alife (single session)
-doing:    R154 DONE. Generalised R153 (culture unlocks ONE action = what you EAT) into a multi-DIMENSIONAL
-          capability VECTOR: deep tech-tree nodes ALSO unlock LOCOMOTION (higher max speed, node@level cap_level_step)
-          and HARVEST REACH (larger eat radius, node@level 2·cap_level_step). Cultural depth now reshapes the whole
-          physical phenotype — diet (R153) + speed + reach — a tech-driven capability economy, not a single switch.
-          Additive behind `tech_capabilities` (requires combinatorial); both mults=0 OR flag off = R153 byte-identical
-          (no nodes designated, speed cap=cfg.speed, reach=cfg.eat_radius, no extra RNG). 127 genesis tests green (+9).
-          New: combinatorial.capability_techniques; genesis _cap_speed/_cap_reach (per-agent, threaded into _act speed
-          clamp + _eat_tech_actions reach), tech_capabilities_test, snapshot fields.
-verify:   scripts/run_genesis_capabilities.py 800 800 (runs/r154_capabilities/panel.png + capability-breadth-coloured
-          3D capabilities.gif eye-verified: social world turns GOLD as nodes spread, purple newborns mixed in). Social
-          vs asocial, 2 seeds: realized_axes 2/2 vs 0; speed_cap 5.72 vs 3.00; reach 5.74 vs 3.00; realized_speed
-          4.61 vs 2.65; diet tiers 4 vs 1. Asocial EXACTLY at base (categorical — deep nodes unreachable in one lifetime).
-redteam:  ROBUST (independent agent, 6 probes). CONFOUND KILLED: with cap_speed_mult=0 (node unlocked, zero bonus)
-          realized_speed collapses 4.35→2.71 ≈ asocial 2.53 → ~90% of the movement gap IS the cap, not a health
-          confound. Metric integrity (hand-set rep exact), asocial categorical-base at 2500 steps (3.0000/3.0000),
-          reach = real access (mote at 4.5 eaten only by node-holder), byte-identical-off, reproducible seeds 2/3. 禁止造假.
+doing:    R155 DONE. R154's capabilities were FREE -> transmission converged the whole population to the full
+          vector (no specialization). R155 makes each capability EXCLUDABLE + BOUNDED: each tech node = the
+          exclusive harvesting KEY to one parallel food NICHE (cap_niches), a somatic BUDGET (cap_budget=1)
+          caps keys held -> must specialize, newborns keep the PARENT's key first (heritable). Resource
+          depletion -> negative frequency dependence -> a STABLE balanced polymorphism of capability profiles
+          = a division of labour THROUGH the tech tree (attacks the R152 public-good negative from the
+          EXCLUDABLE door). cap_niches=False byte-identical to R154. 128 genesis tests green (+10).
+verify:   scripts/run_genesis_specialize.py 900 900 (runs/r155_specialize/panel.png + profile-coloured 3D
+          specialize.gif EYE-VERIFIED: blue niche-0 + orange niche-1 specialists ~50/50 intermixed, two
+          coexisting castes not one converged phenotype). MIXED frac_per_key [0.52,0.48], profile_entropy
+          1.00 (max for 2 profiles), balance 0.98, mean_keys 1.00 (budget binds). Mono collapses toward
+          extinction (24, frac_keyed 1.0 -> NOT key erosion, genuine niche-wastage). FREQ-DEP SELECTION: real
+          niches erase a 0.9/0.1 seed (gap 0.04) where INERT keys (niche_free_frac=1) drift (gap 0.63).
+redteam:  ROBUST (independent agent). Claim1 CONFIRMED 5 seeds; Claim3 CONFIRMED (neutral-control decider =
+          selection not drift); Claim2 direction CONFIRMED & genuine (mono keeps keys, recovers on free food
+          -> niche-wastage, not a force_mono artifact) but MAGNITUDE is cap-bound (mixed rides cap) -> stated
+          as "mono driven toward extinction", NOT a fixed Nx. No integrity bugs. 禁止造假.
 blocked:  none
 docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool + bool repertoire (bounded, <100MB); close GL ctx (r.ctx.release()).
-next:     R155 default = make capability axes COSTLY / traded-off so agents can't hold ALL of them → emergent
-          capability SPECIALIZATION (a division of labour through the TECH TREE itself, attacking the R152 negative
-          from a new door). Alts: more axes (sense-range — needs threading per-agent sense through all sense sites;
-          new build types / tools); GENUINELY UNBOUNDED generative tech space (lift max_techniques cap). See progress.md ## Frontier.
+next:     R156 default = NAIVE bootstrap of the deep capability keys (R155 demonstrated the DYNAMICS via seeded
+          keys; an isolated deep node has no intermediate gradient -> didn't bootstrap from naive in 900 steps,
+          same bootstrap-deadlock lesson as Stage 2). Give the keys a graded acquisition ladder OR make the
+          niche payoff reward partial depth. Alts: >2 niches (richer caste structure); couple capability
+          specialization to BUILDING (builder vs forager caste via excludable tools); unbounded generative
+          tech space. See progress.md ## Frontier.
