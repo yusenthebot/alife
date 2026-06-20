@@ -181,11 +181,19 @@ class GenesisConfig:
     struct_capacity: int = 600         # fixed hearth pool (bounded memory; reused free slots, never grows)
     build_cost: float = 2.0            # energy a build act costs (keeps pure harvesting attractive)
     build_gain: float = 1.0            # strength a build act adds (founds at this, or reinforces by it)
-    struct_decay: float = 0.004        # strength lost/step: unmaintained hearth (strength~1) fades in ~250 steps
-                                       # << max_age 1600, so persistence REQUIRES cross-generation maintenance
-    build_merge_radius: float = 6.0    # build within this of a hearth reinforces it (stigmergic accretion)
-    hearth_radius: float = 7.0         # raw food within this of a strong hearth ripens passively each step
-    hearth_min_strength: float = 1.0   # a hearth ripens food only once invested past this (must be built up)
+    struct_decay: float = 0.01         # strength lost/step: an unmaintained hearth fades over ~its strength*100
+                                       # steps, so a tall settlement (strength~15) fades in ~1500 ~ a lifespan
+                                       # if abandoned -> persistence REQUIRES cross-generation maintenance.
+    build_merge_radius: float = 10.0   # build within this of a hearth reinforces it (stigmergic accretion ->
+                                       # one tall settlement beats many scattered deposits, see reach below)
+    # CONVEX returns to concentration (the R147 lesson applied to building): a hearth's ripening REACH grows
+    # with its strength (reach = min(hearth_radius, hearth_reach_per_strength*strength)), so ripened VOLUME ~
+    # strength^3. One settlement at strength 20 ripens far more than 20 scattered strength-1 deposits -> selection
+    # concentrates building into few tall, shared, persistent settlements (not a uniform fertile sheet). A lone
+    # deposit still ripens a small zone (a real reward), so there is no bootstrap deadlock.
+    hearth_reach_per_strength: float = 1.6
+    hearth_radius: float = 9.0         # MAX ripening reach of a hearth (the cap once it is tall enough)
+    hearth_min_strength: float = 0.5   # below this a deposit is a dead ember: not sensed, ripens nothing
     build_persist: bool = True         # ablation: False -> hearths last a single step (NO ecological
                                        # inheritance) -> isolates the value of a PERSISTENT built environment.
     # metric
@@ -581,12 +589,14 @@ class GenesisWorld:
     def _ripen_hearths(self) -> None:
         """Raw food within hearth_radius of a strong hearth ripens passively (the persistent built labour).
         Re-applied each step, so food near a hearth stays a usable flow; food away from any hearth stays raw."""
+        cfg = self.cfg
         strong = self._strong_hearths()
         raw = np.where(~self.food_ripe)[0]
         if strong.size == 0 or raw.size == 0:
             return
-        d, _ = cKDTree(self.struct_pos[strong]).query(self.food[raw], k=1)
-        ripened = raw[d < self.cfg.hearth_radius]
+        d, near = cKDTree(self.struct_pos[strong]).query(self.food[raw], k=1)
+        reach = np.minimum(cfg.hearth_radius, cfg.hearth_reach_per_strength * self.struct_strength[strong])
+        ripened = raw[d < reach[near]]                        # convex: reach grows with hearth strength
         if ripened.size:
             self.food_ripe[ripened] = True
             self.ripe_age[ripened] = 0

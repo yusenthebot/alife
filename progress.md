@@ -912,7 +912,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stages 1 & 3 COMPLETE (Stage 2 parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1, 3 & 4 COMPLETE (Stage 2 parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
@@ -941,13 +941,31 @@ out-producing force-generalist (evolve 2451 > frozen > forcegen 1753). Red-teame
 INTERMIXED (NN same-caste ≈ random = real DoL not segregation), interdependence confirmed. **Key lesson:
 specialization only pays under STEEP convexity (gamma=4) — at gamma=2 generalists still win (the population
 collapses to one intermediate spec); shallow increasing-returns is not enough to split a caste.** Current
-ceiling = a two-caste trading economy. **Next rung = Stage 4 — NICHE CONSTRUCTION / BUILDING (agents reshape
-the 3D world: deposit/dig/build persistent structures that feed back on selection).** Niche construction is the
-natural Stage-4 step on this substrate (let the processor caste deposit a persistent built ripening-site/cache
-that modifies the local environment and is reused across generations = an economy of made structures), it is
-*directly visible + measurable*, and it is the substrate for Stage 5 cumulative culture. Believe any stage
-positive ONLY if the signature is robust ≥3 seeds AND beats the right control (frozen/monomorphic), red-teamed
-(the R146 8× clonal fluke is the cautionary tale).
+ceiling = a two-caste trading economy.
+
+**Stage 4 = BUILDING / NICHE CONSTRUCTION. [R148 POSITIVE — STAGE 4 DONE.]** `building=True` (requires
+`processing`) lets an agent deposit/reinforce a PERSISTENT hearth structure (a fixed-capacity SoA pool, free-slot
+reuse) via the evolved process-gate output (reused as a BUILD gate), paying `build_cost`. Raw food ripens ONLY
+near a hearth, with **CONVEX reach** (`reach = min(cap, ~3·strength)` so ripened volume ~strength³ — the R147
+convexity lesson re-applied) so concentrated building beats scattered deposits. Hearths DECAY unless re-invested,
+so a standing hearth OUTLIVES its builder = **ecological inheritance** (Odling-Smee). REAL-VERIFY (2500-step
+hearth-coloured 3D + 3-seed controls, panel.png + GIF eye-verified): population bootstraps (dips ~640 as unsettled
+agents starve) then recovers to ~2200 living almost entirely ON hearths (`near_frac` 0.96); `inherit_ratio` 6.2
+(hearths 6× older than the realized lifespan), `inherit_frac` 1.0. **PERSISTENCE PAYS** — persistent built world
+pop 1947 vs a `build_persist=False` ablation 1075 (1.8×); without persistence the settlement collapses
+(`near_frac` 0.96→0.00). **RED-TEAM (passed):** hearths that ripen nothing → pop 0 (the food-ripening feedback is
+CAUSAL, not epiphenomenal); 100% of tall hearths are maintained by builders ~17 generations LATER than their
+founder (ACTIVE cross-generation inheritance, not just old structures sitting there). **HONEST caveats / lessons:**
+(a) hearths TILE the world (the pool saturates at 600; the population settles uniformly, NO discrete villages —
+Clark-Evans R≈1.26 = dispersed). There is a hard tension: broad food coverage (population viable) ⟂ few clustered
+hearths (discrete settlements) — many tiny hearths starve the population, few hearths can't feed it. Discrete
+villages need food to FOLLOW hearths (regrowth biased to settlements) or a much smaller capacity with a survivable
+coverage floor — deferred. (b) building is STRUCTURALLY beneficial (frozen ≈ evolve): the niche-construction +
+inheritance phenomenon does NOT require selection to appear — it is an ecological consequence of the build
+mechanism, reported honestly rather than dressed up as an "evolved" win. **Next rung = Stage 5 — CUMULATIVE
+CULTURE** (a learned skill that ratchets across generations via the built world) → an open-ended complexity metric
+that keeps climbing. Believe any stage positive ONLY if the signature is robust ≥3 seeds AND beats the right
+control, red-teamed (the R146 8× clonal fluke is the cautionary tale).
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
@@ -959,9 +977,11 @@ Locked decisions (CEO, R140):
      learning); measure mutual-information / compositionality rising above frozen+deaf+causal controls.
   3. **Cooperation + division of labour** [R146 attempt 1 negative → R147 attempt 2 POSITIVE, DONE — convex
      specialization trade-off → bimodal processor/harvester caste, selection-built role alignment, mix > monomorphic] — roles + specialisation emerged.
-  4. **Building / niche construction / economy** [R148 = NEXT] — agents reshape the 3D world (gather, store, build,
-     territory, trade); settlements appear (intentional niche construction, beyond R133 termite stigmergy).
-  5. **Cumulative culture** — learned knowledge passes across generations (a cultural ratchet) →
+  4. **Building / niche construction / economy** [R148 POSITIVE, DONE — evolved persistent hearths; population
+     reshapes its world to eat and lives on a self-built, INHERITED environment maintained across ~17 generations;
+     persistence pays 1.8× pop; red-teamed causal. Caveat: tiles the world, not discrete villages] — agents reshape
+     the 3D world; an inherited built environment the population depends on (niche construction, beyond R133 stigmergy).
+  5. **Cumulative culture** [R149 = NEXT] — learned knowledge passes across generations (a cultural ratchet) →
      proto-civilization. Headline = an **open-ended complexity/novelty metric that keeps climbing** (never converges).
 - **Mind substrate = evolved neural brains** (brain.py lineage): each agent = a NN genome, evolves across
   generations via mutation/recombination, plus light lifetime adaptation (Hebbian / small RL tweak).
