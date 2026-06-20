@@ -1,5 +1,54 @@
 # alife — progress
 
+## Current state (Round 156 — 2026-06-20) — GENESIS emergent DIVERGENT cultural TRADITIONS (cultural F_ST), red-teamed ROBUST
+
+**R156 opens a NEW axis on the civilization frontier. R150-R155 measured only ONE global culture frontier
+(how deep the population climbs the open-ended tech tree). But a real civilization is not a single
+monoculture of knowledge — it is MANY DIVERGENT cultural traditions. R156 asks whether the EXISTING
+substrate already grows them, and the answer is YES (modestly), red-teamed ROBUST.**
+
+**The mechanism — emergence on existing substrate + a clean causal control (additive, default-off,
+byte-identical when off).** Oblique transmission already copies the NEAREST strong hearth (a spatial
+cultural store, R148/R150), so a region that happens to climb one BRANCH of the adjacent possible
+reinforces it locally (founder effect + path dependence) while another region climbs another → spatially
+structured traditions. The round adds only a measurement + a null:
+- **`tradition_test(grid, min_deme)`** (in situ, never feeds selection): partitions the living population
+  into a `grid^3` lattice of spatial demes and computes **Wright's F_ST** over the boolean technique
+  repertoire (cultural traits): `F_ST = (H_T − H_S)/H_T`, H = mean per-technique gene-diversity 2p(1−p),
+  pooled vs within-deme. F_ST ≈ 0 = one global tradition; F_ST > 0 = spatially structured traditions.
+  Also reports `n_distinct_traditions` (distinct deme-dominant deepest techniques) + per-deme dominant tech.
+- **`panmictic_culture` (default False)** — the causal NULL: keep the SAME learners (identical
+  nearest-hearth in-range gate) but copy a UNIFORMLY RANDOM strong hearth instead of the nearest one, so
+  the place↔tradition correlation is cut. The ONLY manipulated variable is WHICH hearth you copy. Requires
+  `combinatorial=True`; `panmictic_culture=False` is byte-identical to R150 (exact nearest-hearth path).
+- 5 new tests (133 genesis green): requires-combinatorial, byte-identical-off (pos+vel+rep), panmictic
+  changes the produced culture (transmission differs), tradition_test fields + range + off-empty, local
+  transmission builds ≥2 demes with multiple distinct dominant techniques.
+
+**REAL-VERIFY (`scripts/run_genesis_traditions.py 500`; `runs/r156_traditions/panel.png` +
+tradition-coloured 3D `traditions.gif` EYE-VERIFIED — agents coloured by a hue hashed from their
+deepest-known technique; the F_ST-over-time plot shows green LOCAL lines sitting above grey PANMICTIC):**
+local vs panmictic, 2 seeds, 500 steps, grid=3 (27 demes), n≈3300–3800 —
+- **LOCAL F_ST 0.0269 / 0.0256** (distinct traditions **6 / 10**) vs **PANMICTIC F_ST 0.0155 / 0.0221**
+  (distinct **5 / 5**). Local > panmictic on **2/2** seeds; mean distinct traditions **8 vs 5**.
+
+**RED-TEAM (mandatory; inline, refutation-first; verdict ROBUST).** (1) **metric integrity** — a hand-built
+perfectly-divergent two-deme case returns F_ST **1.0000**, identical demes **0.0000**. (2) **THE
+POSITION-SHUFFLE NULL (the load-bearing probe, 3 seeds)** — recompute F_ST after permuting which deme each
+agent sits in: LOCAL real **0.032 ≫ shuffle noise floor 0.007** on **3/3** seeds, so the F_ST is GENUINE
+spatial structure, not a sampling/metric artifact; local > panmictic **3/3** (0.032 vs 0.021) = spatial
+transmission CAUSES the extra divergence. **HONEST caveats (in the writeup):** the magnitude is **MODEST**
+(F_ST ~0.03, ~4–5× the shuffle floor, not a dramatic 0.2); and the panmictic null is NOT at the shuffle
+floor either (real 0.021 > shuffle 0.006) — because reproduction is already spatial (kin-adjacent offset),
+spatially-near agents share lineage and somewhat-correlated repertoires even without nearest-hearth copying.
+Nearest-hearth transmission ADDS structure on TOP of that baseline; the directional + causal claim holds, the
+absolute F_ST does not (yet) describe sharp discrete cultures. The 3D "spatial patches" are correspondingly
+subtle, reported honestly rather than oversold. 禁止造假 — every number read from live `rep`/positions.
+
+**A genuine emergent result: local cultural transmission over the open-ended tree grows spatially
+structured, divergent traditions (not one global monoculture) — verified + red-teamed. The next step is to
+SHARPEN them from modest neutral drift into discrete, economically-distinct cultures (see ## Frontier).**
+
 ## Current state (Round 154 — 2026-06-20) — GENESIS culture gates a MULTI-AXIS physical phenotype (diet + speed + reach), red-teamed ROBUST
 
 **R154 generalises R153 from "culture unlocks ONE world-action (what you EAT)" to "culture unlocks a
@@ -1169,7 +1218,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked); now DEEPENING the integration (R153 culture gates diet → R154 multi-axis physical capabilities → R155 costly/bounded capabilities = a SECOND division of labour, this one through the TECH TREE).** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked); now DEEPENING the integration (R153 culture gates diet → R154 multi-axis physical capabilities → R155 costly/bounded capabilities = a SECOND division of labour via the TECH TREE → R156 emergent DIVERGENT cultural TRADITIONS: local transmission over the open-ended tree grows spatially structured cultures, cultural F_ST > panmictic null, red-teamed ROBUST but MODEST in magnitude — the next push is to sharpen them into discrete, economically-distinct cultures).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
