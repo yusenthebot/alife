@@ -1,5 +1,63 @@
 # alife — progress
 
+## Current state (Round 154 — 2026-06-20) — GENESIS culture gates a MULTI-AXIS physical phenotype (diet + speed + reach), red-teamed ROBUST
+
+**R154 generalises R153 from "culture unlocks ONE world-action (what you EAT)" to "culture unlocks a
+multi-DIMENSIONAL physical capability VECTOR." Deep combinatorial tech-tree nodes now ALSO unlock
+LOCOMOTION (a higher max speed) and HARVEST REACH (a larger eat radius), on top of R153's diet — so
+cultural depth reshapes the agent's whole physical phenotype, a tech-driven capability economy rather
+than a single switch. Positive and red-teamed ROBUST.**
+
+**The mechanism (additive, unit-tested, byte-identical when off — `tech_capabilities=False` = exact R153).**
+New flag `tech_capabilities` (requires `combinatorial=True`), `genesis.py` + `combinatorial.py`:
+- `combinatorial.capability_techniques(level, n_seed, n_caps, step)` designates the deep tech node that
+  unlocks each PHYSICAL axis i at tree-level ≥ `cap_level_step·(i+1)` (axis 0 = locomotion, axis 1 = reach),
+  so each successive axis sits strictly deeper and only the cultural ratchet (transmission) reaches it
+  (mirrors R153's `recipe_techniques`, distinct nodes so one tree carries both diet and capability gates);
+- `_cap_speed(act)` returns a per-agent max-speed column vector (`cfg.speed·(1+cap_speed_mult)` for holders
+  of `_cap_tech[0]`, else `cfg.speed`), threaded into the `_act` speed clamp in `step()` — genuinely physical
+  (`_limit_speed` enforces it, so a non-holder's realized speed can never exceed the base cap);
+- `_cap_reach(eaters)` returns a per-eater eat radius (`cfg.eat_radius·(1+cap_reach_mult)` for holders of
+  `_cap_tech[1]`), threaded into the `_resolve` radius in `_eat_tech_actions` — a holder harvests motes the
+  base radius can't touch;
+- `tech_capabilities_test` read-out: `realized_axes`, `frac_unlocked` per axis, `mean_axes` (per-agent
+  capability breadth), `mean_speed_cap` / `mean_reach` (the realized physical phenotype), `mean_realized_speed`
+  (the actual |velocity| — the load-bearing behavioural proof). Snapshot carries the 5 capability fields.
+- 9 new tests (127 genesis green): requires-combinatorial, byte-identical-off (pos+vel+food), deterministic+
+  deepening capability nodes, too-shallow-tree raises, speed cap categorical + physically enforced in step,
+  reach node enlarges eat radius categorically, read-out fields + off-empty, transmission>asocial smoke,
+  checkpoint preserves capability phenotype.
+
+**REAL-VERIFY (`scripts/run_genesis_capabilities.py`; `runs/r154_capabilities/panel.png` + capability-breadth-
+coloured 3D `capabilities.gif` eye-verified — the social world turns GOLD as nodes spread, with purple
+culturally-naive newborns visibly mixed in):** social (`learn=True`) vs asocial (`learn=False`), 2 seeds,
+800 steps, cap_level_step=2, both mults 1.0 —
+- **SOCIAL**: `realized_axes` **2/2**, `mean_speed_cap` **5.72** (base 3.0), `mean_reach` **5.74** (base 3.0),
+  `mean_realized_speed` **4.61**, diet `realized_tiers` **4/4**, pop 2000;
+- **ASOCIAL**: `realized_axes` **0**, `mean_speed_cap` **3.00 EXACTLY**, `mean_reach` **3.00 EXACTLY**,
+  `mean_realized_speed` **2.65**, diet **1**, pop ~47–146 (alive on free tier-0 food but stuck at the base
+  phenotype). Asocial is CATEGORICALLY locked out — the deep capability nodes are unreachable from an empty
+  repertoire in one lifetime; only cumulative transmission reaches them. 禁止造假 — every number read from live `rep`/`vel`.
+
+**RED-TEAM (mandatory; independent general-purpose agent, refutation-first; verdict ROBUST):** 6 probes.
+(1) **metric integrity** — hand-set `rep`, `_cap_speed`/`_cap_reach`/`tech_capabilities_test` returned the
+hand-computed values to 1e-9. (2) **THE LOAD-BEARING CONFOUND KILLED** — "is the realized-speed gap just that
+social agents are denser/better-fed?" With `cap_speed_mult=0` (locomotion node unlocked but ZERO speed bonus)
+realized_speed collapses **4.35 → 2.71 ≈ asocial 2.53**: **~90% of the movement gap IS the speed cap itself**,
+not a health confound — the strongest "physical action, not a number" result. (3) **categorical asocial-base**
+— at 2500 steps asocial speed_cap/reach stay **3.0000/3.0000**, frac_unlocked [0,0]. (4) **reach = real
+access** — a holder harvests a mote at distance 4.5 (beyond base 3.0); a non-holder is denied that same mote
+yet still eats a 2.5 mote normally (gate is reach-specific, categorical). (5) **byte-identical off** —
+pos/vel/food `array_equal` vs the flag off. (6) **reproducible** seeds 2/3 (axes 2/2, speed_cap 5.3–5.4 vs
+3.0, diet 4 vs 1 both). **HONEST (red-team noted, neutral):** headline magnitudes (speed_cap 5.72) are
+seed-specific — other seeds land ~5.3–5.4 at 800 steps (not 100% of agents hold the node yet); the
+DIRECTIONAL claim (social ≫ asocial, asocial == base exactly) is robust on all 4 seeds. `realized_axes` is a
+presence flag (saturates easily); the load-bearing signals (speed_cap, reach, realized_speed) carry the
+verdict. **CONVERGENT not divergent (the seed for R155):** cheap, freely-transmitted capabilities make the
+whole population learn ALL axes — no specialization yet; R155 makes axes costly to force a division of labour.
+**A genuine emergent result: culture physically determines an agent's multi-axis capability, not a payoff
+scalar — verified + red-teamed. Substrate committed + reusable.**
+
 ## Current state (Round 153 — 2026-06-20) — GENESIS culture MATTERS PHYSICALLY: techniques UNLOCK a world-action (what an agent can EAT), red-teamed ROBUST
 
 **R153 lifts the R151 capstone's top frontier — "make culture MATTER physically." Until now the learned
@@ -1242,11 +1300,25 @@ niche construction + open-ended culture DO coexist alive. The next leaps in KIND
   diet (social 1→4 tiers / breadth 3.4, asocial locked at 1, 81% food rots), red-teamed ROBUST with the
   energy-injection confound KILLED (~100% of the gap is ACCESS, not payoff). FIRST rung where culture changes
   what agents DO, not a scalar. Next leaps extend this to MORE action axes (below).
-- **(default next, R154) MORE culture-gated PHYSICAL actions — a multi-axis tech-driven economy.** R153 gated
-  ONE action (eating). Extend the recipe→capability map: techniques that unlock BUILD types (only deep culture
-  raises a tall hearth), faster MOVEMENT / longer SENSE (tools), or new processing — so cultural depth reshapes
-  movement + construction + diet together and the combinatorial frontier physically reshapes the 3D world.
-  Highest ambition; build directly on `recipe_techniques` + the `tech_actions` eat-gate pattern.
+- **(R154, DONE — MULTI-AXIS culture-gated capabilities).** Generalised R153's single eat-gate into a
+  capability VECTOR: deep tech nodes ALSO unlock LOCOMOTION (higher max speed) + HARVEST REACH (larger eat
+  radius) via `tech_capabilities` (combinatorial.capability_techniques; per-agent `_cap_speed`/`_cap_reach`).
+  Cultural depth now reshapes the whole physical phenotype — diet + speed + reach. Red-teamed ROBUST: social
+  vs asocial realized_axes 2/2 vs 0, speed_cap 5.72 vs 3.00, reach 5.74 vs 3.00, realized_speed 4.61 vs 2.65,
+  diet 4 vs 1; asocial EXACTLY at base (categorical); CONFOUND KILLED (cap_speed_mult=0 collapses the speed
+  gap to ~10% → ~90% IS the cap, not a health confound). Byte-identical off. NOTE — convergent not divergent:
+  with cheap, freely-transmitted capabilities everyone learns ALL axes (no specialization) → R155 below.
+- **(default next, R155) COSTLY/traded-off capabilities → emergent SPECIALIZATION.** R154 capabilities are
+  free, so transmission converges the whole population to the full vector (no division of labour — same
+  convergence the R152 negative hit). Make holding/using each axis COSTLY (a per-axis upkeep/energy tax, or a
+  repertoire-size cap so an agent can't hold all nodes) so different lineages specialize into different
+  capability profiles — a division of labour emerging through the TECH TREE itself, attacking the R152 negative
+  from a new door (excludable via a private capability rather than a shared-infra wage). Verify: cross-agent
+  variance in the capability vector RISES, distinct profiles coexist, and the mixed population out-survives a
+  forced-monoculture control. Build directly on `tech_capabilities` + the R147 convex-trade-off lesson.
+- **More axes / generative effects:** longer SENSE range (needs threading a per-agent sense_range through all
+  sense sites — _sense_food/_sense_neighbours/_sense_predators/_sense_hearths; invasive, deferred), culture-gated
+  BUILD types (deep culture raises a taller/longer-lived hearth), new tools. Build on the capability_techniques map.
 - **GENUINELY UNBOUNDED tech space (lift the deliberate cap).** R150's ceiling is `max_techniques` (a fixed
   pre-enumerated tree). Make techniques GENERATIVE — a new technique IS the pair of its parents, created on
   combination — so the space is unbounded by construction (combinations of combinations). Gate: bounded memory
