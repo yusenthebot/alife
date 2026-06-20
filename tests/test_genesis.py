@@ -191,12 +191,12 @@ def test_typed_agents_eat_only_their_type():
     w.food = np.array([w.pop.pos[a]])                     # one mote exactly on the agent
     w.food_type = np.array([1], dtype=np.int64)           # ...but it is type 1 (wrong)
     w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     w._eat()
     assert w.pop.energy[a] == 50.0                        # mismatched type -> no food gained
     w.food = np.array([w.pop.pos[a]]); w.food_type = np.array([0], dtype=np.int64)
     w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     w._eat()
     assert w.pop.energy[a] == 50.0 + w.cfg.food_value     # matching type -> eats
 
@@ -446,7 +446,7 @@ def test_only_ripe_food_is_edible():
     w.food = np.array([w.pop.pos[a]])                        # one mote exactly on the agent
     w.food_type = np.zeros(1, dtype=np.int64)
     w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     w.food_ripe = np.array([False])                          # raw -> not edible
     w._eat()
     assert w.pop.energy[a] == 50.0
@@ -568,7 +568,7 @@ def test_convex_harvest_gain_penalises_generalists():
         w.food = np.array([w.pop.pos[slot]])                  # a ripe mote on this agent only
         w.food_type = np.zeros(1, dtype=np.int64)
         w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
-        w.food_proc = np.full(1, -1, dtype=np.int64)
+        w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
         w._eat()
     fv = w.cfg.food_value
     assert abs(w.pop.energy[act[0]] - (50.0 + fv)) < 1e-9             # spec 0 -> full value
@@ -585,7 +585,7 @@ def test_process_reach_scales_with_caste():
     w.food = np.array([base + [far, 0, 0]])
     w.food_type = np.zeros(1, dtype=np.int64)
     w.food_ripe = np.zeros(1, dtype=bool); w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     out = np.zeros((1, w.spec.n_out)); out[:, w._proc_out] = 1.0
     w.pop.spec[a] = 0.3                                       # reach 0.3R < 0.8R -> cannot ripen it
     w._process(np.array([a]), out)
@@ -604,7 +604,7 @@ def test_processor_earns_wage_when_its_food_is_harvested():
     w.food = np.array([w.pop.pos[harv]])                      # ripe mote on the harvester, ripened by proc
     w.food_type = np.zeros(1, dtype=np.int64)
     w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.array([proc], dtype=np.int64)
+    w.food_proc = np.array([proc], dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     w._eat()
     assert abs(w.pop.energy[harv] - (40.0 + w.cfg.food_value)) < 1e-9   # harvester ate full value
     assert abs(w.pop.energy[proc] - (40.0 + w.cfg.process_payment)) < 1e-9  # processor got its wage
@@ -843,7 +843,7 @@ def test_build_specialized_pays_maintainer_wage():
     assert w.struct_last_builder[h] == builder
     w.food = np.array([[45.0, 45.0, 46.0]])                  # a raw mote within reach of the hearth
     w.food_ripe = np.zeros(1, dtype=bool); w.ripe_age = np.zeros(1, dtype=np.int32)
-    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w.food_proc = np.full(1, -1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
     w._ripen_hearths()
     assert w.food_ripe[0]
     assert w.food_proc[0] == builder                         # hearth-ripened food credits the maintainer
@@ -958,6 +958,7 @@ def test_tech_boosts_harvest_energy():
     w.food = np.array([[10.0, 10.0, 10.5], [60.0, 60.0, 60.5]])   # a ripe mote at each agent
     w.food_ripe = np.ones(2, dtype=bool); w.ripe_age = np.zeros(2, dtype=np.int32)
     w.food_proc = np.full(2, -1, dtype=np.int64); w.food_type = np.zeros(2, dtype=np.int64)
+    w.food_tier = np.zeros(2, dtype=np.int64)
     e0, e1 = w.pop.energy[act[0]], w.pop.energy[act[1]]
     w._eat()
     g0 = w.pop.energy[act[0]] - e0; g1 = w.pop.energy[act[1]] - e1
@@ -1214,3 +1215,131 @@ def test_harvest_gain_single_flag_matches_legacy_formulas():
     cas = GenesisWorld(fast_cfg(n0=60, processing=True, specialize=True), seed=0)   # caste only (no culture)
     b = cas.pop.active()[:3]; cas.pop.spec[b] = np.array([0.0, 0.5, 1.0])
     assert np.allclose(cas._harvest_gain(b), cas.cfg.food_value * np.power(1.0 - cas.pop.spec[b], cas.cfg.spec_gamma))
+
+
+# ---------- R153: CULTURE UNLOCKS WORLD-ACTIONS (techniques gate what an agent can physically eat) ----------
+def _tacfg(**kw):
+    """The R153 regime: the combinatorial-culture world (_kcfg) plus tech_actions — food spawns in recipe-
+    locked tiers and only a culturally deep enough agent can eat the richer tiers. tier0 (the free resource)
+    sustains a modest population even asocially, so the locked tiers are a real cultural BONUS (the world
+    stays alive in both arms; transmission decides how much of it gets exploited)."""
+    kw.setdefault("n0", 250)
+    return replace(_kcfg(), tech_actions=True, n_food_tiers=3, recipe_level_step=1, tier_value_bonus=2.0,
+                   tier0_frac=0.6, food_cap=700, food_regrow=35, **kw)
+
+
+def test_tech_actions_requires_combinatorial():
+    with pytest.raises(ValueError):
+        GenesisWorld(_ccfg(tech_actions=True), seed=0)         # tech_actions without combinatorial=True
+
+
+def test_tech_actions_off_is_byte_identical_to_r150():
+    a = GenesisWorld(_kcfg(n0=200), seed=4)                    # R150 combinatorial culture
+    b = GenesisWorld(_kcfg(n0=200, tech_actions=False), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                # tech_actions=False draws no extra RNG
+    assert np.array_equal(a.pop.tech, b.pop.tech)
+    assert np.array_equal(a.food, b.food)                      # food layout identical (food_tier not drawn)
+    assert (a.food_tier == 0).all()                            # all tier 0 when off
+    assert not hasattr(a, "_recipe_tech")                      # no recipe table allocated on the off path
+
+
+def test_recipe_techniques_deterministic_and_deepening():
+    from alife.genesis import combinatorial as cb
+    _, _, level = cb.build_tech_tree(400, 6)
+    r1 = cb.recipe_techniques(level, 6, 4, 3)
+    r2 = cb.recipe_techniques(level, 6, 4, 3)
+    assert np.array_equal(r1, r2)                              # deterministic in the fixed tree
+    assert r1[0] == -1                                         # tier 0 is free (no recipe)
+    levs = level[r1[1:]]
+    assert (levs >= np.array([3, 6, 9])).all()                # each tier's recipe sits at the required depth
+    assert levs[0] < levs[1] < levs[2]                        # higher tiers need a strictly deeper technique
+
+
+def test_recipe_techniques_raises_when_tree_too_shallow():
+    from alife.genesis import combinatorial as cb
+    _, _, level = cb.build_tech_tree(30, 6)                    # a tiny, shallow tree
+    with pytest.raises(ValueError):
+        cb.recipe_techniques(level, 6, 8, 5)                   # demands level>=35, impossible
+
+
+def test_recipe_gate_blocks_unknowing_eater_and_pays_tier_bonus():
+    """The core mechanism: an agent can harvest a tier-t mote ONLY if its repertoire holds that tier's
+    recipe; knowing it both unlocks the food AND pays the richer tier value."""
+    w = GenesisWorld(_tacfg(n0=2), seed=0)
+    a, b = w.pop.active()[:2]
+    t = 2                                                      # a mid locked tier
+    rt = w._recipe_tech[t]
+    w.pop.energy[a] = w.pop.energy[b] = 50.0
+    w.rep[a] = False                                           # agent a knows NOTHING (no recipe)
+    w.rep[b] = False; w.rep[b, rt] = True                     # agent b knows tier-t's recipe
+    w.pop.spec[a] = w.pop.spec[b] = 0.0                        # no caste; isolate the tier effect
+    w.pop.tech[a] = w.pop.tech[b] = 0.0                        # no technique multiplier
+    w.food = np.array([w.pop.pos[a], w.pop.pos[b]])           # one tier-t mote on EACH agent
+    w.food_type = np.zeros(2, dtype=np.int64)
+    w.food_tier = np.array([t, t], dtype=np.int64)
+    w.food_ripe = np.array([True, True]); w.ripe_age = np.zeros(2, dtype=np.int32)
+    w.food_proc = np.full(2, -1, dtype=np.int64)
+    w._eat()
+    assert w.pop.energy[a] == 50.0                            # a lacks the recipe -> cannot eat the locked tier
+    expect = 50.0 + w.cfg.food_value * (1.0 + w.cfg.tier_value_bonus * t)
+    assert abs(w.pop.energy[b] - expect) < 1e-9              # b unlocks it AND earns the richer tier value
+
+
+def test_tier0_is_always_edible():
+    w = GenesisWorld(_tacfg(n0=1), seed=0)
+    a = w.pop.active()[0]
+    w.rep[a] = False                                          # culturally naive
+    w.pop.energy[a] = 50.0; w.pop.spec[a] = 0.0; w.pop.tech[a] = 0.0
+    w.food = np.array([w.pop.pos[a]]); w.food_type = np.zeros(1, dtype=np.int64)
+    w.food_tier = np.zeros(1, dtype=np.int64)                 # tier 0 = the free resource
+    w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w._eat()
+    assert abs(w.pop.energy[a] - (50.0 + w.cfg.food_value)) < 1e-9   # base value, no recipe needed
+
+
+def test_food_tiers_spawn_locked_and_free():
+    w = GenesisWorld(_tacfg(n0=50), seed=1)
+    assert w.food_tier.max() == w.cfg.n_food_tiers - 1        # locked tiers are actually present
+    assert (w.food_tier == 0).any()                          # and so is the free tier
+    frac0 = (w.food_tier == 0).mean()
+    assert 0.45 < frac0 < 0.72                                # ~tier0_frac (0.6) of food is the free tier
+
+
+def test_tech_actions_test_fields_and_off_empty():
+    w = GenesisWorld(_tacfg(n0=200), seed=0)
+    for _ in range(120):
+        w.step()
+    out = w.tech_actions_test()
+    assert {"realized_tiers", "max_tiers", "mean_edible_tiers", "locked_food_frac", "tier_eats"} <= set(out)
+    assert out["max_tiers"] == w.cfg.n_food_tiers
+    assert 1 <= out["realized_tiers"] <= out["max_tiers"]
+    assert GenesisWorld(_kcfg(), seed=0).tech_actions_test() == {}   # off -> empty
+
+
+def test_transmission_unlocks_more_tiers_than_asocial():
+    """The R153 claim (smoke): with social learning the population climbs to the deep RECIPE techniques and
+    physically unlocks more food tiers; the asocial control (no transmission) stays locked near tier 0 and
+    leaves rich food uneaten (high locked_food_frac)."""
+    soc = GenesisWorld(_tacfg(n0=250, learn=True), seed=1)
+    aso = GenesisWorld(_tacfg(n0=250, learn=False), seed=1)
+    for _ in range(450):
+        soc.step(); aso.step()
+    s, a = soc.tech_actions_test(), aso.tech_actions_test()
+    assert s["realized_tiers"] > a["realized_tiers"]          # transmission unlocks strictly more tiers
+    assert s["mean_edible_tiers"] > a["mean_edible_tiers"]    # the average agent eats a wider diet
+    assert a["realized_tiers"] <= 2                           # asocial stays near the free tier (can't reach deep recipes)
+
+
+def test_checkpoint_roundtrips_food_tier(tmp_path):
+    w = GenesisWorld(_tacfg(n0=150), seed=1)
+    for _ in range(120):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_tacfg(n0=150), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w.food_tier, w2.food_tier)          # the tier of every standing mote survives a restart
+    assert np.array_equal(w._recipe_tech, w2._recipe_tech)    # recipe table is deterministic from the fixed tree

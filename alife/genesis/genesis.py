@@ -256,6 +256,20 @@ class GenesisConfig:
                                        # combinatorial climb keeps going — the ceiling is deliberate, not intrinsic.
     n_seed_tech: int = 6               # number of seed primitives (level-0, no-prerequisite techniques).
     innov_steps: int = 1               # discoveries attempted per newborn (from its adjacent possible).
+
+    # --- R153: CULTURE UNLOCKS WORLD-ACTIONS (techniques gate what an agent can physically eat) ---
+    # Until R153 the learned `tech` only multiplied a harvest SCALAR (1+tech_gain*tech): cultural depth
+    # changed a number, not what an agent DID. R153 makes culture change a physical action: food spawns in
+    # TIERS, and a tier-t mote (t>=1) is edible ONLY by an agent whose repertoire contains that tier's RECIPE
+    # technique (a deep tech-tree node, see combinatorial.recipe_techniques). So a deeper culture physically
+    # UNLOCKS richer food the world otherwise denies you — the realized diet widens with cultural depth, and
+    # only transmission (not one asocial lifetime) reaches the deep recipes. tech_actions=False is byte-
+    # identical to R150/R151 (food_tier is all-zero, no extra RNG, the eat path is unchanged).
+    tech_actions: bool = False
+    n_food_tiers: int = 4              # tier 0 (free) + (n_food_tiers-1) recipe-locked tiers
+    recipe_level_step: int = 3        # tier t's recipe sits at tree-level >= recipe_level_step*t (deeper = harder)
+    tier_value_bonus: float = 1.0     # a tier-t mote is worth food_value*(1+tier_value_bonus*t) (locked food is richer)
+    tier0_frac: float = 0.4           # fraction of spawned food that is the free tier 0; the rest is locked tiers
     # metric
     persist_steps: int = 200
 
@@ -273,8 +287,11 @@ class GenesisWorld:
         self.build_specialized = self.cfg.build_specialized
         self.culture = self.cfg.culture
         self.combinatorial = self.cfg.combinatorial
+        self.tech_actions = self.cfg.tech_actions
         if self.combinatorial and not self.culture:
             raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
+        if self.tech_actions and not self.combinatorial:
+            raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -309,6 +326,10 @@ class GenesisWorld:
                                 self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
             self.rep[act] = seed_rep
             self.pop.tech[act] = cb.max_level_known(seed_rep, self._tree_level)
+            if self.tech_actions:                            # R153: which deep node unlocks each locked food tier
+                self._recipe_tech = cb.recipe_techniques(
+                    self._tree_level, ns, self.cfg.n_food_tiers, self.cfg.recipe_level_step)
+                self._tier_eat_count = np.zeros(self.cfg.n_food_tiers, dtype=np.int64)
         elif self.culture:                                   # R149 scalar: founders are culturally NAIVE: one
             act = self.pop.active()                           # innovation each, no ancestors to copy -> start ~0
             self.pop.tech[act] = np.maximum(0.0, self.rng.normal(self.cfg.innov_mean, self.cfg.innov_sigma,
@@ -320,6 +341,7 @@ class GenesisWorld:
                                                   size=(self.cfg.n_patches, 3))
         self.food = self._spawn_food(self.cfg.food_cap)
         self.food_type = self._food_types(self.cfg.food_cap)
+        self.food_tier = self._food_tiers(self.food.shape[0])    # R153 recipe-locked tiers (all-zero when off)
         # ripeness state (R146): food is edible only when ripe. processing OFF -> all ripe always (the
         # R141..R145 world, byte-identical); processing ON -> food spawns RAW and is ripened by processors.
         self.food_ripe = np.zeros(self.food.shape[0], dtype=bool) if self.processing \
@@ -412,6 +434,20 @@ class GenesisWorld:
         if self.cfg.n_food_types <= 1:
             return np.zeros(n, dtype=np.int64)
         return self.rng.integers(0, self.cfg.n_food_types, size=n)
+
+    def _food_tiers(self, n: int) -> np.ndarray:
+        """Recipe-tier label per food mote (R153). Off (or single tier) -> all tier 0, NO RNG draw (so
+        tech_actions=False is byte-identical to R150/R151). On -> tier 0 with prob tier0_frac (the free,
+        always-edible resource), else a uniformly random LOCKED tier in 1..n_food_tiers-1."""
+        cfg = self.cfg
+        if not self.tech_actions or cfg.n_food_tiers <= 1:
+            return np.zeros(n, dtype=np.int64)
+        tiers = np.zeros(n, dtype=np.int64)
+        locked = self.rng.random(n) >= cfg.tier0_frac
+        n_locked = int(locked.sum())
+        if n_locked:
+            tiers[locked] = self.rng.integers(1, cfg.n_food_tiers, size=n_locked)
+        return tiers
 
     # --- sensing ---
     def _sense_neighbours(self, pos, right, up, fwd, sense_range):
@@ -523,11 +559,12 @@ class GenesisWorld:
         """Filter all per-mote food arrays by the same boolean mask (keeps ripeness state in sync)."""
         self.food = self.food[keep]
         self.food_type = self.food_type[keep]
+        self.food_tier = self.food_tier[keep]
         self.food_ripe = self.food_ripe[keep]
         self.ripe_age = self.ripe_age[keep]
         self.food_proc = self.food_proc[keep]
 
-    def _harvest_gain(self, eaters: np.ndarray) -> np.ndarray:
+    def _harvest_gain(self, eaters: np.ndarray, base: np.ndarray | None = None) -> np.ndarray:
         """Per-eater energy gained from harvesting one mote (R151 — the COMPOSED harvest payoff).
 
         The two harvest modifiers MULTIPLY, so they coexist in the integrated capstone world:
@@ -535,9 +572,10 @@ class GenesisWorld:
           - learned technique (R149/R150): a deeper repertoire multiplies the intake (mastery pays).
         Before R151 these were an if/elif, so with BOTH on the culture payoff was silently dropped and the
         cumulative-culture ratchet lost its selective gradient under caste. Each modifier is gated on its own
-        flag, so a single-flag config is byte-identical to R147/R149/R150 (only the both-on case changes)."""
+        flag, so a single-flag config is byte-identical to R147/R149/R150 (only the both-on case changes).
+        `base` (R153) overrides the per-eater base value with the eaten mote's TIER value; None -> food_value."""
         cfg, p = self.cfg, self.pop
-        gain = np.full(eaters.size, cfg.food_value)
+        gain = np.full(eaters.size, cfg.food_value) if base is None else np.asarray(base, dtype=float).copy()
         if self.specialize:                                 # convex harvest skill: pure harvesters eat full
             gain = gain * np.power(1.0 - p.spec[eaters], cfg.spec_gamma)
         if self.culture:                                    # learned technique multiplies the harvest
@@ -548,6 +586,9 @@ class GenesisWorld:
         cfg, p = self.cfg, self.pop
         act = p.active()
         if act.size == 0 or self.food.shape[0] == 0:
+            return
+        if self.tech_actions:                               # R153: ripe AND recipe-unlocked tier
+            self._eat_tech_actions()
             return
         if self.processing:                                 # only RIPE food is edible (R146)
             edible = np.where(self.food_ripe)[0]
@@ -586,6 +627,46 @@ class GenesisWorld:
             if winners.size:
                 p.energy[act[am[winners]]] += cfg.food_value
                 keep[fm[eaten]] = False
+        if not keep.all():
+            self._keep_food(keep)
+
+    def _eat_tech_actions(self) -> None:
+        """R153 eat: ripe food is harvested only from a tier the eater's CULTURE has unlocked. Tier 0 is
+        free; tier t>=1 requires the recipe technique self._recipe_tech[t] in the agent's repertoire. So a
+        culturally deeper agent can physically convert food the world denies a naive one — culture changes
+        what an agent DOES, not just a payoff scalar. Tiers are resolved high->low (richer first), each agent
+        eats at most one mote/step, and the tier's value (food_value*(1+tier_value_bonus*t)) feeds the usual
+        caste/technique multipliers via _harvest_gain. Locked motes simply persist (the visible signature)."""
+        cfg, p = self.cfg, self.pop
+        act = p.active()
+        ripe = np.where(self.food_ripe)[0]
+        if ripe.size == 0:
+            return
+        keep = np.ones(self.food.shape[0], dtype=bool)
+        eaten_agent = np.zeros(act.size, dtype=bool)         # at most one harvest per agent per step
+        ripe_tier = self.food_tier[ripe]
+        for t in range(cfg.n_food_tiers - 1, -1, -1):
+            fm = ripe[(ripe_tier == t) & keep[ripe]]         # ripe, this tier, not already eaten this step
+            if fm.size == 0:
+                continue
+            if t == 0:
+                elig = np.where(~eaten_agent)[0]             # tier 0 is the free resource
+            else:
+                elig = np.where(self.rep[act, self._recipe_tech[t]] & ~eaten_agent)[0]  # recipe-knowers only
+            if elig.size == 0:
+                continue
+            dist, idx = cKDTree(self.food[fm]).query(p.pos[act[elig]], k=1)
+            winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # winners index into elig; eaten into fm
+            if winners.size == 0:
+                continue
+            eaters = act[elig[winners]]
+            base = np.full(eaters.size, cfg.food_value * (1.0 + cfg.tier_value_bonus * t))
+            p.energy[eaters] += self._harvest_gain(eaters, base=base)
+            if self.specialize:                              # wage to whoever ripened each eaten mote (trade)
+                self._pay_processors(fm[eaten])
+            keep[fm[eaten]] = False
+            eaten_agent[elig[winners]] = True
+            self._tier_eat_count[t] += int(eaten.size)
         if not keep.all():
             self._keep_food(keep)
 
@@ -710,6 +791,45 @@ class GenesisWorld:
             "max_level": int(self._tree_level[pop_union].max()) if pop_union.any() else 0,
             "mean_level": float(p.tech[act].mean()),
             "mean_gen": float(p.generation[act].mean()),
+            "n": int(act.size),
+        }
+
+    def tech_actions_test(self) -> dict:
+        """The R153 read-out: how far culture has UNLOCKED physical world-actions (food tiers). In situ.
+          - realized_tiers   : 1 + number of locked tiers whose recipe >=1 LIVING agent knows (the headline:
+                               how much of the world the population can physically exploit; climbs with culture).
+          - max_tiers        : the ceiling (n_food_tiers).
+          - mean_edible_tiers: mean per-agent count of edible tiers (the realized DIET BREADTH of an individual).
+          - locked_food_frac : fraction of standing RIPE food that no living agent can eat (high when culture is
+                               shallow -> rich food rots uneaten; falls as the population unlocks tiers).
+          - tier_eats        : cumulative harvested-mote count per tier (lifetime; diff across windows for a rate).
+        """
+        if not self.tech_actions:
+            return {}
+        p = self.pop
+        act = p.active()
+        T = self.cfg.n_food_tiers
+        recipes = self._recipe_tech[1:]                          # recipe technique id per locked tier 1..T-1
+        if act.size:
+            per_agent = self.rep[np.ix_(act, recipes)]           # [n, T-1] which locked tiers each agent unlocks
+            known_any = per_agent.any(axis=0)
+            mean_edible_tiers = 1.0 + float(per_agent.sum(axis=1).mean())
+        else:
+            known_any = np.zeros(T - 1, dtype=bool)
+            mean_edible_tiers = 0.0
+        ripe = self.food_ripe
+        if ripe.any():
+            tier_known = np.ones(T, dtype=bool)
+            tier_known[1:] = known_any
+            locked_food_frac = float((~tier_known[self.food_tier[ripe]]).mean())
+        else:
+            locked_food_frac = 0.0
+        return {
+            "realized_tiers": 1 + int(known_any.sum()),
+            "max_tiers": int(T),
+            "mean_edible_tiers": mean_edible_tiers,
+            "locked_food_frac": locked_food_frac,
+            "tier_eats": self._tier_eat_count.tolist(),
             "n": int(act.size),
         }
 
@@ -982,6 +1102,7 @@ class GenesisWorld:
         if need > 0:
             self.food = np.vstack([self.food, self._spawn_food(need)])
             self.food_type = np.concatenate([self.food_type, self._food_types(need)])
+            self.food_tier = np.concatenate([self.food_tier, self._food_tiers(need)])
             new_ripe = np.zeros(need, dtype=bool) if self.processing else np.ones(need, dtype=bool)
             self.food_ripe = np.concatenate([self.food_ripe, new_ripe])
             self.ripe_age = np.concatenate([self.ripe_age, np.zeros(need, dtype=np.int32)])
@@ -991,7 +1112,7 @@ class GenesisWorld:
     def snapshot(self) -> dict:
         cfg, p = self.cfg, self.pop
         act = p.active()
-        return {
+        snap = {
             "step": self.step_count,
             "population": float(act.size),
             "food": float(self.food.shape[0]),
@@ -1013,6 +1134,12 @@ class GenesisWorld:
             "culture_tech": (float(self.struct_tech[self._strong_hearths()].max())
                              if self.culture and self._strong_hearths().size else 0.0),
         }
+        if self.tech_actions:                               # R153: how far culture has unlocked world-actions
+            ta = self.tech_actions_test()
+            snap["realized_tiers"] = float(ta.get("realized_tiers", 0))
+            snap["locked_food_frac"] = float(ta.get("locked_food_frac", 0.0))
+            snap["mean_edible_tiers"] = float(ta.get("mean_edible_tiers", 0.0))
+        return snap
 
     def caste_test(self) -> dict:
         """The R147 division-of-labour read-out: caste structure of the living population (bimodality of the
@@ -1188,6 +1315,7 @@ class GenesisWorld:
             **combo,
             food=self.food,
             food_type=self.food_type,
+            food_tier=self.food_tier,
             food_ripe=self.food_ripe,
             ripe_age=self.ripe_age,
             food_proc=self.food_proc,
@@ -1211,6 +1339,8 @@ class GenesisWorld:
         self.step_count = int(d["step"])
         self.food = d["food"]
         self.food_type = d["food_type"]
+        self.food_tier = (d["food_tier"] if "food_tier" in d.files
+                          else np.zeros(self.food.shape[0], dtype=np.int64))
         self.food_ripe = (d["food_ripe"] if "food_ripe" in d.files
                           else np.ones(self.food.shape[0], dtype=bool))
         self.ripe_age = (d["ripe_age"] if "ripe_age" in d.files

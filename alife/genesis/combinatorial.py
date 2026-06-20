@@ -98,6 +98,29 @@ def copy_with_fidelity(src: np.ndarray, fidelity: float, rng: np.random.Generato
     return src & (rng.random(src.shape) < fidelity)
 
 
+def recipe_techniques(level: np.ndarray, n_seed: int, n_tiers: int, step: int) -> np.ndarray:
+    """Designate which tech-tree node UNLOCKS each food tier (R153 — culture gates a physical action).
+
+    Tier 0 needs no recipe (always edible, recipe id -1). Tier t>=1 is unlocked by the LOWEST-index
+    technique whose tree LEVEL is >= step*t — so a higher tier requires a strictly deeper place in the
+    combinatorial tree, and an agent can eat tier-t food only once its learned repertoire has climbed
+    there. Deterministic in the (fixed) tree, so identical across simulation seeds.
+
+    Returns an int64 array of length n_tiers; entry 0 is -1, entry t>=1 is the recipe technique id.
+    Raises if the tree is too shallow to place a recipe for some tier.
+    """
+    recipes = np.full(n_tiers, -1, dtype=np.int64)
+    for t in range(1, n_tiers):
+        target = step * t
+        cand = np.where(level >= target)[0]
+        if cand.size == 0:
+            raise ValueError(
+                f"tech tree too shallow for tier {t}: needs a technique at level>={target}, "
+                f"deepest is {int(level.max())} (raise max_techniques or lower recipe_level_step/n_food_tiers)")
+        recipes[t] = int(cand[0])
+    return recipes
+
+
 def max_level_known(rep: np.ndarray, level: np.ndarray) -> np.ndarray:
     """Per-agent deepest technique level known (0 if it knows only seeds / nothing). This is the
     scalar `tech` that drives the harvest payoff — so deeper mastery is selected."""
