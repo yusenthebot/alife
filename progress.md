@@ -1,5 +1,58 @@
 # alife — progress
 
+## Current state (Round 153 — 2026-06-20) — GENESIS culture MATTERS PHYSICALLY: techniques UNLOCK a world-action (what an agent can EAT), red-teamed ROBUST
+
+**R153 lifts the R151 capstone's top frontier — "make culture MATTER physically." Until now the learned
+`tech` only multiplied a harvest SCALAR (1+tech_gain·tech): cultural depth changed a NUMBER, not what an
+agent DID. R153 makes culture change a PHYSICAL ACTION — what food an agent can eat — and the result is
+positive and red-teamed ROBUST.**
+
+**The mechanism (additive, unit-tested, byte-identical when off — `tech_actions=False` default = exact
+R150/R151).** New flag `tech_actions` (requires `combinatorial=True`), `genesis.py` + `combinatorial.py`:
+- food spawns in recipe-locked **TIERS** (`_food_tiers`): tier 0 is the free resource (prob `tier0_frac`),
+  tiers 1..`n_food_tiers`-1 are locked;
+- a tier-t mote (t≥1) is edible **ONLY** by an agent whose combinatorial repertoire holds that tier's
+  **RECIPE technique** — a deep tech-tree node chosen by `combinatorial.recipe_techniques`: tier t's recipe
+  sits at tree-level ≥ `recipe_level_step·t`, so a higher tier requires a strictly deeper place in the
+  adjacent-possible climb, and only the cultural ratchet (transmission) reaches it;
+- `_eat_tech_actions` resolves eating per-tier high→low (≤1 mote/agent/step), gating each locked tier on
+  `self.rep[agent, recipe_tech[t]]`; the tier's value (`food_value·(1+tier_value_bonus·t)`) feeds the usual
+  caste/technique multipliers via `_harvest_gain(base=...)`. Locked motes simply persist (the visible signature);
+- `tech_actions_test` read-out: `realized_tiers` (tiers ≥1 living agent can eat), `mean_edible_tiers` (per-agent
+  diet breadth), `locked_food_frac` (ripe food no one can eat), cumulative `tier_eats`. `food_tier` checkpoint
+  round-trips. 10 new tests (109 genesis green): requires-combinatorial, byte-identical-off, deterministic+
+  deepening recipe selection, too-shallow-tree raises, categorical eat gate + tier value, tier-0-always-edible,
+  tier spawn distribution, fields/off-empty, social>asocial smoke, food_tier round-trip.
+
+**REAL-VERIFY (`scripts/run_genesis_recipes.py`; `runs/r153_recipes/panel.png` + diet-breadth-coloured 3D
+`recipes.gif` eye-verified — a dense world, agents mostly GREEN = full realized diet with a red/orange
+minority of culturally-naive newborns, and visibly more red mid-run than at the end = the realized-tiers
+climb):** social vs asocial, 2 seeds, food_cap 1200 / tier0_frac 0.7 / 4 tiers / tier_value_bonus 2.0 —
+- **SOCIAL** (`learn=True`): `realized_tiers` 1→**4/4**, mean diet breadth **3.37/4**, pop **2000**,
+  `locked_food_frac` **0.00** (the population unlocks every tier and wastes no food);
+- **ASOCIAL** (`learn=False`): stuck at **1 tier**, breadth **1.0**, pop **~96** (alive but locked out),
+  **81%** of ripe food rots uneaten — cumulative cultural capability is impossible in one lifetime from an
+  empty repertoire (the deep recipes are unreachable). ~21× population, full diet vs locked. 禁止造假 — every
+  number read from the live `rep`/`food_tier`.
+
+**RED-TEAM (mandatory; independent general-purpose agent, refutation-first; 禁止造假 — verdict ROBUST):**
+(1) **metric integrity** — hand-set a known `rep`/`food_tier`, `tech_actions_test` returned exactly the
+hand-computed realized_tiers/edible/locked (reads live state, nothing staged). (2) **categorical gate** — the
+core "this is a physical ACTION not a scalar" check: asocial `tier_eats=[1982,0,0,0]` — **EXACTLY ZERO** motes
+of every locked tier; social `[23952,3468,3543,3318]`. All-or-nothing, not a smaller multiplier. (3)
+**reproducible** seeds 5/6/7 — social tiers=4/pop=2000 vs asocial tiers=1/pop 69–98, every seed. (4) **THE
+CONFOUND KILLED** — "is load-bearing just energy injection (social eats richer tiers)?" With
+`tier_value_bonus=0` (locked tiers worth the SAME base value as tier 0) the population gap is **byte-identical**
+to the bonus=2.0 case (13.7× / 42.6×): **~100% of the population gap is genuine ACCESS to more food motes, NOT
+the richer payoff** — the strongest possible result for the real-action-unlock interpretation; realized_tiers
+still climbs to 4 with bonus=0 (the unlock is about access, not payoff). (5) **distinct from scalar** —
+tech_actions=False keeps food_tier all-zero / no recipe table (R153 is a genuinely new physical axis on top of
+R150's scalar). (6) **no artifacts** — deterministic, food_tier stays length-synced after many steps, no
+dead-slot repertoire leak into newborns. **HONEST (red-team noted, neutral):** social pop is capacity-clamped
+at 2000 (a ceiling, not a free-running equilibrium) — does not affect the gap, the gate, or the access-vs-payoff
+decomposition. **This is a genuine emergent result: culture physically determines what an agent can do in the
+world, not just a payoff scalar — verified + red-teamed. Substrate committed + reusable.**
+
 ## Current state (Round 152 — 2026-06-20) — can coupling building to the caste flip R151's SUBSTITUTION into COMPLEMENT? HONEST NEGATIVE: substitution is robust
 
 **R151 found niche construction SUBSTITUTES for the division of labour (caste-free building lets hearths ripen
@@ -1184,10 +1237,16 @@ niche construction + open-ended culture DO coexist alive. The next leaps in KIND
   the builder's product EXCLUDABLE/individually-captured (a builder OWNS its hearth and gates who eats; or a
   distinct non-substitutable builder-only action), so the wage can't be free-ridden. `build_specialized`
   mechanism stays committed (default off) for that redesign. PARKED (see `## Decisions pending`).
-- **(default next) COUPLE the tech tree to the 3D WORLD (make culture MATTER physically).** Today a technique only multiplies
-  harvest energy (a scalar payoff). Next: techniques that UNLOCK new world-actions — new build types, food
-  processing recipes, tools, faster movement — so cultural DEPTH changes what agents physically DO and the
-  combinatorial frontier reshapes the world (a real tech-driven economy), not just a number. Highest ambition.
+- **(R153, DONE — culture MATTERS PHYSICALLY).** Lifted: techniques now UNLOCK a physical world-action (what an
+  agent can EAT) via recipe-locked food tiers — `tech_actions`. Cultural depth physically widens the realized
+  diet (social 1→4 tiers / breadth 3.4, asocial locked at 1, 81% food rots), red-teamed ROBUST with the
+  energy-injection confound KILLED (~100% of the gap is ACCESS, not payoff). FIRST rung where culture changes
+  what agents DO, not a scalar. Next leaps extend this to MORE action axes (below).
+- **(default next, R154) MORE culture-gated PHYSICAL actions — a multi-axis tech-driven economy.** R153 gated
+  ONE action (eating). Extend the recipe→capability map: techniques that unlock BUILD types (only deep culture
+  raises a tall hearth), faster MOVEMENT / longer SENSE (tools), or new processing — so cultural depth reshapes
+  movement + construction + diet together and the combinatorial frontier physically reshapes the 3D world.
+  Highest ambition; build directly on `recipe_techniques` + the `tech_actions` eat-gate pattern.
 - **GENUINELY UNBOUNDED tech space (lift the deliberate cap).** R150's ceiling is `max_techniques` (a fixed
   pre-enumerated tree). Make techniques GENERATIVE — a new technique IS the pair of its parents, created on
   combination — so the space is unbounded by construction (combinations of combinations). Gate: bounded memory
