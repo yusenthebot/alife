@@ -1,5 +1,57 @@
 # alife — progress
 
+## Current state (Round 151 — 2026-06-20) — GENESIS INTEGRATED CAPSTONE: the ladder stages INTERACT, they don't sum (niche construction substitutes for the division of labour)
+
+**Every ladder stage (R143 predator arms race · R147 caste division of labour · R148 niche-construction
+hearths · R150 open-ended combinatorial culture) had only ever been verified in ISOLATION behind its own
+flag — they had NEVER run together. R151 turns them ALL on in ONE world and asks the only question an
+isolated test cannot: do they SUM into a civilization, or INTERACT?** The answer is the round's finding.
+
+**(a) A real CORRECTNESS collision, found + fixed.** With both `specialize` and `culture` on, the harvest
+payoff `if specialize ... elif culture ...` was MUTUALLY EXCLUSIVE — culture's `tech_gain` energy bonus was
+silently DROPPED under caste, so the open-ended cultural ratchet lost its selective gradient. Fixed by
+composing the two modifiers MULTIPLICATIVELY in a new `_harvest_gain(eaters)` helper (`genesis.py`):
+`food_value · (1-spec)^gamma · (1+tech_gain·tech)`, each term gated on its own flag → byte-identical to every
+prior single-flag config (R147/R149/R150), changing ONLY the never-before-run both-on case. Unit-test +
+byte-identical guard added; 93 genesis tests green (+3: `_harvest_gain` composition, single-flag legacy match,
+all-stages-coexist smoke).
+
+**(b) HEADLINE EMERGENT INTERACTION — niche construction SUBSTITUTES for the division of labour.** Running
+all stages together, the Stage-3 PROCESSOR CASTE COLLAPSES: in the integrated world the fraction of processors
+(heritable `spec`>0.8) → 0.00 and `spec_mean` → 0.085 (86% pure harvesters). The cause is the Stage-4 hearths:
+built hearths ripen raw food PASSIVELY (`_ripen_hearths`), and with `building=True` the per-agent `_process`
+action is REPLACED by `_build` (genesis.py:482-485), so the costly processor caste has no role left and is
+selected away. Built infrastructure makes a division of labour obsolete — automation displacing labour,
+emergent in situ. What DOES coexist in the one living world: the predator-prey arms race persists (no
+extinction), hearths accumulate, and the open-ended culture keeps climbing.
+
+**REAL-VERIFY (`scripts/run_genesis_capstone.py`; `runs/r151_capstone/panel.png` + caste-coloured 3D
+`capstone.gif` eye-verified — a dense, alive, uniformly-harvester 3D world, consistent with the collapsed
+caste):** at the IDENTICAL food-rich regime —
+- **SUBSTITUTION** — WITH hearths frac_processor → **0.00** (seeds 0 AND 1); WITHOUT hearths (building off,
+  same food) → **0.62**. The decisive disambiguation: building-ON/culture-OFF also → 0.00, building-OFF/
+  culture-OFF → 0.62, so the single causal variable is the HEARTHS, not culture's harvest bonus.
+- **MECHANISM** — with ~0 processors the hearths still sustain ~**400 ripe (edible) food** at any instant →
+  niche construction is doing the processing the caste otherwise would.
+- **COEXISTENCE** — prey ~2500 + predators ~90 persist (no extinction, 2 seeds); 600 standing hearths;
+  open-ended culture `pop_distinct` → **319**, frontier level → **10** (transmission-driven, climbs under the
+  full stack).
+
+**RED-TEAM (independent agent, refutation-first; 禁止造假 — verdict ROBUST):** (1) reproducible across seeds
+2/3/4 — WITH hearths frac_proc 0.000 every seed, WITHOUT 0.44-0.57 (the 0.62 was not a fluke); (2) NOT a
+threshold artifact — the WHOLE spec distribution shifts (median 0.05 vs 0.77-0.84), any cutoff in [0.2,0.9]
+gives the same story; (3) MECHANISM causally load-bearing — disabling ONLY hearth ripening (reach=0) while
+keeping hearths makes the population go EXTINCT (hearths are the sole ripening path under building); (4)
+predators ruled out (caste still collapses with `n_predators0=0`) and culture ruled out (collapses with
+culture off). **One honest caveat the red-team flagged:** the no-hearth state is processor-DOMINATED
+(spec_mean ~0.7, pure harvesters only 5-14%), not a balanced 50/50 Smithian split — so "division of labour"
+mildly oversells what's being substituted-for; the substitution direction and magnitude are not in doubt.
+**Also honest:** the open-ended cultural climb is TRANSMISSION-driven (newborns inherit the repertoire and
+discover from the adjacent possible regardless of the energy payoff), so (a)'s harvest fix is a CORRECTNESS
+fix, NOT a cultural-climb mover in this food-rich regime (the legacy dropped-payoff world climbs the same).
+**This is a genuine emergent stage-interaction finding, not theatre.** The capstone substrate + the
+`_harvest_gain` composition are committed and reusable.
+
 ## Current state (Round 150 — 2026-06-20) — GENESIS Stage 5 made OPEN-ENDED: COMBINATORIAL culture (the tech tree that lifts R149's finite ceiling)
 
 **R150 lifts R149's one acknowledged caveat — its scalar `tech` ratchets to a FINITE fixed point
@@ -1067,15 +1119,22 @@ Locked decisions (CEO, R140):
   evolve, measure it, and red-team every "it's really evolving / a convention crystallised / culture
   accumulates" claim before believing it. NEVER scripted theatre (Yusen: 不是简单的测试，真的有自主意识的生物发展).
 
-### Frontier (post-R150 — full ladder built AND culture now open-ended; what raises the ceiling now)
-Current ceiling: each ladder rung (foundation/niches/arms-race/DoL/niche-construction/culture) is proven IN
-ISOLATION via its own flag, and culture is now OPEN-ENDED (R150 combinatorial tech tree — accelerating, no
-dynamical fixed point). The next leaps in KIND:
-- **(default next) INTEGRATED CAPSTONE — one world, all stages at once.** Turn building+specialize(DoL)+culture
-  (now combinatorial) ON together (they already compose: culture⊂building⊂processing; specialize⊂processing)
-  and verify the phenomena COEXIST — a settled, caste-divided population accumulating open-ended culture on an
-  inherited built world. This is the actual "living civilization," not six separate demos. Risk: the regimes may
-  interfere (caste convexity vs the tech-level harvest multiplier); needs a viable joint regime + multi-panel.
+### Frontier (post-R151 — capstone RAN; stages INTERACT not sum; what raises the ceiling now)
+Current ceiling: every ladder rung was proven IN ISOLATION, and R151 ran them ALL TOGETHER in one world. The
+capstone's verdict: the stages do NOT simply sum — they INTERACT, and the integration revealed (a) a real
+harvest-payoff correctness collision (fixed; specialize/culture were mutually-exclusive, now multiplicative),
+and (b) an emergent SUBSTITUTION — niche-construction hearths (Stage 4) displace the processor caste (Stage 3),
+because the built world ripens food and the `building` path replaces the per-agent `_process` action (so the
+caste collapses to 0% with hearths, persists at ~60% without; red-teamed ROBUST). Predator arms race +
+niche construction + open-ended culture DO coexist alive. The next leaps in KIND:
+- **(default next) MAKE STAGES 3+4 COMPLEMENT, NOT SUBSTITUTE — a genuine division-of-labour building economy.**
+  R151 showed hearths make the processor caste redundant. The fix is to make niche construction REQUIRE a
+  labour caste: e.g. building a hearth needs a dedicated BUILDER caste (costly, specialised — high `spec`
+  builds, low `spec` harvests), or hearths DECAY fast and need continual maintenance labour, so a settled
+  civilization can only persist with a standing division of labour. Then DoL and niche construction
+  INTERDEPEND (the balanced caste the capstone is currently missing re-emerges around the built world).
+  Verify: a stable bimodal builder/harvester caste that is NECESSARY for the hearths to stand (knock out the
+  builders → settlements collapse), red-teamed, ≥3 seeds. This is the real "civilization needs specialists."
 - **COUPLE the tech tree to the 3D WORLD (make culture MATTER physically).** Today a technique only multiplies
   harvest energy (a scalar payoff). Next: techniques that UNLOCK new world-actions — new build types, food
   processing recipes, tools, faster movement — so cultural DEPTH changes what agents physically DO and the
