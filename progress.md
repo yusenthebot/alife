@@ -912,7 +912,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stages 1, 3 & 4 COMPLETE (Stage 2 parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
@@ -962,10 +962,38 @@ hearths (discrete settlements) — many tiny hearths starve the population, few 
 villages need food to FOLLOW hearths (regrowth biased to settlements) or a much smaller capacity with a survivable
 coverage floor — deferred. (b) building is STRUCTURALLY beneficial (frozen ≈ evolve): the niche-construction +
 inheritance phenomenon does NOT require selection to appear — it is an ecological consequence of the build
-mechanism, reported honestly rather than dressed up as an "evolved" win. **Next rung = Stage 5 — CUMULATIVE
-CULTURE** (a learned skill that ratchets across generations via the built world) → an open-ended complexity metric
-that keeps climbing. Believe any stage positive ONLY if the signature is robust ≥3 seeds AND beats the right
-control, red-teamed (the R146 8× clonal fluke is the cautionary tale).
+mechanism, reported honestly rather than dressed up as an "evolved" win.
+
+**Stage 5 = CUMULATIVE CULTURE. [R149 POSITIVE — STAGE 5 DONE; the full ladder is complete.]** `culture=True`
+(requires building) makes the Stage-4 hearths a CULTURAL REPOSITORY. Each agent carries a LIFETIME-learned scalar
+`tech` (a foraging technique) that is **NOT genetic** — a separate `Population.tech` array, never touched by
+`mutate_brains`. A newborn ACQUIRES it in `_acquire_tech`: it copies (×`culture_fidelity`) the best technique
+recorded at the nearest strong hearth (an artifact carrying ancestral knowledge) or its parent, then adds ONE
+positive innovation step `max(0, N(innov_mean, innov_sigma))`. Higher `tech` multiplies harvest energy
+(`1+tech_gain·tech`) so it is selected — but every generation must RE-LEARN it, so the accumulation lives in
+transmission + the built world, not the genome. A build act WRITES the builder's tech into the hearth record
+(keeping the max), so the record RATCHETS across generations (Tomasello). Brain shape is UNCHANGED vs building
+(tech is automatic, not a brain output), so culture=False is the R148 world byte-identical. REAL-VERIFY
+(scripts/run_genesis_culture.py, 2500-step technique-coloured 3D + controls; panel.png + GIF EYE-VERIFIED — the
+population visibly BRIGHTENS dark-indigo→bright-gold as culture accumulates, mean frame brightness 24→51):
+**FALSIFIABLE headline tech_mean cumulative 12.93 vs ASOCIAL (learn=False) 0.19 = 66.6×**, 3/3 seeds — and the
+asocial mean sits pinned EXACTLY at innov_mean (0.19), i.e. one innovation, zero accumulation. **CULTURAL NOT
+GENETIC:** with evolve=False (frozen genome, exact-copy children) tech_mean still climbs to 12.98. **FIDELITY
+THRESHOLD (Lewis & Laland):** monotone dose-response 0.99→23.1, 0.90→5.85, 0.70→2.62, 0.50→1.82 — below a
+critical fidelity copy-loss > innovation and the ratchet collapses to the asocial ceiling. **RED-TEAM
+(independent general-purpose agent, refutation-first): CONFIRMED.** (a) the asocial ceiling is STRUCTURAL not a
+small-N artifact — it's a max-order-statistic ~√logN that only reaches ~1.25 even at N=5×10⁵, never the cumulative
+~13; (b) NO genetic leakage — `tech` is structurally disjoint from `brains`, written only in `_acquire_tech`; (c)
+the fidelity dose-response cannot be faked by a circular metric (at fidelity 0 the learning path is exercised but
+transmits nothing → falls to the asocial value). **HONEST caveats (applied to the writeup):** the headline now
+LEADS the FALSIFIABLE `tech_mean` (which COLLAPSES toward the asocial ceiling within a few generations if
+transmission stops — red-team measured 2.53→0.69) rather than the near-monotone `tech_max`/`hearth_tech_max`
+high-water mark (a record that one surviving high-tech agent or one never-reset hearth slot can pin). And
+"OPEN-ENDED / keeps climbing" was OVERSTATED — the ratchet is fidelity-BOUNDED, climbing toward a finite fixed
+point ~innov/(1-fidelity) (high — tens — but saturating), softened throughout. Genuinely open-ended culture
+(combinatorial innovation, ideas-beget-ideas) is a future frontier. Believe any stage positive ONLY if the
+signature is robust ≥3 seeds AND beats the right control, red-teamed (the R146 8× clonal fluke is the cautionary
+tale).
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
@@ -981,8 +1009,12 @@ Locked decisions (CEO, R140):
      reshapes its world to eat and lives on a self-built, INHERITED environment maintained across ~17 generations;
      persistence pays 1.8× pop; red-teamed causal. Caveat: tiles the world, not discrete villages] — agents reshape
      the 3D world; an inherited built environment the population depends on (niche construction, beyond R133 stigmergy).
-  5. **Cumulative culture** [R149 = NEXT] — learned knowledge passes across generations (a cultural ratchet) →
-     proto-civilization. Headline = an **open-ended complexity/novelty metric that keeps climbing** (never converges).
+  5. **Cumulative culture** [R149 POSITIVE, DONE — non-genetic lifetime `tech` socially learned through the built
+     world (hearths = repository); tech_mean cumulative 66.6× the asocial one-lifetime ceiling, 3/3 seeds; climbs
+     with frozen genes (cultural not genetic); Lewis-Laland fidelity threshold; red-teamed CONFIRMED. Caveat:
+     fidelity-BOUNDED ratchet (~innov/(1-fidelity)), not literally unbounded] — learned knowledge passes across
+     generations (a cultural ratchet) → proto-civilization. **THE FULL LADDER (1,3,4,5) IS NOW COMPLETE; Stage 2
+     signalling parked.**
 - **Mind substrate = evolved neural brains** (brain.py lineage): each agent = a NN genome, evolves across
   generations via mutation/recombination, plus light lifetime adaptation (Hebbian / small RL tweak).
   Scales to 1e3–1e5 agents on CPU/GPU. Open-endedness comes from evolution + niche construction, not scripting.
@@ -990,6 +1022,25 @@ Locked decisions (CEO, R140):
 - **3D + visually-checkable + genuine emergence.** Acceptance = run the world, render 3D, WATCH behaviour
   evolve, measure it, and red-team every "it's really evolving / a convention crystallised / culture
   accumulates" claim before believing it. NEVER scripted theatre (Yusen: 不是简单的测试，真的有自主意识的生物发展).
+
+### Frontier (post-R149 — the full ladder is built; what raises the ceiling now)
+Current ceiling: each ladder rung (foundation/niches/arms-race/DoL/niche-construction/culture) is proven IN
+ISOLATION via its own `culture`/`building`/`specialize`/… flag. The next leaps in KIND:
+- **(default next) INTEGRATED CAPSTONE — one world, all stages at once.** Turn building+specialize(DoL)+culture
+  ON together (they already compose: culture⊂building⊂processing; specialize⊂processing) and verify the
+  phenomena COEXIST — a settled, caste-divided population accumulating culture on an inherited built world. This
+  is the actual "living civilization," not six separate demos. Risk: the regimes may interfere (caste convexity
+  vs culture harvest multiplier); needs a viable joint parameter regime + a multi-signature panel.
+- **GENUINELY OPEN-ENDED culture (lifts the R149 caveat).** R149's ratchet saturates at ~innov/(1-fidelity).
+  Make innovation COMBINATORIAL — innovation step scales with current tech (ideas-beget-ideas / endogenous
+  growth, Arthur/Solé) — so the complexity metric does NOT converge. Gate: keep it bounded enough to red-team,
+  prove super-linear climb vs the additive-innovation control.
+- **Stage-2 SIGNALLING redesign (the one parked rung).** Two honest negatives (R144/R145) traced to the
+  signalling-bootstrap deadlock; the diagnosed fix is a SUBSTRATE change — synchronous, sharply lethal predation
+  "rounds" where a missed warning reliably kills and a heeded one reliably saves (Floreano/Mitri arena). Only
+  revisit with that redesign; believe emergence ONLY if it beats frozen AND deaf AND causal, ≥3 seeds, red-team.
+- **Scale + discrete settlements:** the R148 hearth caveat (hearths TILE the world, no discrete villages) — make
+  food regrowth FOLLOW hearths so settlements become discrete; and push N toward 1e4–1e5 via the GPU path.
 
 Why this direction (ambition-critic, R140): the R120–R139 arc became a **physics demo zoo** — ~20 isolated
 single-phenomenon PDE/CA renders, each verified once, breadth at the cost of depth; nothing OPEN-ENDED,

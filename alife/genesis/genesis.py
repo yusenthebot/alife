@@ -205,9 +205,12 @@ class GenesisConfig:
     # them, so the accumulation lives in the built world + transmission, not in the genome. A build act also
     # WRITES the builder's tech into the hearth's record (keeping the max), so hearths accumulate the best known
     # technique = a growing cultural record. With high fidelity the recorded tech RATCHETS up across generations
-    # far beyond a single lifetime's innovation (Tomasello's ratchet) -> an OPEN-ENDED complexity metric that
-    # keeps climbing. Requires building=True (hearths are the repository). Brain shape is UNCHANGED vs building
-    # (tech is automatic, not a brain output), so culture=False is the R148 world byte-identical.
+    # far beyond a single lifetime's innovation (Tomasello's ratchet), climbing toward a finite fidelity-set fixed
+    # point ~innov/(1-fidelity) (cumulative + trans-generational, but bounded — not literally unbounded). The
+    # FALSIFIABLE signal is the LIVING population's mean tech (tech_mean), which COLLAPSES toward the asocial
+    # ceiling if transmission stops — unlike the hearth record, a never-reset high-water mark. Requires
+    # building=True (hearths = the repository). Brain shape is UNCHANGED vs building (tech is automatic, not a
+    # brain output), so culture=False is the R148 world byte-identical.
     culture: bool = False
     learn: bool = True                 # social-learning switch. False = ASOCIAL control: no copying (base tech
                                        # forced to 0), so each agent reaches only its own one-lifetime innovation
