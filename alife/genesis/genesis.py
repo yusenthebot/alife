@@ -105,6 +105,19 @@ class GenesisConfig:
                                        # -> a neighbour closer to the predator can warn earlier (the
                                        # sentinel value that makes an alarm call pay). 0 = full sense_range
                                        # (R143 behaviour, byte-identical).
+    # kin selection (R145 — make an alarm call actually PAY). R144's honest negative traced to ~zero
+    # relatedness: n0 distinct founder genomes mix freely, so warning a neighbour helps a stranger and the
+    # signalling allele can't spread (Floreano & Mitri 2009: communication evolves under HIGH relatedness,
+    # collapses without). n_founder_genomes>0 founds the prey as that many CLONAL demes — one random genome
+    # per deme, all its members dropped in a tight spatial cluster sharing one lineage id — so a prey's
+    # nearest neighbour is overwhelmingly its clone and warning it propagates the caller's OWN genes
+    # (Hamilton's rb>c). 0 = R141..R144 founding (n0 distinct genomes), byte-identical.
+    n_founder_genomes: int = 0
+    founder_cluster_radius: float = 7.0
+    # honest-signalling cost (R145): a small per-step energy cost proportional to |utterance| keeps SILENCE
+    # the default, so an evolved non-zero signal is one selection actually paid to keep (Zahavi handicap /
+    # cost-of-signalling) — guards against free noisy babble passing as meaning. 0 = signalling is free.
+    emit_cost: float = 0.0
     signal_bins: int = 4               # quantile bins for the signal-MI read-out
     deaf: bool = False                 # functional control: channel present in the brain but heard is
                                        # forced silent. Compared against signalling=True (intact), this
@@ -148,6 +161,29 @@ class GenesisWorld:
         cfg, w, p = self.cfg, self.cfg.world, self.pop
         n0 = cfg.n0
         slots = p.alloc(n0)
+        if cfg.n_founder_genomes > 0:
+            # clonal demes (R145): G genomes, each cloned into a tight spatial cluster sharing a lineage id
+            # -> high spatial relatedness (a prey's nearest neighbour is its clone) for kin selection. This
+            # path is reached only when explicitly enabled, so it does not perturb R141..R144 RNG order.
+            G = min(cfg.n_founder_genomes, n0)
+            deme = self.rng.integers(0, G, size=n0)                 # which deme each founder belongs to
+            genomes = brain.random_brains(G, self.spec, self.rng)
+            centers = self.rng.uniform(0, w.size, size=(G, 3))
+            colors = self.rng.uniform(0.25, 1.0, size=(G, 3))
+            p.pos[slots] = w.clamp(centers[deme]
+                                   + self.rng.normal(0, cfg.founder_cluster_radius, size=(n0, 3)))
+            d = self.rng.normal(size=(n0, 3))
+            p.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.speed
+            p.energy[slots] = cfg.e_start
+            p.brains[slots] = genomes[deme]
+            p.lineage[slots] = deme.astype(np.int32)
+            p.generation[slots] = 0
+            p.color[slots] = colors[deme]
+            if cfg.n_food_types > 1:                                 # one diet per deme (specialist clones)
+                diets = self.rng.uniform(0, cfg.n_food_types, size=G)
+                p.diet[slots] = diets[deme]
+            self.lineage_first_step = {int(g): 0 for g in range(G)}
+            return
         p.pos[slots] = self.rng.uniform(0, w.size, size=(n0, 3))
         d = self.rng.normal(size=(n0, 3))
         p.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.speed
@@ -252,10 +288,13 @@ class GenesisWorld:
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)  # _act reads out[:,:3]
             p.vel[act] = newvel
             p.pos[act] = w.clamp(pos + newvel)
+            emit = np.zeros(act.size)
             if self.signalling:                             # the evolved extra output IS the utterance
                 p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
+                emit = cfg.emit_cost * np.abs(p.utterance[act])  # honest-signalling cost -> silence default
             speed = np.linalg.norm(newvel, axis=1)
-            p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed), cfg.e_max)
+            p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit),
+                                       cfg.e_max)
             p.age[act] += 1
         self._eat()
         if self.has_predators:

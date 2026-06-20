@@ -138,6 +138,19 @@ def signal_mi_null(utterance: np.ndarray, world_state: np.ndarray, rng: np.rando
     return float(vals.mean()), float(vals.std())
 
 
+def neighbour_relatedness(pos: np.ndarray, lineage: np.ndarray) -> float:
+    """Fraction of agents whose NEAREST neighbour shares their founder lineage (R145).
+
+    The kin-structure read-out: ~1 when the population is spatially clonal (a neighbour is your clone,
+    so warning it propagates your genes — kin selection can pay), ~1/n_lineages when well mixed. This
+    is what the clonal-deme founding manipulates; the signalling-emergence claim rests on it being high."""
+    n = pos.shape[0]
+    if n < 2:
+        return 0.0
+    _, idx = cKDTree(pos).query(pos, k=2)
+    return float((lineage == lineage[idx[:, 1]]).mean())
+
+
 def diet_diversity(diet: np.ndarray, n_types: int) -> float:
     """Effective number of occupied diet niches = exp(Shannon) over the rounded-diet histogram.
 

@@ -360,6 +360,59 @@ def test_danger_state_binary():
     assert metrics.danger_state(prey, np.empty((0, 3)), 5.0).tolist() == [0, 0]
 
 
+# ---------- R145: kin selection (clonal demes) + honest-signalling cost ----------
+def test_clonal_founding_builds_high_relatedness():
+    # n_founder_genomes>0 founds the prey as clonal demes: a prey's nearest neighbour is its clone far
+    # more often than under the mixed (n0-distinct) founding R144 used.
+    mixed = GenesisWorld(replace(fast_cfg(n0=300)), seed=0)
+    clonal = GenesisWorld(replace(fast_cfg(n0=300), n_founder_genomes=8, founder_cluster_radius=5.0), seed=0)
+    act_m, act_c = mixed.pop.active(), clonal.pop.active()
+    r_mixed = metrics.neighbour_relatedness(mixed.pop.pos[act_m], mixed.pop.lineage[act_m])
+    r_clonal = metrics.neighbour_relatedness(clonal.pop.pos[act_c], clonal.pop.lineage[act_c])
+    assert r_clonal > 0.8 and r_mixed < 0.1                # clones cluster; distinct founders don't
+    assert np.unique(clonal.pop.lineage[act_c]).size <= 8  # at most G distinct bloodlines
+    # clonemates share a genome at founding (the kin-selection premise)
+    for g in np.unique(clonal.pop.lineage[act_c]):
+        same = act_c[clonal.pop.lineage[act_c] == g]
+        assert np.allclose(clonal.pop.brains[same], clonal.pop.brains[same[0]])
+
+
+def test_clonal_founding_off_is_byte_identical():
+    # the default (n_founder_genomes=0) path must not perturb the R141..R144 RNG order
+    a = GenesisWorld(replace(fast_cfg(), n_predators0=10, signalling=True, prey_pred_range=12.0), seed=7)
+    b = GenesisWorld(replace(fast_cfg(), n_predators0=10, signalling=True, prey_pred_range=12.0), seed=7)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.brains, b.pop.brains)
+
+
+def test_emit_cost_charges_loud_signallers():
+    # with emit_cost>0 a loud emitter pays more energy than a silent one (honest-signalling cost)
+    free = GenesisWorld(replace(fast_cfg(n0=120), n_predators0=8, signalling=True, emit_cost=0.0), seed=1)
+    paid = GenesisWorld(replace(fast_cfg(n0=120), n_predators0=8, signalling=True, emit_cost=0.5), seed=1)
+    for _ in range(3):
+        free.step(); paid.step()
+    # force a known loud utterance, then step once: the paid world must debit emit_cost*|u| extra energy
+    for w in (free, paid):
+        act = w.pop.active()
+        w.pop.utterance[act] = 0.0
+    fa, pa = free.pop.active(), paid.pop.active()
+    e_free0, e_paid0 = free.pop.energy.copy(), paid.pop.energy.copy()
+    # identical worlds at this point (same seed/draws) -> compare the energy debit after one step
+    free.step(); paid.step()
+    assert paid.cfg.emit_cost > free.cfg.emit_cost
+    # paid world's mean energy should be <= free world's (loud signallers bled extra)
+    assert paid.pop.energy[paid.pop.active()].mean() <= free.pop.energy[free.pop.active()].mean() + 1e-9
+
+
+def test_neighbour_relatedness_bounds():
+    pos = np.array([[0, 0, 0.0], [1, 0, 0], [40, 40, 40], [41, 40, 40]])
+    lin_kin = np.array([5, 5, 9, 9])                       # each nearest neighbour is same-lineage
+    lin_mix = np.array([0, 1, 2, 3])                       # all distinct
+    assert metrics.neighbour_relatedness(pos, lin_kin) == 1.0
+    assert metrics.neighbour_relatedness(pos, lin_mix) == 0.0
+
+
 # ---------- 3D render smoke (headless moderngl) ----------
 def test_render_smoke():
     from alife.world3d import World3D as W3
