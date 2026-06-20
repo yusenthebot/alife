@@ -1,5 +1,58 @@
 # alife — progress
 
+## Current state (Round 157 — 2026-06-20) — GENESIS ECOLOGICALLY-SELECTED divergent traditions (region↔branch alignment), red-teamed ROBUST
+
+**R156 grew divergent traditions but they were NEUTRAL DRIFT (modest F_ST ~0.03). R157's question: how do you
+SHARPEN modest neutral-drift traditions into discrete, economically-distinct cultures? The round delivers a
+clean scientific arc — one HONEST NEGATIVE that motivates the POSITIVE mechanism, both red-teamed.**
+
+**HONEST NEGATIVE first — forgetting does NOT sharpen drift (`culture_decay`, committed default-off).** The
+frontier's leading hypothesis was "the hearth record is a never-forgetting UNION accumulator that homogenizes;
+add forgetting and local divergence sharpens." Built it: `culture_decay=True` replaces the boolean union with a
+per-technique floating MEMORY that decays (`memory_decay`) and must be re-deposited to stay in the sensed record
+(the Tasmania / Henrich cultural-loss effect; default-off byte-identical). **Probe REFUTED it:** at decay 0.02
+F_ST is a wash (0.0518 vs 0.0460 seed0; 0.0408 vs 0.0409 seed1) and at 0.05 it is strictly WORSE (0.0398/0.0345,
+fewer distinct traditions) — uniform decay erodes the DEEP techniques that DEFINE a tradition faster than the
+shallow shared ones. The diagnosis: R156 traditions are neutral drift in a spatially-homogeneous world, so there
+is **no force maintaining divergence** and forgetting can only erode, not sharpen. Substrate kept (default-off).
+
+**POSITIVE — the missing force is SELECTION (`spatial_tiers` + `recipe_budget`).** Make the world spatially
+HETEROGENEOUS: a recipe-locked mote's tier is set by its x-axis REGION (`spatial_tiers`), so region r yields only
+tier-(r+1) food, edible (via R153 `tech_actions`) ONLY by holders of that tier's recipe BRANCH. A recipe carry-
+BUDGET (`recipe_budget`, the R155 `_enforce_cap_budget` mechanism applied to recipes) forces each agent to be a
+branch SPECIALIST instead of a generalist-who-learns-everything (R154's convergence trap), and a high free-tier
+LIFELINE (`tier0_frac`) keeps the population alive while branches sort. So in region r only recipe-r specialists
+can eat the rich local food → **selection LOCKS each region to its own branch** = discrete, spatially-structured,
+economically-distinct traditions MAINTAINED by local adaptation, not drift. (`recipe_upkeep`, a metabolic cost
+per carried recipe, is a committed weaker alternative lever; the budget is the keystone.) New read-out
+`ecological_traditions_test`: per-region own-branch vs other-branch fraction → **ALIGNMENT** = own − other. 13 new
+tests (146 genesis green): 4 knobs require-tech_actions/combinatorial, all default-off byte-identical, spatial
+tier=region assignment, budget caps carried branches, forget-unmaintained-technique, lossy-vs-union, read-out
+fields + off-empty, spatial-beats-random smoke, two checkpoint roundtrips.
+
+**REAL-VERIFY (`scripts/run_genesis_ecotraditions.py 450`; `runs/r157_ecotraditions/panel.png` + branch-coloured
+3D `ecotraditions.gif` EYE-VERIFIED — agents coloured by their recipe BRANCH; green spatial-alignment lines sit
+above grey null lines, own>other branch fraction both seeds, and the 3D shows red agents clustering in the left
+region / blue in the centre, a subtle spatial colour structure):** spatial vs random-niche null, 2 seeds, 450
+steps, n=6000 both —
+- **SPATIAL alignment 0.049 / 0.152** (own 0.59/0.73 vs other 0.54/0.58) vs **RANDOM-niche null −0.016 / 0.008**.
+  Spatial > null on **2/2** seeds (mean **0.101 vs −0.004**, null at zero); +probe 3/3 = **5/5 total**.
+
+**RED-TEAM (mandatory; inline, refutation-first; verdict ROBUST).** (1) **metric integrity** — a hand-built
+perfect region-sort (region r holds only branch r) returns alignment **1.0000**, all-branches **0.0000**.
+(2) **THE POSITION-SHUFFLE NULL (load-bearing, 3 seeds)** — recompute alignment after permuting which region each
+agent sits in: REAL **0.049 / 0.152 / 0.057** sits **>2σ above the shuffle floor ~0** (±0.001–0.008) on **3/3** =
+GENUINE spatial structure, not a metric/sampling artifact. **HONEST caveats:** magnitude is **MODEST** (alignment
+~0.05–0.15; agents still carry SOME wrong branches — own 0.59–0.73, not a pure 1.0); `recipe_budget=1` gives sharp
+pure specialists but **CRASHED the population** (bootstrap chicken-and-egg — specialists starve before spatial
+sorting can sort them; seed-dependent collapse to n≈50), so budget=2 + a free-tier lifeline is the viable regime.
+The directional + causal claim (selection > both nulls, 5/5 seeds) is robust; SHARP discrete pure-specialist
+cultures are the next rung, not yet reached. 禁止造假 — every number read from live `rep`/positions.
+
+**A genuine emergent result: ecological selection (spatial niches + a knowledge carry-budget) turns R156's modest
+neutral-drift traditions into spatially-locked, economically-distinct ones — verified + red-teamed. The path to
+SHARP cultures (and then inter-group TRADE = the civilization leap) is seeded in ## Frontier.**
+
 ## Current state (Round 156 — 2026-06-20) — GENESIS emergent DIVERGENT cultural TRADITIONS (cultural F_ST), red-teamed ROBUST
 
 **R156 opens a NEW axis on the civilization frontier. R150-R155 measured only ONE global culture frontier
@@ -1218,7 +1271,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked); now DEEPENING the integration (R153 culture gates diet → R154 multi-axis physical capabilities → R155 costly/bounded capabilities = a SECOND division of labour via the TECH TREE → R156 emergent DIVERGENT cultural TRADITIONS: local transmission over the open-ended tree grows spatially structured cultures, cultural F_ST > panmictic null, red-teamed ROBUST but MODEST in magnitude — the next push is to sharpen them into discrete, economically-distinct cultures).** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1, 3, 4 & 5 COMPLETE — the full ambition ladder is done (Stage 2 signalling parked); now DEEPENING the integration (R153 culture gates diet → R154 multi-axis physical capabilities → R155 costly/bounded capabilities = a SECOND division of labour via the TECH TREE → R156 emergent DIVERGENT cultural TRADITIONS via local transmission, cultural F_ST > panmictic null but MODEST = neutral drift → R157 ECOLOGICALLY-SELECTED traditions: a clean arc — HONEST NEGATIVE (forgetting/`culture_decay` does NOT sharpen drift, it erodes the deep techniques) motivating the POSITIVE (`spatial_tiers` + `recipe_budget`: spatial food niches + forced specialists → selection locks each region to its own branch, region↔branch alignment > scrambled-niche AND position-shuffle nulls 5/5 seeds, red-teamed ROBUST but still MODEST own~0.6 — sharp pure-specialist cultures + inter-group TRADE are the next rungs).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
@@ -1383,7 +1436,32 @@ niche construction + open-ended culture DO coexist alive. The next leaps in KIND
   culturally-NAIVE founders in 900 steps — a single deep node has no intermediate selective gradient (the same
   bootstrap-deadlock as Stage-2 signalling), so the DYNAMICS were demonstrated with seeded keys; naive bootstrap
   is the R156 frontier. Byte-identical off. cap_niches=False = R154.
-- **(default next, R156) NAIVE BOOTSTRAP of the deep capability keys.** R155 demonstrated the specialization
+- **(R156, DONE — emergent DIVERGENT cultural TRADITIONS).** A civilization is not one monoculture of knowledge.
+  R156 showed the EXISTING substrate grows MANY traditions: oblique transmission copies the NEAREST strong hearth
+  (a spatial cultural store), so a region that climbs one BRANCH of the open-ended tree reinforces it locally →
+  spatially structured cultures. `tradition_test` = Wright's F_ST over the boolean repertoire across a grid³ of
+  demes; causal null `panmictic_culture` (copy a RANDOM hearth) cuts place↔tradition. LOCAL F_ST > panmictic 3/3
+  + position-shuffle robust. **HONEST: MODEST (F_ST ~0.03) = neutral drift, not discrete cultures.**
+- **(R157, DONE — ECOLOGICALLY-SELECTED traditions; one negative + one positive).** Asked how to SHARPEN R156's
+  modest drift. **NEGATIVE: forgetting fails** — `culture_decay` (a decaying per-technique hearth MEMORY, the
+  Tasmania/Henrich cultural-loss effect, replacing R156's never-forgetting union) does NOT sharpen drift; uniform
+  decay erodes the DEEP techniques that define a tradition (F_ST wash at 0.02, worse at 0.05). Diagnosis: drift in
+  a homogeneous world has no maintaining force. **POSITIVE: selection works** — `spatial_tiers` (a recipe-locked
+  mote's tier = its x-REGION, so region r yields only branch-r food via R153 tech_actions) + `recipe_budget` (the
+  R155 carry-budget on recipes → forced branch SPECIALISTS, not generalists) + a high `tier0_frac` LIFELINE → in
+  region r only recipe-r specialists eat the rich food → selection LOCKS each region to its branch. New read-out
+  `ecological_traditions_test` (region↔branch ALIGNMENT = own−other frac). REAL-VERIFY: spatial align 0.101 vs
+  scrambled-niche null −0.004, 2/2 (+probe 3/3 = 5/5); red-team ROBUST (metric 1.0/0.0; position-shuffle real
+  >2σ above floor ~0, 3/3). **HONEST: MODEST (align ~0.05–0.15, own~0.6 — wrong branches still carried);
+  `recipe_budget=1` gives sharp pure specialists but CRASHES the pop (bootstrap chicken-and-egg).** All 4 knobs
+  (culture_decay/spatial_tiers/recipe_budget/recipe_upkeep) committed default-off byte-identical.
+- **(default next, R158 — SHARP cultures, then the civilization leap TRADE).** Two rungs: (a) SHARPEN — let
+  `recipe_budget=1` (pure specialists) survive via a gentler/phased bootstrap (rich free tier early, tapered) so
+  each region purifies to ONE branch (alignment → ~1, discrete cultures); (b) THE CIVILIZATION LEAP — inter-group
+  TRADE/exchange: a recipe-r specialist has a tier-r SURPLUS it can't eat alone and a tier-q DEFICIT, so let
+  neighbours of different branches EXCHANGE surplus (a transfer action / shared cache) → an inter-regional economy
+  = the first proto-civilization economic structure. Build on `ecological_traditions_test` + `_eat_tech_actions`.
+- **(still open) NAIVE BOOTSTRAP of the deep capability keys.** R155 demonstrated the specialization
   DYNAMICS via seeded keys but the keys did not emerge from naive founders (deep node, no gradient). Give
   acquisition a graded ladder so partial cultural depth already pays toward a key (mirror R153's nested tiers
   that bootstrapped), OR let the niche reward scale with proximity-to-key in the tree, so selection can climb to
