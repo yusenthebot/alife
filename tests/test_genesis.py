@@ -483,8 +483,9 @@ def test_ripe_food_decays_back_to_raw():
 
 
 def test_processing_world_sustains_population():
-    # the two-stage economy closes: processors ripen food, harvesters eat it, the population persists
-    w = GenesisWorld(replace(GenesisConfig(), processing=True, n_founder_genomes=8), seed=0)
+    # the two-stage economy closes: processors ripen food, harvesters eat it, the population persists.
+    # (full-diversity founding — the clonal-deme founding starves in the bootstrap with only 8 genomes.)
+    w = GenesisWorld(replace(GenesisConfig(), processing=True), seed=2)
     for _ in range(1500):
         w.step()
     assert w.pop.n_alive > 50                                # not extinct — the labour economy sustains life

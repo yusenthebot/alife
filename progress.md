@@ -1,6 +1,44 @@
 # alife — progress
 
-## Current state (Round 145 — 2026-06-20) — GENESIS Stage 2: kin-selection attempt at signalling — SECOND honest negative (relatedness ≠ the missing piece)
+## Current state (Round 146 — 2026-06-20) — GENESIS Stage 3: division of labour, attempt 1 (public-goods processing) — HONEST NEGATIVE
+
+**R146 pivoted to Stage 3 (cooperation / division of labour) and built a two-stage food ECONOMY on the
+genesis substrate — a working new layer, but the division-of-labour claim it was meant to produce did NOT
+emerge.** Mechanism (all additive to `alife/genesis/`, `processing=False` → R141..R145 byte-identical,
+40 genesis tests green incl. determinism + checkpoint guards):
+- food spawns **RAW (inedible)**; an evolved **PROCESS output** ripens every raw mote within `process_radius`
+  into **edible (ripe)** food, paying `process_cost` — ripe food is a **local PUBLIC GOOD** any neighbour can
+  harvest, and **decays back to raw** after `ripe_ttl` (a continuous FLOW, not a stock);
+- prey gain a **nearest-RAW-food sense channel** (n_in +4) so they can navigate to processing sites, and a
+  process-gate output (n_out +1); a `scramble_allocation` ablation replaces the evolved gate with a Bernoulli
+  draw at the same mean rate (identical processing BUDGET, allocation conditioning destroyed);
+- an in-situ `process_allocation_test` reads corr(process-decision, local ripe proximity) — a **negative**
+  value would be the response-threshold DoL signature (process when ripe scarce, harvest when abundant).
+
+**REAL-VERIFY (founders=0 full diversity, 7000-step role-coloured 3D GIF + 2-seed evolve/frozen/scramble
+controls; `runs/r146_labor/panel.png` eye-verified):** the economy **WORKS robustly** — population sustains
+**~2300 across all 4 seeds**, the processing→ripe→harvest flow closes (high-throughput, low standing ripe
+stock). But **NO division of labour emerged:** corr(process, ripe-prox) sits at **~+0.2 for BOTH evolve and
+frozen** (incidental — agents process where food is generally dense; this is the OPPOSITE sign of need-based
+allocation, which would be negative), and **evolve pop 2279 ≈ scramble 2288** (no productivity gain from
+allocation), **evolve ≈ frozen** generally (ratio ~1.0). The `frac_processing` settles ~0.22 — a population
+average consistent with **generalist time-sharing, not a differentiated processor/harvester caste**.
+
+**RED-TEAM did its job (禁止造假).** A clonal-deme variant (`n_founder_genomes=8`, intended to give kin
+selection a foothold) showed a tempting **8× evolve-vs-frozen population gap on seed 0** — but red-teaming
+across 4 seeds revealed **3 of 4 go EXTINCT** (with only 8 founder genomes the bootstrap starves if none is a
+competent processor); the 8× was a **single-seed bootstrap fluke, not division of labour**, and was rejected.
+
+**Diagnosis (the real finding):** generalists are optimal here because processing is **cheap and
+non-exclusive** — an agent can freely process *and* harvest, so there is **no specialization trade-off** and
+the strong public good is forgiving enough that even random brains sustain the population (hence evolve ≈
+frozen, nothing to select for). Raising `process_cost` does NOT induce allocation — it just causes extinction
+(cost ≥ 6 → pop 0). Genuine division of labour needs a **specialization trade-off with CONVEX (accelerating)
+returns** (a caste: doing both strictly worse than a mix of specialists), not merely a shared public good.
+This is the principled next mechanism (R147). The processing substrate is committed and reusable. See
+`## Decisions pending` and `## Frontier`.
+
+### R145 (previous round) — GENESIS Stage 2: kin-selection attempt at signalling — SECOND honest negative (relatedness ≠ the missing piece)
 
 **R145 tested the decisive hypothesis from R144's diagnosis — that genuine alarm signalling failed for lack
 of RELATEDNESS — and the same four-control protocol REFUTED it.** R144's negative was traced to ~zero
@@ -638,6 +676,13 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R146) GENESIS Stage 3 division of labour — attempt 1 NEGATIVE; attempt 2 (convex specialization
+  trade-off) queued, not a CEO gate.** Public-goods processing built a working two-stage economy but no role
+  allocation/differentiation emerged (generalists optimal — no specialization trade-off). NOT thrash: this is
+  the FIRST Stage-3 mechanism, with a clean diagnosis. R147 = attempt 2: a HERITABLE processing↔harvesting
+  efficiency trait with CONVEX returns (caste DoL). Rule: if R147 also returns a clean negative, that is the
+  2nd principled Stage-3 attempt → PARK Stage 3 like Stage 2 and pivot to Stage 4 (niche construction /
+  building / agents reshaping the 3D world), which may be an easier emergence to demonstrate. No CEO action.
 - **(R145) GENESIS Stage 2 signalling — PARKED for a substrate redesign, not a CEO gate.** Two honest
   negatives (R144 no-kin, R145 clonal demes at r=0.90) show the signalling-bootstrap deadlock is not broken
   by relatedness or parameter sweeps. Revisiting needs a substrate change (synchronous discrete-predation
@@ -841,9 +886,23 @@ no emission payoff), which kin selection alone doesn't break because the margina
 swamped by foraging/evasion noise. **Breaking it needs a SUBSTRATE change, not another parameter sweep:** a
 sharp synchronous selective-event structure (discrete predation "rounds" where a missed warning is reliably
 lethal and a heeded one reliably saves — the Floreano/Mitri foraging-arena design), or explicit fitness
-coupling. This is deferred as a future Stage-2 redesign. **Per anti-thrash, R146 PIVOTS to Stage 3 — division
-of labour (the R142 diet specialists already coexist as a seed), then Stage 4 niche construction, Stage 5
-culture.** When Stage 2 is revisited, believe emergence ONLY if it beats frozen AND deaf AND causal, ≥3 seeds, red-team.
+coupling. This is deferred as a future Stage-2 redesign. When Stage 2 is revisited, believe emergence ONLY if
+it beats frozen AND deaf AND causal, ≥3 seeds, red-team.
+
+**Stage 3 = COOPERATION / DIVISION OF LABOUR. [R146 attempt 1: two-stage food economy built and works; DoL
+did NOT emerge — honest negative. Attempt 2 queued.]** R146 made food spawn RAW and added an evolved PROCESS
+output that ripens raw→edible food as a local public good (kin-stabilisable, decaying flow). The economy is
+robust (~2300 pop all seeds) but generalists dominate: corr(process, ripe-prox) ~+0.2 for evolve & frozen (no
+need-based allocation), evolve ≈ frozen ≈ scramble (no DoL productivity gain). **Diagnosis: no specialization
+trade-off → being a generalist is optimal.** Genuine DoL needs CONVEX (accelerating) returns to specialization
+so a mix of dedicated processors + harvesters beats all-generalists — the R147 mechanism (a heritable
+processing↔harvesting efficiency trait, caste DoL). The current ceiling = a working but undifferentiated
+labour economy. **Escalation ladder if R147 also fails (= 2 principled Stage-3 negatives): PARK Stage 3, climb
+to Stage 4 — NICHE CONSTRUCTION / BUILDING (agents reshape the 3D world: deposit/dig/build structures that
+persist and feed back on selection).** Niche construction may be an *easier* emergence to demonstrate than DoL
+(a structure is directly visible + measurable), and it is the substrate for Stage 5 cumulative culture.
+Believe any Stage-3 positive ONLY if differentiation is bimodal/persistent AND mixed > monomorphic
+productivity, ≥3 seeds, red-teamed (the R146 8× fluke is the cautionary tale).
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:

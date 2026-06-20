@@ -34,7 +34,10 @@ HARV = np.array([0.18, 0.62, 0.78])    # teal   = harvesting this step
 
 
 def cfg(**kw):
-    return replace(GenesisConfig(), processing=True, n_founder_genomes=8, **kw)
+    # full-diversity founding (founders=0): the economy survives robustly across seeds. Clonal demes
+    # (founders=8) were tried to give kin selection a foothold but proved FRAGILE (3/4 seeds starve in the
+    # bootstrap with only 8 founder genomes) — and even when surviving produced no role allocation.
+    return replace(GenesisConfig(), processing=True, **kw)
 
 
 def headline(steps, seed=0, render_every=175):
@@ -116,8 +119,9 @@ def main():
     ax[1, 2].bar(["evolve\n(allocated)", "scramble\n(same budget)"], [np.mean(evo_pop), np.mean(scr_pop)],
                  color=["#1f77b4", "#999999"])
     ax[1, 2].set_title(f"CONTROL B productivity: evo {np.mean(evo_pop):.0f} vs scr {np.mean(scr_pop):.0f}")
-    fig.suptitle("GENESIS R146 — division of labour: two-stage food economy + kin-stabilised role "
-                 "allocation\n(orange = processing, teal = harvesting in labor.gif)", fontsize=13)
+    fig.suptitle("GENESIS R146 — two-stage food economy (processing -> ripe -> harvest). HONEST NEGATIVE: "
+                 "the economy works\nbut NO division of labour emerged — corr(process,ripe)~0, evolve~frozen "
+                 "(orange=processing, teal=harvesting in labor.gif)", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(os.path.join(OUT, "panel.png"), dpi=100)
     print(f"wrote {OUT}/labor.gif and {OUT}/panel.png", flush=True)
