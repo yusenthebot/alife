@@ -196,6 +196,23 @@ class GenesisConfig:
     hearth_min_strength: float = 0.5   # below this a deposit is a dead ember: not sensed, ripens nothing
     build_persist: bool = True         # ablation: False -> hearths last a single step (NO ecological
                                        # inheritance) -> isolates the value of a PERSISTENT built environment.
+    # division of labour AROUND niche construction (R152 — make Stages 3+4 COMPLEMENT, not substitute).
+    # R151's capstone found that universal, caste-free building lets the persistent hearths ripen food for
+    # free, so the processor caste is redundant and selected away — niche construction SUBSTITUTES for the
+    # division of labour. build_specialized=True couples the two so a genuine BUILDER caste re-emerges and an
+    # economy forms AROUND the built infrastructure:
+    #   - build STRENGTH is convex in the caste trait (deposit = build_gain * spec^build_spec_gamma): a pure
+    #     builder (spec=1) raises a strong hearth, a harvester (spec=0) deposits a dead ember -> only the
+    #     builder caste can found/maintain settlements (the R147 convexity lesson applied to building);
+    #   - a builder earns a WAGE (process_payment, reusing the R147 wage path) whenever a harvester eats food
+    #     ripened by a hearth that builder last maintained -> builders live on maintenance wages, harvesters on
+    #     the food itself, so value flows from the consumers back to the maintainers of the shared infrastructure.
+    # The harvest convexity (builders eat ~0) + the maintenance wage split the population into a builder caste
+    # that keeps the hearths and a harvester caste that exploits them -> the division of labour RE-EMERGES
+    # around niche construction (Stages 3+4 COMPLEMENT). Requires building=True AND specialize=True.
+    # build_specialized=False is the exact R148..R151 world (caste-free building), byte-identical.
+    build_specialized: bool = False
+    build_spec_gamma: float = 2.0      # convexity of build skill in the caste trait (>1: only high-spec build well)
     # cumulative culture (R149 — Stage 5). The Stage-4 hearths become a CULTURAL REPOSITORY. culture=True gives
     # each agent a LIFETIME-learned scalar `tech` (a foraging technique) that is NOT in the genome and is NOT
     # inherited genetically: a newborn ACQUIRES it by SOCIAL LEARNING — it copies (with `culture_fidelity`) the
@@ -253,6 +270,7 @@ class GenesisWorld:
         self.processing = self.cfg.processing
         self.specialize = self.cfg.specialize
         self.building = self.cfg.building
+        self.build_specialized = self.cfg.build_specialized
         self.culture = self.cfg.culture
         self.combinatorial = self.cfg.combinatorial
         if self.combinatorial and not self.culture:
@@ -265,6 +283,8 @@ class GenesisWorld:
             raise ValueError("building (R148 niche construction) requires processing=True")
         if self.culture and not self.building:
             raise ValueError("culture (R149 cumulative culture) requires building=True (hearths = the repository)")
+        if self.build_specialized and not (self.building and self.specialize):
+            raise ValueError("build_specialized (R152 builder caste) requires building=True AND specialize=True")
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (4 if self.processing else 0)           # +nearest-RAW-food sense channel (R146)
@@ -321,6 +341,8 @@ class GenesisWorld:
         self.struct_birth = np.zeros(m, dtype=np.int64)     # step the hearth was founded (-> its age)
         self.struct_founder_gen = np.zeros(m, dtype=np.int32)
         self.struct_max_gen = np.zeros(m, dtype=np.int32)   # latest builder generation that maintained it
+        self.struct_last_builder = np.full(m, -1, dtype=np.int64)  # R152: agent slot that last built/maintained
+                                                             # the hearth (-> paid the maintenance wage); -1 = none
         self.struct_tech = np.zeros(m)                       # best technique recorded at the hearth (R149 culture
                                                              # repository): the growing cultural record
         if self.combinatorial:                               # R150: each hearth stores an accumulating REPERTOIRE
@@ -750,6 +772,10 @@ class GenesisWorld:
         bgen = p.generation[act[builders]]
         btech = p.tech[act[builders]] if self.culture else None
         brep = self.rep[act[builders]] if self.combinatorial else None
+        if self.build_specialized:                           # R152: build skill is convex in the caste trait
+            bgain = cfg.build_gain * np.power(p.spec[act[builders]], cfg.build_spec_gamma)  # harvester -> ~0
+        else:
+            bgain = np.full(builders.size, cfg.build_gain)   # R148..R151: caste-free, every builder equal
         alive = np.where(self.struct_alive)[0]
         if alive.size:
             d, near = cKDTree(self.struct_pos[alive]).query(bpos, k=1)
@@ -761,8 +787,10 @@ class GenesisWorld:
         # REINFORCE existing hearths (accumulate strength; raise the maintainer generation)
         if reinforce.any():
             tgt = alive[near[reinforce]]
-            np.add.at(self.struct_strength, tgt, cfg.build_gain)
+            np.add.at(self.struct_strength, tgt, bgain[reinforce])
             np.maximum.at(self.struct_max_gen, tgt, bgen[reinforce])
+            if self.build_specialized:                       # the maintainer earns this hearth's wage (R152)
+                self.struct_last_builder[tgt] = act[builders[reinforce]]
             if self.culture:                                 # the hearth records the BEST technique deposited
                 np.maximum.at(self.struct_tech, tgt, btech[reinforce])
             if self.combinatorial:                           # the hearth ACCUMULATES the union of deposited
@@ -776,8 +804,10 @@ class GenesisWorld:
                 slots = free[:k]
                 who = founders[:k]
                 self.struct_pos[slots] = bpos[who]
-                self.struct_strength[slots] = cfg.build_gain
+                self.struct_strength[slots] = bgain[who]
                 self.struct_birth[slots] = self.step_count
+                if self.build_specialized:                   # founder is the first maintainer (earns the wage)
+                    self.struct_last_builder[slots] = act[builders[who]]
                 self.struct_founder_gen[slots] = bgen[who]
                 self.struct_max_gen[slots] = bgen[who]
                 if self.culture:
@@ -797,10 +827,13 @@ class GenesisWorld:
             return
         d, near = cKDTree(self.struct_pos[strong]).query(self.food[raw], k=1)
         reach = np.minimum(cfg.hearth_radius, cfg.hearth_reach_per_strength * self.struct_strength[strong])
-        ripened = raw[d < reach[near]]                        # convex: reach grows with hearth strength
+        mask = d < reach[near]                                # convex: reach grows with hearth strength
+        ripened = raw[mask]
         if ripened.size:
             self.food_ripe[ripened] = True
             self.ripe_age[ripened] = 0
+            if self.build_specialized:                        # credit the hearth's last maintainer for the wage
+                self.food_proc[ripened] = self.struct_last_builder[strong[near[mask]]]  # (R152); -1 if abandoned
 
     def _decay_structures(self) -> None:
         """Hearths lose strength each step; one drops dead (slot freed) at strength<=0. build_persist=False
@@ -1163,6 +1196,7 @@ class GenesisWorld:
             struct_birth=self.struct_birth,
             struct_founder_gen=self.struct_founder_gen,
             struct_max_gen=self.struct_max_gen,
+            struct_last_builder=self.struct_last_builder,
             struct_tech=self.struct_tech,
             struct_alive=self.struct_alive,
             evolve=np.bool_(self.evolve),
@@ -1189,6 +1223,8 @@ class GenesisWorld:
             self.struct_birth = d["struct_birth"]
             self.struct_founder_gen = d["struct_founder_gen"]
             self.struct_max_gen = d["struct_max_gen"]
+            self.struct_last_builder = (d["struct_last_builder"] if "struct_last_builder" in d.files
+                                        else np.full(self.struct_pos.shape[0], -1, dtype=np.int64))
             self.struct_tech = (d["struct_tech"] if "struct_tech" in d.files
                                 else np.zeros(self.struct_pos.shape[0]))
             self.struct_alive = d["struct_alive"]

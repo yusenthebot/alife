@@ -795,6 +795,82 @@ def test_checkpoint_roundtrip_with_hearths(tmp_path):
     assert np.array_equal(w.struct_birth, w2.struct_birth)
 
 
+# ---------- R152: division of labour AROUND niche construction (builder caste) ----------
+def _bscfg(**kw):
+    return fast_cfg(processing=True, building=True, specialize=True, build_specialized=True, **kw)
+
+
+def test_build_specialized_requires_building_and_specialize():
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(processing=True, building=True, build_specialized=True), seed=0)   # no specialize
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(processing=True, specialize=True, build_specialized=True), seed=0)  # no building
+
+
+def test_build_specialized_off_is_byte_identical():
+    a = GenesisWorld(fast_cfg(processing=True, building=True, specialize=True), seed=5)
+    b = GenesisWorld(fast_cfg(processing=True, building=True, specialize=True, build_specialized=False), seed=5)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)              # flag off draws no extra RNG, scales nothing
+    assert np.allclose(a.struct_strength, b.struct_strength)
+
+
+def test_build_strength_convex_in_spec():
+    w = GenesisWorld(_bscfg(n0=4), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act[0]] = np.array([15.0, 15.0, 15.0]); w.pop.spec[act[0]] = 1.0   # pure builder
+    w.pop.pos[act[1]] = np.array([70.0, 70.0, 70.0]); w.pop.spec[act[1]] = 0.2   # harvester (far -> own slot)
+    out = np.zeros((act.size, w.spec.n_out)); out[[0, 1], w._proc_out] = 1.0
+    w._build(act, out)
+    assert w.struct_alive.sum() == 2
+    s_builder = w.struct_strength[w.struct_last_builder == act[0]][0]
+    s_harv = w.struct_strength[w.struct_last_builder == act[1]][0]
+    assert s_builder > s_harv                                # convex: only the high-spec builder raises a real hearth
+    assert s_harv < w.cfg.hearth_min_strength                # 0.2^2 = 0.04 -> a dead ember, ripens nothing
+    assert s_builder >= w.cfg.hearth_min_strength
+
+
+def test_build_specialized_pays_maintainer_wage():
+    w = GenesisWorld(_bscfg(n0=4), seed=0)
+    act = w.pop.active()
+    builder = act[0]
+    w.pop.spec[builder] = 1.0
+    w.pop.pos[builder] = np.array([45.0, 45.0, 45.0])
+    out = np.zeros((act.size, w.spec.n_out)); out[0, w._proc_out] = 1.0
+    w._build(act, out)                                       # founds a strong hearth; builder is its maintainer
+    h = np.where(w.struct_alive)[0][0]
+    assert w.struct_last_builder[h] == builder
+    w.food = np.array([[45.0, 45.0, 46.0]])                  # a raw mote within reach of the hearth
+    w.food_ripe = np.zeros(1, dtype=bool); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w._ripen_hearths()
+    assert w.food_ripe[0]
+    assert w.food_proc[0] == builder                         # hearth-ripened food credits the maintainer
+    e0 = w.pop.energy[builder]
+    w._pay_processors(np.array([0]))                         # a harvester eats it -> wage flows to the builder
+    assert w.pop.energy[builder] == pytest.approx(e0 + w.cfg.process_payment)
+
+
+def test_build_specialized_world_survives_and_builds():
+    w = GenesisWorld(_bscfg(n0=200), seed=0)
+    for _ in range(200):
+        w.step()
+    assert w.pop.n_alive > 0                                  # the wage economy is viable
+    assert w.struct_alive.sum() > 0                           # high-spec builders raise maintained hearths
+
+
+def test_checkpoint_roundtrip_with_build_specialized(tmp_path):
+    w = GenesisWorld(_bscfg(n0=120), seed=1)
+    for _ in range(150):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_bscfg(n0=120), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w.struct_last_builder, w2.struct_last_builder)
+
+
 # ---------- R149: cumulative culture (Stage 5) ----------
 def _ccfg(**kw):
     # a viable building regime (the real-run convex-reach params + denser food) so the population robustly
