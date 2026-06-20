@@ -19,7 +19,7 @@ wave = run(SomiteConfig(N=220, v=2.2, omega=1.0, grad=2.2, coupling=0.04, dt=0.0
 kymo = wave["kymo"]
 ds = max(1, kymo.shape[0] // 600)
 field = np.sin(kymo[::ds])
-front = wave["v"] if False else None  # (front overlaid below)
+front = None  # (front overlaid below)
 
 # clean uniform-clock segment pattern + a graded (gradient) one
 flat = run(SomiteConfig(N=300, v=2.5, omega=1.0, grad=0.0, dt=0.01))["frozen_phase"]
@@ -62,7 +62,7 @@ axB.legend(fontsize=9); axB.grid(alpha=0.3)
 zebra = ListedColormap(["#1d3557", "#e9c46a"])
 for r, (phi, lab) in enumerate([(flat, "uniform clock -> equal somites"),
                                 (grad, "posterior frequency gradient -> graded somites (anterior larger)")]):
-    ax = fig.add_subplot(gs[1, :]) if False else fig.add_subplot(2, 2, 3 + r)
+    ax = fig.add_subplot(2, 2, 3 + r)
     strip = np.tile(somite_ids(phi) % 2, (24, 1))
     ax.imshow(strip, aspect="auto", cmap=zebra, interpolation="nearest")
     ax.set_title(lab, fontsize=10); ax.set_yticks([])

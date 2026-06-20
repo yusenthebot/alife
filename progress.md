@@ -1,6 +1,23 @@
 # alife — progress
 
-## Current state (Round 139 — 2026-06-19)
+## Current state (Round 140 review — 2026-06-20)
+
+**R140 was a milestone REVIEW round** at 130 modules / 781 tests. Full suite ran ALONE: **781 passed, 0
+failed** (14m57s). Every R131–R139 headline was adversarially re-verified on **fresh unseen seeds**
+(17/17 survived); the milestone gallery was rendered and **eye-verified** (all 9 signatures correct);
+the repo was de-slopped (5 stale gallery stubs + an old workflow deleted, 5 dead `if False` branches
+fixed, the R1-frozen package docstring refreshed); docs were brought current (130 / 781, README trimmed
+to CEO-R91); architecture audited HEALTHY. One honest correction: the wolf-sheep predator-LAG-SIGN test
+was not seed-robust, so it was rewritten to assert the robust boom-bust CV signature instead (the lag
+metric stays validated on a synthetic control).
+
+**CEO DIRECTION SHIFT (2026-06-20):** the loop pivots away from single-phenomenon demos to **GENESIS — a
+persistent, real 3D world that, just by running, freely develops toward a civilization, populated by
+genuinely autonomous evolved-neural creatures (not scripts).** Staged ambition ladder (foundation →
+emergent language → cooperation/division-of-labour → building/economy → cumulative culture). Full spec,
+locked decisions, and the reusable substrate are in **`Frontier / next`** at the bottom of this file.
+
+### R139 details
 
 R139 added dendritic solidification (`alife/dendrite.py`): a snowflake crystal grows from an undercooled
 melt. Freeze a pure liquid below its melting point and the crystal does not grow as a smooth ball — it
@@ -672,6 +689,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 | R137 | Invasion fronts (fisherfront.py) — Fisher-KPP pulled waves + the Allee extinction threshold. Logistic RD u_t=D u_xx+r u(1-u) → a PULLED travelling front at c=2√(rD) (speed set by the dilute leading edge). Allee term r u(1-u)(u-a) → a PUSHED front c=√(rD/2)(1-2a) with an EXTINCTION THRESHOLD: a<½ invade, a=½ stall, a>½ RETREAT (founder population dies). Matches CLOSED-FORM theory: Fisher c on the 2√(rD) line across r,D (slightly below = Bramson log correction); Allee velocity on √(rD/2)(1-2a) to <1%, zero-crossing exactly at a=½. 2D: Fisher colony 15→51 (invades) vs Allee a=0.7 colony 28→8 (extinct), same seed. Deterministic/reproducible. DISTINCT from barkley/excitable (excitable PULSE w/ refractory rest, not monostable invasion) + Gray-Scott/Turing (standing patterns). VISUAL: 2D invasion-vs-extinction snapshots + Fisher speed law + Allee velocity-vs-a zero-crossing + shape-invariant profiles + 38-frame side-by-side GIF |
 | R138 | Turing patterns on a sphere (turingsphere.py) — an animal coat on a curved CLOSED surface. Gray-Scott RD on an ICOSPHERE mesh (icosahedron subdivided n times → unit sphere; no lat-lon pole singularity, near-uniform resolution). Diffusion = row-normalized graph Laplacian (Lap u = mean(nbrs)−u, eigvals [−2,0] → standard GS step stable; conserves constants, |L·1|<1e-16). Three eyeball coat regimes by (F,k): isolated SPOTS (~41, leopard ball), LABYRINTH, CORAL. Sphere-specific QUANT: closed geometry quantises the pattern — spot count grows with sphere size (subdiv 3/4/5 → 0/18/41 spots, ∝ area/λ²; mesh refine = larger R/λ since normalized Laplacian sets λ in edge units). HONEST: spot-count only meaningful in the isolated-spots regime (size-law uses that; labyrinth/coral not counted as spots); graph Laplacian ≈ Laplace-Beltrami → qualitative pattern + size-scaling, not precise λ. DISTINCT from coatpattern (flat 2D taper) + reactiondiff (flat GS) — closed curved manifold + topological quantization. VISUAL: 3 coat-regime 3D balls (Poly3DCollection) + spot-count-vs-size + lon-lat unwrap + far side + 30-frame rotating GIF |
+| R140 | **REVIEW round** (milestone, 130 modules / 781 tests). (1) Full suite ALONE: 781 passed in 14m57s, 0 fail. (2) Adversarial fresh-seed re-verify of R131-R139 headlines on UNSEEN seeds (primes ≥41, tests use {0-4,7,11}): 17/17 survived — BZ spiral+rings, wolf-sheep coexist+boom-bust (lag-sign honestly excluded — not seed-robust, test rewritten to assert the robust CV signature instead), termite stigmergy-vs-random, murmuration 273-vs-2 catches (137× protection), Faraday k*=resonance + subharmonic Ω/2, grain power-law + greedy-pin control, Fisher c≈2√(rD) + symmetric Allee sign-change ±0.282, Turing-sphere 18→41 spots size-law, dendrite arm=j + 4× anisotropy growth. (3) Milestone gallery (run_gallery_r140.py) rendered + eye-verified — all 9 signatures correct. (4) De-slop: deleted 5 stale per-round gallery stubs + review_r2.workflow.js, fixed 5 dead `if False` branches, refreshed R1-frozen __init__ docstring. (5) Docs: README/CODEBASE_GUIDE/QUICKSTART counts → 130/781, README trimmed to CEO-R91 (no per-round catalog). (6) Architecture audit: HEALTHY (acyclic DAG, no god-objects, largest 237L); one deferred dedup (5-pt Laplacian copy-pasted ×12 → a future alife/stencil.py). (7) Ambition-critic verdict drove the next direction (below). |
 | R139 | Dendritic solidification (dendrite.py) — a snowflake crystal from an undercooled melt (Kobayashi 1993 phase field). Phase p (1=solid) couples to temperature T; anisotropic gradient energy ε(θ)=ε̄(1+δ cos(j(θ-θ0))) + latent heat K∂p/∂t; Mullins-Sekerka tip instability + lattice anisotropy → j sharp primary arms + side branches. Eye+data: 6-fold (ice) + 4-fold (cubic) dendrites + side-branched (noise) crystal + latent-heat HALO in T. QUANT: arm count = anisotropy mode j (angular-FFT of tip-radius profile; j=4→4, j=6→6 = measured equals set parameter); anisotropy DRIVES growth (δ=0.04 solid-frac 0.40 vs δ=0 0.10). HONEST: 'fat' dendrites not fine needles; square-grid Laplacian → spurious 4-fold at δ=0 and j≥8 (claim only j=4,6 physical cases); signs validated empirically vs saved probe. DISTINCT mechanism from snowflake (Reiter hexagonal vapour-CA) + dla (random-walk aggregation) — continuum PDE w/ latent-heat coupling + tunable anisotropy; retires deferred dendrite frontier. VISUAL: 6-fold+4-fold+side-branched crystals + T halo + arm=j bars + growth-vs-δ + 35-frame growth GIF |
 
 ## Honest notes (what did NOT work, recorded so they aren't re-tried blindly)
@@ -701,33 +719,55 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
-- **The capstone (R33) ties the project together:** brains + sensing + energy + reproduction +
-  in-situ natural selection in one living world, behavior evolving as you watch — the original vision
-  realized as ONE system, not a collection of demos. Both big ambition-critic leaps (open-endedness
-  R28–R30, morphology R31) and the longest-standing open problem (R3 in-situ selection) are now done.
-- Ways to push the capstone further: **(a) put evolved MORPHOLOGY creatures in the living world**
-  (body+brain+ecology in one); **(b) in-situ speciation / niches**; **(c) sexual reproduction +
-  recombination**. (R34 added in-situ predators — coexistence + prey evasion robust; a clean
-  two-sided arms race resisted tuning, see honest note.)
-- **R33 red-team nuance (R36):** the in-situ directedness gain is genuine natural selection (a no-mutation
-  run still rises by *sorting the initial random brains'* standing variation; R35's tracking, by contrast,
-  fully collapses with mutation off — confirming that one needs heritable innovation). Over ~5k steps
-  mutation adds little to R33 beyond selecting standing variation (and carries slight load). So R33 is
-  honestly "selection acting in situ," with cumulative mutation-driven innovation a smaller effect on
-  that horizon. Not an artifact — directedness depends on the energy-based life/death regime.
-- **R34 honest note:** in-situ predator–prey coexists robustly via a Huffaker refuge and prey reliably
-  evolve evasion, but a clean *two-sided* arms race (pursuit ALSO rising) did not materialize — the
-  predator population pins at its cap and prey are abundant, so pursuit selection is weak; predators
-  also get pursuit "for free" from a sensor that points at prey. Reported as the data shows it; this
-  is the same R5/R10/R14 knife-edge the project has hit before.
-- Remaining heavy leap: a **GPU-compute scale jump** (JAX/taichi → 1e5–1e6 agents / faster physics).
-  Scripted-phenomenon modules are at deep diminishing returns; the live frontier is the integrated world.
-- **R25 note:** pure-zero-start Fisher sits on the unstable equilibrium and does not bootstrap;
-  a small seeded preference (the sensory-bias origin of ornaments) is needed to trigger runaway —
-  this is the correct theoretical result, not a hack. Per-generation genetic correlation is small
-  but persistently positive; the runaway and the dose-response are the robust signatures.
-- **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU (fog/glow/shadows) → KD-tree scale
-  (~10k+) → **GPU compute shaders (R54–R60): 1M agents, SSBO+ping-pong+memory_barrier+atomics,
-  correctness-gated vs numpy.** Proven toolkit for any future megascale ALife.
-- **Status: published & synced** through R61 (origin/master public). Loop runs divergently under
-  standing order; only push/publish/delete-other-projects gate (push now pre-approved each round).
+
+### CEO DIRECTION SHIFT (2026-06-20, R140) — GENESIS: a living 3D world that grows a civilization
+Yusen steered the loop to a new major frontier: **build a real, alive 3D world that — just by running
+locally or in the cloud — freely develops toward a CIVILIZATION, populated by genuinely autonomous
+creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
+demo arc is retired.
+
+Locked decisions (CEO, R140):
+- **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
+  1. **Foundation** — a persistent 3D world with embodied agents driven by **evolved neural brains**;
+     sensing, movement, metabolism/energy, reproduction, death; behaviour genuinely EVOLVES as it runs.
+  2. **Emergent signalling → language** — agents evolve a shared communication code from scratch
+     (Lewis/Skyrms signalling, naming-game / iterated learning); measure mutual-information / compositionality rising.
+  3. **Cooperation + division of labour** — roles, group selection, specialisation emerge.
+  4. **Building / niche construction / economy** — agents reshape the 3D world (gather, store, build,
+     territory, trade); settlements appear (intentional niche construction, beyond R133 termite stigmergy).
+  5. **Cumulative culture** — learned knowledge passes across generations (a cultural ratchet) →
+     proto-civilization. Headline = an **open-ended complexity/novelty metric that keeps climbing** (never converges).
+- **Mind substrate = evolved neural brains** (brain.py lineage): each agent = a NN genome, evolves across
+  generations via mutation/recombination, plus light lifetime adaptation (Hebbian / small RL tweak).
+  Scales to 1e3–1e5 agents on CPU/GPU. Open-endedness comes from evolution + niche construction, not scripting.
+  Hybrid escalation allowed later: graft heavier learned cognition (RL / world-model) onto successful lineages once the world is alive.
+- **3D + visually-checkable + genuine emergence.** Acceptance = run the world, render 3D, WATCH behaviour
+  evolve, measure it, and red-team every "it's really evolving / a convention crystallised / culture
+  accumulates" claim before believing it. NEVER scripted theatre (Yusen: 不是简单的测试，真的有自主意识的生物发展).
+
+Why this direction (ambition-critic, R140): the R120–R139 arc became a **physics demo zoo** — ~20 isolated
+single-phenomenon PDE/CA renders, each verified once, breadth at the cost of depth; nothing OPEN-ENDED,
+INTEGRATED, or EVOLVING. The project's alive peak — the R33 capstone `alife/ecosim.py` (brains + energy +
+in-situ selection in one living world) — was abandoned at R34. GENESIS revives and massively extends it.
+
+### Reusable substrate already in the repo (build ON these, don't restart)
+- `ecosim.py` (R33) — the energy-limited living world where directed foraging evolves with no GA (the seed to revive/scale).
+- `brain.py` / `neuro.py` / `sensors.py` — NN genomes (forward/mutate), recurrence, sensing.
+- `world.py` / `world3d.py` / `render3d.py` — toroidal + 3D arenas, moderngl 3D rendering (fog/glow/shadows).
+- `evolve3d.py` / `coevo3d.py` / `predprey3d.py` / `bigworld3d.py` — 3D embodied ecologies (foragers, arms race).
+- `morphevo.py` — evolving bodies (for embodied agents later); `signals.py` — signalling primitives (lexicon seed).
+- `openended.py` / `navqd.py` / `noveltymaze.py` — QD / novelty-archive machinery (the open-ended complexity instrument).
+- GPU compute path (R54–R60): SSBO + ping-pong + atomics, 1M agents, correctness-gated vs numpy — the scale lever.
+
+### Engineering carry-overs / open items
+- **R33 nuance (R36):** in-situ directedness is genuine natural selection (sorts standing variation even with
+  mutation off); cumulative mutation-driven innovation needs a longer horizon + the energy-limited regime. GENESIS must run LONG.
+- **Arms-race knife-edge (R5/R10/R14/R34):** two-sided pursuit-vs-evasion escalation pins at population caps; GENESIS
+  needs the energy-limited, refuge-structured regime + scale for open-ended coevolution to actually escalate.
+- **Deferred tidy (R140 architecture audit):** 5-point toroidal Laplacian is copy-pasted verbatim in ~12 PDE
+  modules → fold into a shared `alife/stencil.py` (lap5/lap9/grad/div) in a future round (a sign-typo in any copy
+  is a silent physics bug). Low priority, do NOT destabilise the 12 verified modules in a tidy pass.
+- **Fidelity/stack ladder:** numpy 2D → numpy 3D + moderngl GPU → KD-tree (~10k) → GPU compute shaders (1M agents).
+  torch (CPU available, RTX 5080 / CUDA 13 local) is the lever for heavier per-agent cognition later.
+- **Status: published & synced** (origin/master public through R140). Loop runs divergently under standing order;
+  only push/publish/delete-other-projects gate (push pre-approved each round).

@@ -42,7 +42,7 @@ scripts/run.sh scripts/run_evolve3d.py --name foragers3d  # -> eco3d.mp4, fitnes
 # R9  — predator-prey in 3D (aerial arms race)
 scripts/run.sh scripts/run_coevo3d.py --name hunt3d       # -> hunt3d.mp4, arms_race3d.png
 
-# R10/R11 — the self-sustaining, atmospheric 3D living world  *** the finale ***
+# R10/R11 — the self-sustaining, atmospheric 3D living world  *** the first living world ***
 scripts/run.sh scripts/run_predprey3d.py --name world3d   # -> world3d.mp4, pop3d.png
 ```
 
@@ -61,4 +61,6 @@ scripts/test.sh
 - Cones point along each creature's heading; color in flocking views encodes heading.
 - The 3D world fades into atmospheric fog; the camera slowly orbits.
 
-See `README.md` for the full story (R1 → R11) and `progress.md` for current state.
+This tour covers R1 → R11 (the early living-world arc). For the full ~130-model catalog
+across all rounds and the current state, see [`progress.md`](progress.md); `README.md` has the
+project overview.

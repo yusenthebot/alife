@@ -37,7 +37,7 @@ axA.set_title(f"Poiseuille flow → parabolic profile\n(shape RMSE {shape_rmse:.
 axA.legend(fontsize=9); axA.grid(alpha=0.3)
 
 # B. Karman vorticity field (the showpiece)
-axB = fig.add_subplot(2, 1, 2) if False else fig.add_subplot(2, 2, (3, 4))
+axB = fig.add_subplot(2, 2, (3, 4))
 vlim = np.nanpercentile(np.abs(vort), 99)
 im = axB.imshow(vort.T, origin="lower", cmap="RdBu_r", vmin=-vlim, vmax=vlim, aspect="equal")
 axB.set_title(f"Kármán vortex street behind a cylinder — Re={Re:.0f}, Strouhal St={St:.2f} "

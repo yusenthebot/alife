@@ -2,12 +2,12 @@
 
 A growing library of artificial-life and complex-systems models, built from zero in autonomous
 **evolving rounds**. The project started at the simplest possible swarm — blind Boids flocking —
-and has climbed ~120 rounds since: genetic selection, neural-network brains, predator–prey arms
+and has climbed ~140 rounds since: genetic selection, neural-network brains, predator–prey arms
 races, energy/reproduction, 3D ecosystems you watch evolve, GPU worlds of a million agents, the
 origin of life, network science, self-organized criticality, reaction–diffusion and excitable
 media, major evolutionary transitions, active matter that evolves its own locomotion, fluid
 dynamics with evolved swimmers, random-matrix ecology, and developmental pattern formation
-(somitogenesis, growing-domain Turing, phyllotaxis, snow-crystal growth).
+(somitogenesis, growing-domain Turing, phyllotaxis, snow-crystal growth, dendritic solidification).
 
 Each round clears the current bar, researches the frontier, then raises it — and **every result is
 really run**: frames rendered, screenshots inspected, metrics plotted and red-teamed, never faked.
@@ -27,7 +27,7 @@ Each model is one self-contained Python module with its own tests and a reproduc
    └───────────────────────────────┬──────────────────────────────┘
                                     │  + 1 self-contained model per round
    ┌──────────────────────────────────────────────────────────────┐
-   │  MODEL CATALOG    alife/<topic>.py    (~121 models, R1 → Rn)   │
+   │  MODEL CATALOG    alife/<topic>.py    (~130 models, R1 → Rn)   │
    │  flocking · selection · neural brains · predator–prey · 3D     │
    │  ecosystems · open-endedness · evolving bodies · origin-of-    │
    │  life · networks · criticality · reaction–diffusion /          │
@@ -40,7 +40,7 @@ Each model is one self-contained Python module with its own tests and a reproduc
    │ brain · sensors  │   │ per-model        │   │   → runs/r<N>_<x>/  │
    │ particlelife     │   │ metrics &        │   │      *.png figures  │
    │ CA grids ·       │   │ red-team checks  │   │ tests/test_<topic>  │
-   │ networks         │   │                  │   │   (712 pytest)      │
+   │ networks         │   │                  │   │   (781 pytest)      │
    │ numpy · scipy ·  │   └──────────────────┘   └─────────────────────┘
    │ moderngl GPU     │
    └──────────────────┘
@@ -69,27 +69,18 @@ moderngl, pytest.
 ## Run it
 
 Use the `scripts/run.sh` wrapper — it runs inside the venv and sets the path so `import alife`
-works (and isolates from a sourced ROS2 `PYTHONPATH`, if any):
+works (and isolates from a sourced ROS2 `PYTHONPATH`, if any). There is one
+`scripts/run_<topic>.py` per model; each prints a short summary and writes its figure to
+`runs/<name>/` (gitignored).
 
 ```bash
-scripts/run.sh scripts/run_boids.py          # R1   — emergent flocking
-scripts/run.sh scripts/run_evolve.py         # R3   — evolved neural-network brains
-scripts/run.sh scripts/run_excitable.py      # R88  — excitable-media spiral waves
-scripts/run.sh scripts/run_chimera.py        # R115 — chimera states (order + chaos at once)
-scripts/run.sh scripts/run_phyllotaxis.py    # R118 — the golden angle of sunflowers
-scripts/run.sh scripts/run_snowflake.py      # R119 — six-fold snow-crystal growth
-```
-
-Each script prints a short summary and writes its figure (and any video/frames) to `runs/<name>/`
-(gitignored). Open the `.png`/`.mp4` to see the result. There is one `scripts/run_<topic>.py` per
-model — browse them, or see [`QUICKSTART.md`](QUICKSTART.md) for a guided tour.
-
-Run the test suite:
-
-```bash
-scripts/test.sh                              # full suite (712 tests)
+scripts/run.sh scripts/run_boids.py          # any model — writes runs/<name>/*.png
+scripts/test.sh                              # full suite (781 tests)
 scripts/test.sh tests/test_excitable.py      # a single model
 ```
+
+For a guided, round-by-round operator tour of which command shows what, see
+[`QUICKSTART.md`](QUICKSTART.md); for the full catalog, [`progress.md`](progress.md).
 
 ## License
 

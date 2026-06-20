@@ -38,7 +38,8 @@ def _draw(ax, edges, n, title, color):
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     n, m = 4000, 2
-    ba, er = ba_graph(n, m, seed=0), er_graph(n, None if False else len(ba_graph(n, m, seed=0)), seed=0)
+    ba = ba_graph(n, m, seed=0)
+    er = er_graph(n, len(ba), seed=0)
     eb = powerlaw_exponent(ba, n); ee = powerlaw_exponent(er, n)
     db, de = degrees(ba, n), degrees(er, n)
     print(f"BA: CCDF slope {eb:.2f} (scale-free ~ -2), max degree {db.max()} (hub)")
