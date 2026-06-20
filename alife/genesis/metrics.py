@@ -208,6 +208,50 @@ def caste_metrics(spec: np.ndarray) -> dict:
     }
 
 
+def clark_evans(pos: np.ndarray, side: float) -> float:
+    """Clark-Evans nearest-neighbour index R for points in a cube of side `side` (volume side^3).
+    R = observed mean NN distance / expected-under-Poisson (0.554*(V/N)^(1/3)). R<1 = CLUSTERED
+    (settlements), ~1 = random, >1 = dispersed. The R148 settlement signature for hearth placement."""
+    n = pos.shape[0]
+    if n < 3 or side <= 0:
+        return 1.0
+    d, _ = cKDTree(pos).query(pos, k=2)
+    obs = float(d[:, 1].mean())
+    expected = 0.554 * (side ** 3 / n) ** (1.0 / 3.0)
+    return obs / expected if expected > 0 else 1.0
+
+
+def niche_metrics(struct_pos: np.ndarray, struct_strength: np.ndarray, struct_age: np.ndarray,
+                  agent_pos: np.ndarray, agent_age: np.ndarray, side: float,
+                  hearth_radius: float, min_strength: float, mean_agent_lifespan: float) -> dict:
+    """Niche-construction read-out (R148). Built from STRONG hearths only (the ones that actually shape the
+    world). In situ; never feeds selection.
+      - n_hearths        : number of strong (food-ripening) hearths standing.
+      - settlement       : Clark-Evans R of hearth positions (<1 = clustered into settlements, not scattered).
+      - mean_struct_age  : mean age of standing hearths (steps since founded).
+      - inherit_ratio    : mean_struct_age / mean_agent_lifespan. >1 = hearths OUTLIVE their builders =
+                           ecological inheritance (the world carries structure across generational turnover).
+      - inherit_frac     : fraction of living agents whose NEAREST strong hearth is OLDER than the agent
+                           itself, i.e. that agent inherited a hearth built before it was born.
+      - near_frac        : fraction of agents within hearth_radius of a strong hearth (settled, not roaming).
+    """
+    strong = struct_strength >= min_strength
+    sp = struct_pos[strong]
+    sa = struct_age[strong].astype(float)
+    out = {"n_hearths": float(sp.shape[0]), "settlement": 1.0, "mean_struct_age": 0.0,
+           "inherit_ratio": 0.0, "inherit_frac": 0.0, "near_frac": 0.0}
+    if sp.shape[0] == 0 or agent_pos.shape[0] == 0:
+        return out
+    out["settlement"] = clark_evans(sp, side)
+    out["mean_struct_age"] = float(sa.mean())
+    if mean_agent_lifespan > 0:
+        out["inherit_ratio"] = float(sa.mean()) / mean_agent_lifespan
+    d, idx = cKDTree(sp).query(agent_pos, k=1)
+    out["near_frac"] = float((d < hearth_radius).mean())
+    out["inherit_frac"] = float((sa[idx] > agent_age.astype(float)).mean())
+    return out
+
+
 def diet_diversity(diet: np.ndarray, n_types: int) -> float:
     """Effective number of occupied diet niches = exp(Shannon) over the rounded-diet histogram.
 

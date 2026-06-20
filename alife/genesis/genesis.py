@@ -163,6 +163,31 @@ class GenesisConfig:
     force_generalist: bool = False     # productivity control: freeze every agent's spec at 0.5 (a forced
                                        # monomorphic generalist economy) -> isolates whether the EVOLVED
                                        # bimodal caste out-produces a non-specialized population.
+    # niche construction / building (R148 — Stage 4). Beyond R147's TRANSIENT processor labour: building=True
+    # lets an agent deposit a PERSISTENT structure (a "hearth") into the world via the evolved process-gate
+    # output (reused as a BUILD gate), paying build_cost. A build act founds a new hearth at the agent's
+    # position OR — if one is already within build_merge_radius — REINFORCES it (+build_gain strength), so
+    # repeated building accretes into spatially clustered SETTLEMENTS (stigmergy without a scripted template).
+    # Hearths DECAY (struct_decay/step): an un-maintained one fades over ~a lifespan, a continually re-invested
+    # one persists indefinitely and so OUTLIVES its builder. The environmental feedback: raw food within
+    # hearth_radius of a hearth strong enough (>=hearth_min_strength) ripens PASSIVELY each step — the
+    # persistent structure does the labour a live processor did in R146/R147. Raw food ripens ONLY near hearths,
+    # so the population must reshape its world to eat: niche construction with ecological inheritance (later
+    # generations inherit and maintain ancestors' hearths). Requires processing=True (the raw/ripe economy +
+    # raw-food sense); prey gain a nearest-hearth sense channel so they can navigate to settlements. The
+    # process-gate output is REPURPOSED as the build gate (no extra output); _process (transient ripening) is
+    # replaced by _build + passive hearth ripening. building=False is the R141..R147 world, byte-identical.
+    building: bool = False
+    struct_capacity: int = 600         # fixed hearth pool (bounded memory; reused free slots, never grows)
+    build_cost: float = 2.0            # energy a build act costs (keeps pure harvesting attractive)
+    build_gain: float = 1.0            # strength a build act adds (founds at this, or reinforces by it)
+    struct_decay: float = 0.004        # strength lost/step: unmaintained hearth (strength~1) fades in ~250 steps
+                                       # << max_age 1600, so persistence REQUIRES cross-generation maintenance
+    build_merge_radius: float = 6.0    # build within this of a hearth reinforces it (stigmergic accretion)
+    hearth_radius: float = 7.0         # raw food within this of a strong hearth ripens passively each step
+    hearth_min_strength: float = 1.0   # a hearth ripens food only once invested past this (must be built up)
+    build_persist: bool = True         # ablation: False -> hearths last a single step (NO ecological
+                                       # inheritance) -> isolates the value of a PERSISTENT built environment.
     # metric
     persist_steps: int = 200
 
@@ -176,13 +201,17 @@ class GenesisWorld:
         self.signalling = self.cfg.signalling
         self.processing = self.cfg.processing
         self.specialize = self.cfg.specialize
+        self.building = self.cfg.building
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
             raise ValueError("specialize (R147 caste trade-off) requires processing=True")
+        if self.building and not self.processing:
+            raise ValueError("building (R148 niche construction) requires processing=True")
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
-                   + (4 if self.processing else 0))          # +nearest-RAW-food sense channel (R146)
+                   + (4 if self.processing else 0)           # +nearest-RAW-food sense channel (R146)
+                   + (4 if self.building else 0))            # +nearest-HEARTH sense channel (R148)
         prey_out = (N_OUT + (1 if self.signalling else 0)    # +utterance output (R144); _act ignores it
                     + (1 if self.processing else 0))         # +process gate output (R146); _act ignores it
         # index of the process-gate output (after movement and the optional utterance output)
@@ -212,6 +241,17 @@ class GenesisWorld:
         if self.has_predators:
             self.pred = Population(PopConfig(self.cfg.pred_capacity, self.pred_spec.n_weights))
             self._seed_predators()
+        # persistent hearth structures (R148 niche construction) — a fixed-capacity SoA, free-slot reuse
+        # so a multi-day run can't grow memory. Empty until agents build. strength<=0 frees the slot.
+        m = self.cfg.struct_capacity
+        self.struct_pos = np.zeros((m, 3))
+        self.struct_strength = np.zeros(m)
+        self.struct_birth = np.zeros(m, dtype=np.int64)     # step the hearth was founded (-> its age)
+        self.struct_founder_gen = np.zeros(m, dtype=np.int32)
+        self.struct_max_gen = np.zeros(m, dtype=np.int32)   # latest builder generation that maintained it
+        self.struct_alive = np.zeros(m, dtype=bool)
+        self._death_age_sum = 0.0                            # realized-lifespan accumulator (R148 inheritance)
+        self._death_count = 0
 
     # --- setup ---
     def _seed_population(self) -> None:
@@ -349,6 +389,8 @@ class GenesisWorld:
                 parts.append(self._heard(act, ni, nprox))
             if self.processing:                             # +nearest-RAW-food sense channel (R146)
                 parts.append(_sense_kd(pos, r, u, f, self.food[~self.food_ripe], cfg.sense_range))
+            if self.building:                               # +nearest-HEARTH sense channel (R148)
+                parts.append(self._sense_hearths(pos, r, u, f))
             parts.append(e)
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)  # _act reads out[:,:3]
@@ -361,9 +403,14 @@ class GenesisWorld:
             speed = np.linalg.norm(newvel, axis=1)
             p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit),
                                        cfg.e_max)
-            if self.processing:                             # ripen nearby raw food (the costly labour)
+            if self.building:                               # deposit/reinforce a persistent hearth (R148)
+                self._build(act, out)
+            elif self.processing:                           # ripen nearby raw food (the costly labour)
                 self._process(act, out)
             p.age[act] += 1
+        if self.building:                                   # hearths ripen nearby raw food, then decay
+            self._ripen_hearths()
+            self._decay_structures()
         self._eat()
         if self.processing:
             self._decay_ripe()
@@ -477,6 +524,86 @@ class GenesisWorld:
         self.food_ripe[expired] = False
         self.ripe_age[expired] = 0
 
+    # --- niche construction / building (R148) ---
+    def _strong_hearths(self) -> np.ndarray:
+        """Global indices of hearths invested past hearth_min_strength (the ones that ripen food + are sensed)."""
+        return np.where(self.struct_alive & (self.struct_strength >= self.cfg.hearth_min_strength))[0]
+
+    def _sense_hearths(self, pos, r, u, f) -> np.ndarray:
+        """Prey body-frame sense of the nearest STRONG hearth (R148) -> (P,4). Lets agents navigate to
+        settlements (where food ripens). Only strong hearths are sensed — a faint deposit is not yet a site."""
+        strong = self._strong_hearths()
+        if strong.size == 0:
+            return np.zeros((pos.shape[0], 4))
+        return _sense_kd(pos, r, u, f, self.struct_pos[strong], self.cfg.sense_range)
+
+    def _build(self, act: np.ndarray, out: np.ndarray) -> None:
+        """Builders (process-gate>0) deposit/reinforce a persistent hearth, paying build_cost. A build act
+        within build_merge_radius of an existing hearth REINFORCES it (stigmergic accretion -> settlements);
+        otherwise it FOUNDS a new one in a free slot. Founder/maintainer generations are tracked so ecological
+        inheritance (later generations maintaining ancestors' hearths) is measurable."""
+        cfg, p = self.cfg, self.pop
+        gate = out[:, self._proc_out] > 0.0                 # reuse the process-gate output as the build gate
+        builders = np.where(gate)[0]                         # rows in act
+        if builders.size == 0:
+            return
+        bpos = p.pos[act[builders]]
+        bgen = p.generation[act[builders]]
+        alive = np.where(self.struct_alive)[0]
+        if alive.size:
+            d, near = cKDTree(self.struct_pos[alive]).query(bpos, k=1)
+            reinforce = d < cfg.build_merge_radius
+        else:
+            d = np.full(builders.size, np.inf)
+            near = np.zeros(builders.size, dtype=int)
+            reinforce = np.zeros(builders.size, dtype=bool)
+        # REINFORCE existing hearths (accumulate strength; raise the maintainer generation)
+        if reinforce.any():
+            tgt = alive[near[reinforce]]
+            np.add.at(self.struct_strength, tgt, cfg.build_gain)
+            np.maximum.at(self.struct_max_gen, tgt, bgen[reinforce])
+        # FOUND new hearths for builders with no hearth nearby (bounded by free slots)
+        founders = np.where(~reinforce)[0]
+        if founders.size:
+            free = np.where(~self.struct_alive)[0]
+            k = min(founders.size, free.size)
+            if k:
+                slots = free[:k]
+                who = founders[:k]
+                self.struct_pos[slots] = bpos[who]
+                self.struct_strength[slots] = cfg.build_gain
+                self.struct_birth[slots] = self.step_count
+                self.struct_founder_gen[slots] = bgen[who]
+                self.struct_max_gen[slots] = bgen[who]
+                self.struct_alive[slots] = True
+        p.energy[act[builders]] -= cfg.build_cost            # every build act pays, found or reinforce
+
+    def _ripen_hearths(self) -> None:
+        """Raw food within hearth_radius of a strong hearth ripens passively (the persistent built labour).
+        Re-applied each step, so food near a hearth stays a usable flow; food away from any hearth stays raw."""
+        strong = self._strong_hearths()
+        raw = np.where(~self.food_ripe)[0]
+        if strong.size == 0 or raw.size == 0:
+            return
+        d, _ = cKDTree(self.struct_pos[strong]).query(self.food[raw], k=1)
+        ripened = raw[d < self.cfg.hearth_radius]
+        if ripened.size:
+            self.food_ripe[ripened] = True
+            self.ripe_age[ripened] = 0
+
+    def _decay_structures(self) -> None:
+        """Hearths lose strength each step; one drops dead (slot freed) at strength<=0. build_persist=False
+        wipes every hearth each step (the no-ecological-inheritance ablation)."""
+        if not self.cfg.build_persist:
+            self.struct_alive[:] = False
+            self.struct_strength[:] = 0.0
+            return
+        live = self.struct_alive
+        self.struct_strength[live] -= self.cfg.struct_decay
+        gone = live & (self.struct_strength <= 0.0)
+        self.struct_alive[gone] = False
+        self.struct_strength[gone] = 0.0
+
     def _die(self) -> None:
         cfg, p = self.cfg, self.pop
         act = p.active()
@@ -484,6 +611,8 @@ class GenesisWorld:
             return
         dead = act[(p.energy[act] <= 0.0) | (p.age[act] >= cfg.max_age)]
         if dead.size:
+            self._death_age_sum += float(p.age[dead].sum())   # realized lifespans (R148 inheritance comparator)
+            self._death_count += int(dead.size)
             p.kill(dead)
 
     # --- predators (R143) ---
@@ -634,6 +763,7 @@ class GenesisWorld:
             "ripe_food": float(self.food_ripe.sum()) if self.processing else 0.0,
             "spec_bimodality": (metrics.bimodality(p.spec[act]) if self.specialize and act.size else 0.0),
             "spec_mean": (float(p.spec[act].mean()) if self.specialize and act.size else 0.0),
+            "n_hearths": float(self._strong_hearths().size) if self.building else 0.0,
         }
 
     def caste_test(self) -> dict:
@@ -730,6 +860,8 @@ class GenesisWorld:
         if self.signalling:
             parts.append(self._heard(act, ni, nprox))
         parts.append(_sense_kd(pos, r, u, f, self.food[~self.food_ripe], cfg.sense_range))
+        if self.building:
+            parts.append(self._sense_hearths(pos, r, u, f))
         parts.append((p.energy[act] / cfg.e_repro).reshape(-1, 1))
         out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
         return out[:, self._proc_out] > 0.0, out
@@ -767,6 +899,26 @@ class GenesisWorld:
             "n": int(act.size),
         }
 
+    def niche_test(self) -> dict:
+        """The R148 niche-construction read-out: are the self-built hearths CLUSTERED into settlements, do they
+        OUTLIVE their builders (ecological inheritance), and is the population settled around them? In situ."""
+        if not self.building:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < 20:
+            return {}
+        lifespan = (self._death_age_sum / self._death_count) if self._death_count else float(p.age[act].mean())
+        age = self.step_count - self.struct_birth
+        return metrics.niche_metrics(self.struct_pos, np.where(self.struct_alive, self.struct_strength, -1.0),
+                                     age, p.pos[act], p.age[act], self.cfg.world.size,
+                                     self.cfg.hearth_radius, self.cfg.hearth_min_strength, lifespan)
+
+    def hearth_arrays(self):
+        """(pos, strength) of the standing STRONG hearths — for rendering settlements as built structures."""
+        strong = self._strong_hearths()
+        return self.struct_pos[strong], self.struct_strength[strong]
+
     def render_arrays(self):
         """(pos, vel, color, food) of the living agents — prey + predators — for render3d.Renderer3D."""
         p, act = self.pop, self.pop.active()
@@ -789,6 +941,12 @@ class GenesisWorld:
             food_ripe=self.food_ripe,
             ripe_age=self.ripe_age,
             food_proc=self.food_proc,
+            struct_pos=self.struct_pos,
+            struct_strength=self.struct_strength,
+            struct_birth=self.struct_birth,
+            struct_founder_gen=self.struct_founder_gen,
+            struct_max_gen=self.struct_max_gen,
+            struct_alive=self.struct_alive,
             evolve=np.bool_(self.evolve),
             rng=np.array(json.dumps(self.rng.bit_generator.state)),
             lin_keys=np.array(list(self.lineage_first_step.keys()), dtype=np.int64),
@@ -807,6 +965,13 @@ class GenesisWorld:
                          else np.zeros(self.food.shape[0], dtype=np.int32))
         self.food_proc = (d["food_proc"] if "food_proc" in d.files
                           else np.full(self.food.shape[0], -1, dtype=np.int64))
+        if "struct_pos" in d.files:                          # hearths (R148); absent in pre-R148 checkpoints
+            self.struct_pos = d["struct_pos"]
+            self.struct_strength = d["struct_strength"]
+            self.struct_birth = d["struct_birth"]
+            self.struct_founder_gen = d["struct_founder_gen"]
+            self.struct_max_gen = d["struct_max_gen"]
+            self.struct_alive = d["struct_alive"]
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}

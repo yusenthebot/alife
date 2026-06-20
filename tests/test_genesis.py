@@ -651,3 +651,145 @@ def test_caste_test_reports_structure_and_determinism():
     out = a.caste_test()
     assert {"spec_mean", "bimodality", "frac_specialist", "proc_spec", "harv_spec", "n"} <= set(out)
     assert GenesisWorld(fast_cfg(processing=True), seed=0).caste_test() == {}    # off -> empty
+
+
+# ---------- niche construction / building (R148, Stage 4) ----------
+def _bcfg(**kw):
+    return fast_cfg(processing=True, building=True, **kw)
+
+
+def test_building_requires_processing():
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(building=True), seed=0)
+
+
+def test_building_adds_hearth_sense_channel():
+    base = GenesisWorld(fast_cfg(processing=True), seed=0)
+    built = GenesisWorld(_bcfg(), seed=0)
+    assert built.spec.n_in == base.spec.n_in + 4        # +nearest-hearth sense channel
+    assert built.spec.n_out == base.spec.n_out          # build gate REUSES the process-gate output
+
+
+def test_building_off_is_deterministic_unchanged():
+    a = GenesisWorld(fast_cfg(processing=True), seed=4)
+    b = GenesisWorld(fast_cfg(processing=True, building=False), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)          # building=False draws no extra RNG
+
+
+def test_build_act_founds_then_reinforces_hearth():
+    w = GenesisWorld(_bcfg(n0=4), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act[0]] = np.array([20.0, 20.0, 20.0])
+    out = np.zeros((act.size, w.spec.n_out)); out[0, w._proc_out] = 1.0   # agent 0 builds
+    w._build(act, out)
+    assert w.struct_alive.sum() == 1                     # founded one hearth
+    s0 = w.struct_strength[w.struct_alive][0]
+    w._build(act, out)                                   # builds again at same spot -> reinforces (within merge)
+    assert w.struct_alive.sum() == 1
+    assert w.struct_strength[w.struct_alive][0] > s0     # strength accreted, no second hearth
+
+
+def test_build_far_apart_founds_separate_hearths():
+    w = GenesisWorld(_bcfg(n0=4), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act[0]] = np.array([10.0, 10.0, 10.0])
+    w.pop.pos[act[1]] = np.array([70.0, 70.0, 70.0])     # far beyond build_merge_radius
+    out = np.zeros((act.size, w.spec.n_out)); out[[0, 1], w._proc_out] = 1.0
+    w._build(act, out)
+    assert w.struct_alive.sum() == 2
+
+
+def test_hearths_ripen_only_nearby_raw_food():
+    w = GenesisWorld(_bcfg(), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0])
+    w.struct_strength[0] = 2.0                            # strong enough to ripen
+    w.struct_alive[0] = True
+    w.food = np.array([[45.0, 45.0, 47.0],               # within hearth_radius -> ripens
+                       [10.0, 10.0, 10.0]])              # far away -> stays raw
+    w.food_ripe = np.zeros(2, dtype=bool)
+    w.ripe_age = np.zeros(2, dtype=np.int32)
+    w._ripen_hearths()
+    assert w.food_ripe[0] and not w.food_ripe[1]
+
+
+def test_weak_hearth_does_not_ripen():
+    w = GenesisWorld(_bcfg(), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0])
+    w.struct_strength[0] = 0.3                            # below hearth_min_strength
+    w.struct_alive[0] = True
+    w.food = np.array([[45.0, 45.0, 46.0]])
+    w.food_ripe = np.zeros(1, dtype=bool); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w._ripen_hearths()
+    assert not w.food_ripe[0]                             # a faint deposit is not yet a working hearth
+
+
+def test_unmaintained_hearth_decays_and_dies():
+    w = GenesisWorld(_bcfg(struct_decay=0.1), seed=0)
+    w.struct_strength[0] = 0.25; w.struct_alive[0] = True
+    for _ in range(3):
+        w._decay_structures()
+    assert not w.struct_alive[0]                          # 0.25 - 3*0.1 <= 0 -> freed
+
+
+def test_build_persist_false_wipes_hearths_each_step():
+    w = GenesisWorld(_bcfg(build_persist=False), seed=0)
+    w.struct_strength[0] = 5.0; w.struct_alive[0] = True
+    w._decay_structures()
+    assert w.struct_alive.sum() == 0                      # no ecological inheritance in the ablation
+
+
+def test_clark_evans_clustered_below_uniform():
+    rng = np.random.default_rng(0)
+    side = 100.0
+    uniform = rng.uniform(0, side, size=(300, 3))
+    centers = rng.uniform(20, 80, size=(5, 3))
+    clustered = centers[rng.integers(0, 5, 300)] + rng.normal(0, 2.0, size=(300, 3))
+    assert metrics.clark_evans(clustered, side) < metrics.clark_evans(uniform, side)
+    assert metrics.clark_evans(clustered, side) < 1.0    # R<1 = settlements
+
+
+def test_niche_metrics_inheritance_fields():
+    # one old hearth (age 500) with young agents around it -> inherited
+    sp = np.array([[50.0, 50.0, 50.0], [10.0, 80.0, 30.0]])
+    strength = np.array([3.0, 3.0]); age = np.array([500, 480])
+    ap = np.array([[50.0, 50.0, 52.0]] * 30)
+    aage = np.full(30, 20)
+    out = metrics.niche_metrics(sp, strength, age, ap, aage, 100.0, 7.0, 1.0, mean_agent_lifespan=100.0)
+    assert out["n_hearths"] == 2
+    assert out["mean_struct_age"] > 100                  # hearths far older than agents
+    assert out["inherit_ratio"] > 1.0                    # outlive their builders
+    assert out["inherit_frac"] == 1.0                    # every agent's nearest hearth predates it
+    assert out["near_frac"] == 1.0
+
+
+def test_niche_test_runs_and_reports():
+    w = GenesisWorld(_bcfg(n0=200), seed=0)
+    for _ in range(120):
+        w.step()
+    out = w.niche_test()
+    assert {"n_hearths", "settlement", "mean_struct_age", "inherit_ratio",
+            "inherit_frac", "near_frac"} <= set(out)
+    assert GenesisWorld(fast_cfg(processing=True), seed=0).niche_test() == {}   # off -> empty
+
+
+def test_building_world_builds_hearths_under_evolution():
+    w = GenesisWorld(_bcfg(n0=200), seed=0)
+    for _ in range(200):
+        w.step()
+    assert w.struct_alive.sum() > 0                       # agents actually deposit hearths to eat
+    assert w.pop.n_alive > 0                              # and survive on the world they reshaped
+
+
+def test_checkpoint_roundtrip_with_hearths(tmp_path):
+    w = GenesisWorld(_bcfg(n0=120), seed=1)
+    for _ in range(150):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_bcfg(n0=120), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w.struct_alive, w2.struct_alive)
+    assert np.allclose(w.struct_strength, w2.struct_strength)
+    assert np.array_equal(w.struct_birth, w2.struct_birth)
