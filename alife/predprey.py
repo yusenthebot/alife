@@ -20,6 +20,28 @@ from .brain import BrainSpec
 from .coevo import _move, _sense_set, spec
 from .world import World
 
+# Chunk size for the pairwise (query x target) ops below. The old dense forms allocated a full
+# (N_query x N_target x 2) array. SCALE-HARDENING: at the default caps (2000x720x2x8) that is only
+# ~23 MB — fine — but it grows to GB-scale past a few thousand agents, so chunk over the query axis:
+# IDENTICAL result, bounded O(CHUNK x N_target) memory, no KD-tree tie-break drift. (Not the cause of
+# the observed 51 GB OOM — that was a leaked MuJoCo sim; see ~/.claude/rules/common/performance.md.)
+_CHUNK = 512
+
+
+def _chunked_nearest(world: World, queries: np.ndarray, targets: np.ndarray):
+    """Per-query nearest target (toroidal): returns (dist, idx) over targets. Memory-safe."""
+    n = queries.shape[0]
+    dist = np.empty(n)
+    idx = np.empty(n, dtype=int)
+    for s in range(0, n, _CHUNK):
+        q = queries[s:s + _CHUNK]
+        rel = world.delta_to(q, targets)                       # (chunk, M, 2)
+        d2 = np.einsum("nmk,nmk->nm", rel, rel)
+        a = d2.argmin(1)
+        idx[s:s + _CHUNK] = a
+        dist[s:s + _CHUNK] = np.sqrt(d2[np.arange(q.shape[0]), a])
+    return dist, idx
+
 
 @dataclass(frozen=True)
 class PredPreyConfig:
@@ -87,19 +109,28 @@ class PredPreyEcosystem:
     def _vel(self, sp: dict) -> np.ndarray:
         return np.stack([np.cos(sp["head"]), np.sin(sp["head"])], axis=1)
 
+    def _sense_chunked(self, pos, head, targets, k) -> np.ndarray:
+        """Sectored sensing, chunked over agents — identical to _sense_set, bounded memory."""
+        w, sr = self.cfg.world, self.cfg.sense_range
+        if targets.shape[0] == 0:
+            return np.zeros((pos.shape[0], k))
+        out = [_sense_set(w, pos[s:s + _CHUNK], head[s:s + _CHUNK], targets, None, sr, k)
+               for s in range(0, pos.shape[0], _CHUNK)]
+        return np.vstack(out)
+
     def step(self) -> None:
         cfg, w, k = self.cfg, self.cfg.world, sensors.K_SECTORS
         prey, pred = self.prey, self.pred
 
         # ---- movement (evolved brains) ----
         if prey["pos"].shape[0]:
-            food_ch = _sense_set(w, prey["pos"], prey["head"], self.food, None, cfg.sense_range, k)
-            pred_ch = _sense_set(w, prey["pos"], prey["head"], pred["pos"], None, cfg.sense_range, k)
+            food_ch = self._sense_chunked(prey["pos"], prey["head"], self.food, k)
+            pred_ch = self._sense_chunked(prey["pos"], prey["head"], pred["pos"], k)
             prey["pos"], prey["head"], prey["vel"] = _move(
                 w, prey["pos"], prey["head"], prey["brains"], self.spec,
                 cfg.prey_speed, cfg.prey_turn, k, food_ch, pred_ch)
         if pred["pos"].shape[0]:
-            prey_ch = _sense_set(w, pred["pos"], pred["head"], prey["pos"], None, cfg.sense_range, k)
+            prey_ch = self._sense_chunked(pred["pos"], pred["head"], prey["pos"], k)
             pred["pos"], pred["head"], pred["vel"] = _move(
                 w, pred["pos"], pred["head"], pred["brains"], self.spec,
                 cfg.pred_speed, cfg.pred_turn, k, prey_ch, np.zeros((pred["pos"].shape[0], k)))
@@ -134,11 +165,10 @@ class PredPreyEcosystem:
         cfg, w, prey = self.cfg, self.cfg.world, self.prey
         if not (prey["pos"].shape[0] and self.food.shape[0]):
             return
-        fr = w.delta_to(prey["pos"], self.food)
-        fd2 = np.einsum("nfk,nfk->nf", fr, fr)
-        eaten = fd2.min(0) < cfg.eat_radius ** 2
+        dist, idx = _chunked_nearest(w, self.food, prey["pos"])   # each food -> its nearest prey
+        eaten = dist < cfg.eat_radius
         if eaten.any():
-            np.add.at(prey["energy"], fd2.argmin(0)[eaten], cfg.food_value)
+            np.add.at(prey["energy"], idx[eaten], cfg.food_value)
             self.food = self.food[~eaten]
 
     def _catch(self) -> None:
@@ -146,11 +176,9 @@ class PredPreyEcosystem:
         cfg, w, prey, pred = self.cfg, self.cfg.world, self.prey, self.pred
         if not (pred["pos"].shape[0] and prey["pos"].shape[0]):
             return
-        pr = w.delta_to(pred["pos"], prey["pos"])
-        pd2 = np.einsum("pmk,pmk->pm", pr, pr)
+        dist, nearest = _chunked_nearest(w, pred["pos"], prey["pos"])   # each pred -> nearest prey
         prey_alive = np.ones(prey["pos"].shape[0], dtype=bool)
-        nearest = pd2.argmin(1)
-        can = (pd2[np.arange(pred["pos"].shape[0]), nearest] < cfg.catch_radius ** 2) & (pred["cooldown"] == 0)
+        can = (dist < cfg.catch_radius) & (pred["cooldown"] == 0)
         for p in np.where(can)[0]:
             tgt = nearest[p]
             if prey_alive[tgt]:

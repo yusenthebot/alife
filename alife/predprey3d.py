@@ -14,9 +14,29 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from scipy.spatial import cKDTree
+
 from . import brain
-from .coevo3d import _act, _body_frame, _sense, spec
+from .coevo3d import _act, _body_frame, spec
 from .world3d import World3D
+
+
+def _sense_kd(pos, right, up, fwd, targets, sense_range):
+    """Body-frame sensing of the nearest target via KD-tree -> (P,4) = [bx,by,bz]*prox, prox.
+
+    Identical result to the dense coevo3d._sense (same nearest target) but O(P log M) memory instead
+    of the O(P*M*3) array. SCALE-HARDENING: the dense form is only ~30 MB at the default caps
+    (1500x850x3x8) — fine — but grows to GB-scale past a few thousand agents and is catastrophic at
+    megascale, so use this KD-tree path before scaling up (see ~/.claude/rules/common/performance.md)."""
+    p = pos.shape[0]
+    if targets.shape[0] == 0:
+        return np.zeros((p, 4))
+    dist, idx = cKDTree(targets).query(pos, k=1)
+    nearest = targets[idx] - pos
+    unit = nearest / np.maximum(np.linalg.norm(nearest, axis=1, keepdims=True), 1e-9)
+    prox = np.where(dist < sense_range, 1.0 - dist / sense_range, 0.0)
+    return np.stack([(unit * right).sum(1) * prox, (unit * up).sum(1) * prox,
+                     (unit * fwd).sum(1) * prox, prox], axis=1)
 
 
 @dataclass(frozen=True)
@@ -83,15 +103,15 @@ class PredPrey3DEcosystem:
         # prey move (sense food + predators)
         if prey["pos"].shape[0]:
             r, u, f = _body_frame(prey["vel"])
-            fs = _sense(w, prey["pos"], r, u, f, self.food, None, cfg.sense_range)
-            ps = _sense(w, prey["pos"], r, u, f, pred["pos"], None, cfg.sense_range)
+            fs = _sense_kd(prey["pos"], r, u, f, self.food, cfg.sense_range)
+            ps = _sense_kd(prey["pos"], r, u, f, pred["pos"], cfg.sense_range)
             prey["vel"] = _act(brain.forward(prey["brains"], self.spec, np.concatenate([fs, ps], 1)),
                                r, u, f, prey["vel"], cfg.prey_force, cfg.min_speed, cfg.prey_speed)
             prey["pos"] = w.clamp(prey["pos"] + prey["vel"])
         # predators move (sense prey)
         if pred["pos"].shape[0]:
             r, u, f = _body_frame(pred["vel"])
-            qs = _sense(w, pred["pos"], r, u, f, prey["pos"], None, cfg.sense_range)
+            qs = _sense_kd(pred["pos"], r, u, f, prey["pos"], cfg.sense_range)
             z = np.zeros((pred["pos"].shape[0], 4))
             pred["vel"] = _act(brain.forward(pred["brains"], self.spec, np.concatenate([qs, z], 1)),
                                r, u, f, pred["vel"], cfg.pred_force, cfg.min_speed, cfg.pred_speed)
@@ -113,14 +133,15 @@ class PredPrey3DEcosystem:
             self.food = np.vstack([self.food, self.rng.uniform(0, w.size, size=(need, 3))])
 
     def _graze(self):
+        # KD-tree (food -> nearest prey, multi-eat) — identical to the old dense
+        # `food[None]-prey[:,None]` argmin but O(F log P) memory not O(P*F*3) (scale-hardening).
         cfg, prey = self.cfg, self.prey
         if not (prey["pos"].shape[0] and self.food.shape[0]):
             return
-        rel = self.food[None] - prey["pos"][:, None, :]
-        fd2 = np.einsum("nfk,nfk->nf", rel, rel)
-        eaten = fd2.min(0) < cfg.eat_radius ** 2
+        dist, idx = cKDTree(prey["pos"]).query(self.food, k=1)   # each food -> its nearest prey
+        eaten = dist < cfg.eat_radius
         if eaten.any():
-            np.add.at(prey["energy"], fd2.argmin(0)[eaten], cfg.food_value)
+            np.add.at(prey["energy"], idx[eaten], cfg.food_value)
             self.food = self.food[~eaten]
 
     def _catch(self):
