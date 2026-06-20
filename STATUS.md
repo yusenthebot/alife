@@ -17,7 +17,7 @@ doing:    R149 DONE — Stage-5 cumulative culture = POSITIVE. culture=True give
           tech is a separate array never touched by mutate_brains; fidelity dose-response can't be faked. HONEST
           caveats (applied): headline now LEADS tech_mean (falsifiable, collapses w/o transmission) not the
           near-monotone tech_max high-water mark; "open-ended/keeps climbing" SOFTENED to fidelity-bounded ceiling
-          (~innov/(1-fidelity), high but finite). 89 genesis tests green (12 new). COMMITTED + PUSHED.
+          (~innov/(1-fidelity), high but finite). 77 genesis tests green (13 new). COMMITTED + PUSHED.
 blocked:  none
 docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool (bounded, <1GB); close GL ctx (r.ctx.release()). numpy/scipy+moderngl+imageio; torch DEFERRED CEO-gate.
 next:     R150 = the full ambition ladder (3D foundation→niches→arms race→DoL→niche construction→culture) is now
