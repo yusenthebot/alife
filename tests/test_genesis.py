@@ -932,3 +932,153 @@ def test_checkpoint_roundtrip_with_culture(tmp_path):
     w2.load_checkpoint(p)
     assert np.allclose(w.struct_tech, w2.struct_tech)           # the cultural record survives a restart
     assert np.allclose(w.pop.tech, w2.pop.tech)
+
+
+# ---------- R150: open-ended COMBINATORIAL culture ----------
+def _kcfg(**kw):
+    # the R149 viable culture regime + combinatorial tech tree on. Small tree for fast tests.
+    kw.setdefault("n0", 250)
+    kw.setdefault("innov_steps", 1)
+    return _ccfg(combinatorial=True, max_techniques=400, n_seed_tech=6, **kw)
+
+
+def test_combinatorial_requires_culture():
+    with pytest.raises(ValueError):
+        GenesisWorld(_bcfg(combinatorial=True), seed=0)        # combinatorial without culture=True
+
+
+def test_combinatorial_off_is_byte_identical_to_r149():
+    a = GenesisWorld(_ccfg(n0=200), seed=4)                    # R149 scalar culture
+    b = GenesisWorld(_ccfg(n0=200, combinatorial=False), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                # combinatorial=False draws no extra RNG
+    assert np.array_equal(a.pop.tech, b.pop.tech)
+    assert not hasattr(a, "rep")                               # no repertoire pool allocated on the scalar path
+
+
+def test_tech_tree_is_deterministic_and_structured():
+    from alife.genesis import combinatorial as cb
+    pa, pb, level = cb.build_tech_tree(200, 6)
+    pa2, pb2, level2 = cb.build_tech_tree(200, 6)
+    assert np.array_equal(pa, pa2) and np.array_equal(level, level2)   # fixed tree across builds
+    assert (pa[:6] == -1).all() and (level[:6] == 0).all()    # seeds: no prereqs, level 0
+    for k in range(6, 200):
+        assert 0 <= pa[k] < k and 0 <= pb[k] < k and pa[k] != pb[k]    # distinct lower-indexed prereqs
+        assert level[k] == 1 + max(level[pa[k]], level[pb[k]])
+    assert level.max() >= 2                                    # the tree has real depth to climb
+
+
+def test_adjacent_possible_requires_prerequisites():
+    from alife.genesis import combinatorial as cb
+    pa, pb, level = cb.build_tech_tree(50, 4)
+    rep = np.zeros((1, 50), dtype=bool)
+    ap0 = cb.adjacent_possible(rep, pa, pb, 4, combo_prereqs=True)
+    assert ap0[0, :4].all()                                    # from empty: only seeds are reachable
+    assert not ap0[0, 4:].any()
+    # a non-seed technique becomes reachable exactly once BOTH its prereqs are present
+    k = 10
+    rep[0, pa[k]] = True
+    assert not cb.adjacent_possible(rep, pa, pb, 4, True)[0, k]   # one prereq is not enough
+    rep[0, pb[k]] = True
+    assert cb.adjacent_possible(rep, pa, pb, 4, True)[0, k]       # both prereqs -> now in the adjacent possible
+
+
+def test_combo_prereqs_false_is_the_additive_null():
+    from alife.genesis import combinatorial as cb
+    pa, pb, _ = cb.build_tech_tree(50, 4)
+    rep = np.zeros((1, 50), dtype=bool)
+    ap = cb.adjacent_possible(rep, pa, pb, 4, combo_prereqs=False)
+    assert ap.all()                                           # additive null: every unknown technique reachable
+
+
+def test_max_level_known_picks_deepest():
+    from alife.genesis import combinatorial as cb
+    _, _, level = cb.build_tech_tree(50, 4)
+    rep = np.zeros((2, 50), dtype=bool)
+    rep[0, 4] = True                                          # a level-1 technique
+    deep = int(np.argmax(level)); rep[1, deep] = True
+    out = cb.max_level_known(rep, level)
+    assert out[0] == level[4] and out[1] == level[deep]
+
+
+def test_founders_start_with_a_tiny_repertoire():
+    w = GenesisWorld(_kcfg(), seed=0)
+    act = w.pop.active()
+    assert w.rep[act].sum(axis=1).max() <= w.cfg.innov_steps   # each founder knows <= innov_steps techniques
+    assert w.rep[act].any()                                    # but at least the seed discoveries happened
+
+
+def test_social_learning_copies_repertoire_then_innovates():
+    from alife.genesis import combinatorial as cb
+    w = GenesisWorld(_kcfg(culture_fidelity=1.0, innov_steps=0), seed=0)
+    pa, pb = w._tree_pa, w._tree_pb
+    # plant a hearth carrying a deep, self-consistent repertoire (a full prereq chain up to technique k)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0]); w.struct_strength[0] = 2.0; w.struct_alive[0] = True
+    chain = np.zeros(w.cfg.max_techniques, dtype=bool); chain[:6] = True
+    for k in (6, 7, 8):
+        chain[pa[k]] = True; chain[pb[k]] = True; chain[k] = True
+    w.struct_rep[0] = chain
+    s = w.pop.alloc(1); w.pop.pos[s] = np.array([45.0, 45.0, 46.0])
+    par = w.pop.active()[0]; w.rep[par] = False
+    w._acquire_repertoire(s, np.array([par]))
+    assert np.array_equal(w.rep[s[0]], chain)                  # fidelity 1, no innovation -> exact copy of the record
+
+
+def test_asocial_combinatorial_cannot_inherit():
+    w = GenesisWorld(_kcfg(learn=False, culture_fidelity=1.0), seed=0)
+    w.struct_pos[0] = np.array([45.0, 45.0, 45.0]); w.struct_strength[0] = 2.0; w.struct_alive[0] = True
+    w.struct_rep[0, :50] = True                                # a rich hearth record
+    s = w.pop.alloc(1); w.pop.pos[s] = np.array([45.0, 45.0, 46.0])
+    par = w.pop.active()[0]
+    w._acquire_repertoire(s, np.array([par]))
+    assert w.rep[s[0]].sum() <= w.cfg.innov_steps              # asocial: ignores the record, reinvents from empty
+
+
+def test_hearth_accumulates_repertoire_union():
+    w = GenesisWorld(_kcfg(n0=4), seed=0)
+    act = w.pop.active()
+    w.pop.pos[act] = np.array([20.0, 20.0, 20.0])             # all builders at one site -> one hearth
+    w.rep[act[0]] = False; w.rep[act[0], 7] = True
+    out = np.zeros((act.size, w.spec.n_out)); out[0, w._proc_out] = 1.0
+    w._build(act, out)
+    h = np.where(w.struct_alive)[0][0]
+    assert w.struct_rep[h, 7]
+    w.rep[act[0]] = False; w.rep[act[0], 9] = True             # a later builder deposits a different technique
+    w._build(act, out)
+    assert w.struct_rep[h, 7] and w.struct_rep[h, 9]          # the record is the UNION (never loses a technique)
+
+
+def test_combinatorial_open_ended_beats_additive_and_asocial():
+    """The core R150 claim (smoke): under combinatorial (prerequisite-gated) discovery with social learning the
+    living population's repertoire climbs far beyond the additive null AND the asocial control."""
+    combo = GenesisWorld(_kcfg(n0=250, combo_prereqs=True, learn=True), seed=1)
+    aso = GenesisWorld(_kcfg(n0=250, combo_prereqs=True, learn=False), seed=1)
+    for _ in range(450):
+        combo.step(); aso.step()
+    c, a = combo.combinatorial_test(), aso.combinatorial_test()
+    assert c and a
+    assert c["pop_distinct"] > 3 * a["pop_distinct"]          # social pooling unlocks the combinatorial climb
+    assert c["max_level"] > a["max_level"]                    # and reaches a deeper frontier
+
+
+def test_combinatorial_test_fields_and_off_empty():
+    w = GenesisWorld(_kcfg(n0=200), seed=0)
+    for _ in range(120):
+        w.step()
+    out = w.combinatorial_test()
+    assert {"pop_distinct", "hearth_distinct", "max_level", "mean_level", "mean_gen"} <= set(out)
+    assert GenesisWorld(_ccfg(), seed=0).combinatorial_test() == {}   # scalar culture -> empty
+
+
+def test_checkpoint_roundtrip_combinatorial(tmp_path):
+    w = GenesisWorld(_kcfg(n0=150), seed=1)
+    for _ in range(150):
+        w.step()
+    p = str(tmp_path / "ck.npz")
+    w.save_checkpoint(p)
+    w2 = GenesisWorld(_kcfg(n0=150), seed=9)
+    w2.load_checkpoint(p)
+    assert np.array_equal(w.rep, w2.rep)                       # the per-agent repertoires survive a restart
+    assert np.array_equal(w.struct_rep, w2.struct_rep)         # and the hearth records
+    assert np.array_equal(w.pop.tech, w2.pop.tech)

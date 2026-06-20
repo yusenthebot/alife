@@ -221,6 +221,24 @@ class GenesisConfig:
     innov_sigma: float = 0.25          # kept: tech = base + max(0, N(innov_mean, innov_sigma))).
     tech_gain: float = 0.35            # energy-per-mote multiplier is (1 + tech_gain*tech): tech pays, so it is
                                        # selected — but it must be re-learned each generation (it's not genetic).
+    # OPEN-ENDED COMBINATORIAL culture (R150 — lifts R149's finite ceiling). combinatorial=True replaces the
+    # scalar `tech` with a discrete REPERTOIRE of techniques on a fixed tech TREE (alife.genesis.combinatorial):
+    # a technique k>=n_seed_tech is DISCOVERABLE only once both its prerequisite techniques are known (Kauffman's
+    # adjacent possible / Arthur's combinatorial evolution). Newborns inherit a repertoire by social learning
+    # (copy parent ∪ nearest-hearth record, each bit kept w.p. culture_fidelity) then make innov_steps discoveries
+    # from their adjacent possible; `tech` (the harvest payoff) becomes the deepest LEVEL known, so mastery is
+    # selected. Because the adjacent possible grows with the repertoire, discovery ACCELERATES and the population
+    # repertoire (the open-ended complexity metric) keeps climbing — no intrinsic fixed point (only the deliberate
+    # max_techniques cap). combo_prereqs=False is the ADDITIVE null on identical machinery (discover any unknown
+    # technique, no gate -> a saturating ratchet). Requires culture=True. combinatorial=False is the R149 scalar
+    # path, byte-identical.
+    combinatorial: bool = False
+    combo_prereqs: bool = True         # gate discovery on prerequisites (the combinatorial mechanism). False =
+                                       # additive null: uniform discovery over all unknown techniques (saturates).
+    max_techniques: int = 1500         # bounded tech-tree size (memory: capacity x this bits). Raise it and the
+                                       # combinatorial climb keeps going — the ceiling is deliberate, not intrinsic.
+    n_seed_tech: int = 6               # number of seed primitives (level-0, no-prerequisite techniques).
+    innov_steps: int = 1               # discoveries attempted per newborn (from its adjacent possible).
     # metric
     persist_steps: int = 200
 
@@ -236,6 +254,9 @@ class GenesisWorld:
         self.specialize = self.cfg.specialize
         self.building = self.cfg.building
         self.culture = self.cfg.culture
+        self.combinatorial = self.cfg.combinatorial
+        if self.combinatorial and not self.culture:
+            raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -257,8 +278,19 @@ class GenesisWorld:
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
-        if self.culture:                                     # founders are culturally NAIVE: one innovation each,
-            act = self.pop.active()                           # no ancestors to copy -> the ratchet starts from ~0
+        if self.combinatorial:                               # R150: build the fixed tech tree + repertoire pools
+            from . import combinatorial as cb
+            K, ns = self.cfg.max_techniques, self.cfg.n_seed_tech
+            self._tree_pa, self._tree_pb, self._tree_level = cb.build_tech_tree(K, ns)
+            self.rep = np.zeros((self.cfg.capacity, K), dtype=bool)       # per-agent repertoire (World-owned)
+            act = self.pop.active()                                       # founders are culturally NAIVE: empty
+            seed_rep = np.zeros((act.size, K), dtype=bool)                # repertoire, a few discoveries each
+            cb.discover_inplace(seed_rep, self._tree_pa, self._tree_pb, ns,
+                                self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
+            self.rep[act] = seed_rep
+            self.pop.tech[act] = cb.max_level_known(seed_rep, self._tree_level)
+        elif self.culture:                                   # R149 scalar: founders are culturally NAIVE: one
+            act = self.pop.active()                           # innovation each, no ancestors to copy -> start ~0
             self.pop.tech[act] = np.maximum(0.0, self.rng.normal(self.cfg.innov_mean, self.cfg.innov_sigma,
                                                                  size=act.size))
         w = self.cfg.world
@@ -291,6 +323,8 @@ class GenesisWorld:
         self.struct_max_gen = np.zeros(m, dtype=np.int32)   # latest builder generation that maintained it
         self.struct_tech = np.zeros(m)                       # best technique recorded at the hearth (R149 culture
                                                              # repository): the growing cultural record
+        if self.combinatorial:                               # R150: each hearth stores an accumulating REPERTOIRE
+            self.struct_rep = np.zeros((m, self.cfg.max_techniques), dtype=bool)  # (union of builders' techniques)
         self.struct_alive = np.zeros(m, dtype=bool)
         self._death_age_sum = 0.0                            # realized-lifespan accumulator (R148 inheritance)
         self._death_count = 0
@@ -570,6 +604,9 @@ class GenesisWorld:
         and the cross-generation ratchet cannot form. tech is NOT genetic and NOT mutated from the genome."""
         cfg, p = self.cfg, self.pop
         n = slots.size
+        if self.combinatorial:
+            self._acquire_repertoire(slots, parents)
+            return
         if cfg.learn:
             source = p.tech[parents].copy()                  # vertical transmission baseline (the parent's tech)
             strong = self._strong_hearths()
@@ -583,6 +620,63 @@ class GenesisWorld:
             base = np.zeros(n)                               # asocial: no copying, reinvent from scratch
         innov = np.maximum(0.0, self.rng.normal(cfg.innov_mean, cfg.innov_sigma, size=n))
         p.tech[slots] = base + innov
+
+    # --- open-ended combinatorial culture (R150) ---
+    def _acquire_repertoire(self, slots: np.ndarray, parents: np.ndarray) -> None:
+        """A newborn ACQUIRES a combinatorial REPERTOIRE (R150). Social learning: copy (each bit kept w.p.
+        culture_fidelity) the union of its parent's repertoire and the nearest STRONG hearth's accumulated
+        record, then make innov_steps discoveries from its ADJACENT POSSIBLE (techniques whose prerequisites
+        it now knows). learn=False is the ASOCIAL control: no copying, so each agent explores only from an
+        empty repertoire in one lifetime and the trans-generational frontier cannot form. The repertoire is
+        NOT genetic. `tech` (the harvest payoff) is set to the deepest technique LEVEL known, so mastery pays."""
+        from . import combinatorial as cb
+        cfg = self.cfg
+        K = cfg.max_techniques
+        if cfg.learn:
+            source = self.rep[parents].copy()                # vertical transmission: the parent's repertoire
+            strong = self._strong_hearths()
+            if strong.size:                                  # oblique transmission via the built world (hearths)
+                d, idx = cKDTree(self.struct_pos[strong]).query(self.pop.pos[slots], k=1)
+                in_range = d < cfg.hearth_radius
+                if in_range.any():
+                    rows = np.where(in_range)[0]
+                    source[rows] |= self.struct_rep[strong][idx[rows]]   # learn the BEST record in reach
+            child = cb.copy_with_fidelity(source, cfg.culture_fidelity, self.rng)
+        else:
+            child = np.zeros((slots.size, K), dtype=bool)    # asocial: no copying, reinvent from scratch
+        cb.discover_inplace(child, self._tree_pa, self._tree_pb, cfg.n_seed_tech,
+                            cfg.combo_prereqs, self.rng, cfg.innov_steps)
+        self.rep[slots] = child
+        self.pop.tech[slots] = cb.max_level_known(child, self._tree_level)
+
+    def combinatorial_test(self) -> dict:
+        """The R150 open-ended-culture read-out (in situ; never feeds selection). The headline complexity
+        metric is the LIVING population's repertoire SIZE — distinct techniques collectively known — which
+        keeps climbing under combinatorial discovery and collapses without transmission.
+          - pop_distinct   : techniques known by >=1 living agent (the open-ended complexity metric).
+          - hearth_distinct: techniques in the hearth records (the built cultural store).
+          - max_level      : deepest tech-tree level reached by the living population (frontier depth).
+          - mean_level     : mean deepest-level-known across living agents (= mean tech, the payoff).
+          - mean_gen       : mean generation depth (the climb is read against this).
+        """
+        if not self.combinatorial:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < 20:
+            return {}
+        pop_union = self.rep[act].any(axis=0)
+        strong = self._strong_hearths()
+        hearth_union = (self.struct_rep[strong].any(axis=0) if strong.size
+                        else np.zeros(self.cfg.max_techniques, dtype=bool))
+        return {
+            "pop_distinct": int(pop_union.sum()),
+            "hearth_distinct": int(hearth_union.sum()),
+            "max_level": int(self._tree_level[pop_union].max()) if pop_union.any() else 0,
+            "mean_level": float(p.tech[act].mean()),
+            "mean_gen": float(p.generation[act].mean()),
+            "n": int(act.size),
+        }
 
     def culture_test(self) -> dict:
         """The R149 cumulative-culture read-out: how high has the learned technique RATCHETED, in the living
@@ -642,6 +736,7 @@ class GenesisWorld:
         bpos = p.pos[act[builders]]
         bgen = p.generation[act[builders]]
         btech = p.tech[act[builders]] if self.culture else None
+        brep = self.rep[act[builders]] if self.combinatorial else None
         alive = np.where(self.struct_alive)[0]
         if alive.size:
             d, near = cKDTree(self.struct_pos[alive]).query(bpos, k=1)
@@ -657,6 +752,8 @@ class GenesisWorld:
             np.maximum.at(self.struct_max_gen, tgt, bgen[reinforce])
             if self.culture:                                 # the hearth records the BEST technique deposited
                 np.maximum.at(self.struct_tech, tgt, btech[reinforce])
+            if self.combinatorial:                           # the hearth ACCUMULATES the union of deposited
+                np.bitwise_or.at(self.struct_rep, tgt, brep[reinforce])  # repertoires (a growing cultural store)
         # FOUND new hearths for builders with no hearth nearby (bounded by free slots)
         founders = np.where(~reinforce)[0]
         if founders.size:
@@ -672,6 +769,8 @@ class GenesisWorld:
                 self.struct_max_gen[slots] = bgen[who]
                 if self.culture:
                     self.struct_tech[slots] = btech[who]     # a new hearth opens its record at the founder's tech
+                if self.combinatorial:
+                    self.struct_rep[slots] = brep[who]       # a new hearth opens with the founder's repertoire
                 self.struct_alive[slots] = True
         p.energy[act[builders]] -= cfg.build_cost            # every build act pays, found or reinforce
 
@@ -1036,9 +1135,11 @@ class GenesisWorld:
     # --- persistence ---
     def save_checkpoint(self, path: str) -> None:
         st = self.pop.state()
+        combo = {"rep": self.rep, "struct_rep": self.struct_rep} if self.combinatorial else {}
         np.savez_compressed(
             path,
             step=np.int64(self.step_count),
+            **combo,
             food=self.food,
             food_type=self.food_type,
             food_ripe=self.food_ripe,
@@ -1078,6 +1179,9 @@ class GenesisWorld:
             self.struct_tech = (d["struct_tech"] if "struct_tech" in d.files
                                 else np.zeros(self.struct_pos.shape[0]))
             self.struct_alive = d["struct_alive"]
+        if self.combinatorial and "rep" in d.files:          # R150 repertoire pools
+            self.rep = d["rep"]
+            self.struct_rep = d["struct_rep"]
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}

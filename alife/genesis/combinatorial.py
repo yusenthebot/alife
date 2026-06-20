@@ -1,0 +1,107 @@
+"""Open-ended COMBINATORIAL culture (R150) — the tech tree that lifts R149's finite ceiling.
+
+R149's cumulative culture is a scalar `tech` whose innovation is a FIXED-rate independent draw, so it
+ratchets to a finite fixed point ~innov/(1-fidelity): cumulative but NOT open-ended. R150 replaces the
+scalar with a discrete REPERTOIRE of techniques on a fixed tech TREE. A technique k (k>=n_seed) has two
+PREREQUISITE techniques (a fixed deterministic table); an agent can DISCOVER k only if it already knows
+BOTH prereqs — Kauffman's "adjacent possible" / Arthur's combinatorial evolution of technology. Because
+the set of discoverable techniques GROWS as the repertoire grows (more known techniques -> more prereq
+pairs satisfied -> more reachable products), the discovery rate ACCELERATES and the frontier never
+saturates: open-ended by construction. There is no intrinsic fixed point (contrast R149); a run is
+bounded only by the deliberate max_techniques cap, and raising the cap lets it keep climbing.
+
+The combinatorial mechanism is isolated by a single switch, `combo_prereqs`:
+  - True  -> discovery is gated on prerequisites (the combinatorial / adjacent-possible mechanism).
+  - False -> discovery is uniform over ALL unknown techniques (the ADDITIVE null: a fixed-rate draw
+             whose yield DECELERATES as the finite pool fills -> a saturating ratchet, like R149).
+So `combo_prereqs` cleanly separates "open-ended combinatorial climb" from "additive saturating ratchet"
+on otherwise identical machinery.
+
+Pure array functions; no global state. The World owns the boolean repertoire matrices (one row per
+agent slot / per hearth), so memory stays bounded by the fixed pools.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+# The tech tree is a property of the WORLD, not of a run, so it is built from a fixed seed and is
+# identical across simulation seeds (only the agents' exploration of it differs run to run).
+TREE_SEED = 20250620
+
+
+def build_tech_tree(n_techniques: int, n_seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Build the fixed combinatorial tech tree.
+
+    Techniques 0..n_seed-1 are SEED primitives: no prerequisites (prereq = -1), level 0, discoverable
+    from an empty repertoire. Each technique k>=n_seed draws two DISTINCT lower-indexed prerequisites
+    and has level 1 + max(level of its prereqs). Deterministic (fixed RNG) -> the same tree every run.
+
+    Returns (prereq_a, prereq_b, level), each shape (n_techniques,), dtype int64.
+    """
+    if n_seed < 2 or n_seed >= n_techniques:
+        raise ValueError("need 2 <= n_seed < n_techniques (a seed must be combinable)")
+    rng = np.random.default_rng(TREE_SEED)
+    pa = np.full(n_techniques, -1, dtype=np.int64)
+    pb = np.full(n_techniques, -1, dtype=np.int64)
+    level = np.zeros(n_techniques, dtype=np.int64)
+    for k in range(n_seed, n_techniques):
+        a = int(rng.integers(0, k))
+        b = int(rng.integers(0, k))
+        while b == a:
+            b = int(rng.integers(0, k))
+        pa[k] = a
+        pb[k] = b
+        level[k] = 1 + max(int(level[a]), int(level[b]))
+    return pa, pb, level
+
+
+def adjacent_possible(rep: np.ndarray, pa: np.ndarray, pb: np.ndarray,
+                      n_seed: int, combo_prereqs: bool) -> np.ndarray:
+    """The set of techniques each agent could discover NEXT, as a boolean mask [n, K].
+
+    combo_prereqs=True : an UNKNOWN technique is reachable iff both its prerequisites are known
+                         (seeds, prereq=-1, need nothing) -> Kauffman's adjacent possible.
+    combo_prereqs=False: every UNKNOWN technique is reachable (the additive null).
+    """
+    unknown = ~rep
+    if not combo_prereqs:
+        return unknown
+    n, _ = rep.shape
+    nonseed = np.arange(rep.shape[1]) >= n_seed       # techniques that actually have prerequisites
+    have = np.ones_like(rep)
+    # for the non-seed techniques, both prereqs must be present in the agent's repertoire
+    have[:, nonseed] = rep[:, pa[nonseed]] & rep[:, pb[nonseed]]
+    return unknown & have
+
+
+def discover_inplace(rep: np.ndarray, pa: np.ndarray, pb: np.ndarray, n_seed: int,
+                     combo_prereqs: bool, rng: np.random.Generator, steps: int) -> None:
+    """Each agent (row of `rep`) attempts `steps` discoveries, each adding ONE technique drawn at
+    random from its current adjacent possible. Mutates `rep` in place. An agent with an empty
+    adjacent possible in a step discovers nothing that step (rows handled independently)."""
+    if rep.shape[0] == 0:
+        return
+    for _ in range(max(0, steps)):
+        avail = adjacent_possible(rep, pa, pb, n_seed, combo_prereqs)
+        has = avail.any(axis=1)
+        if not has.any():
+            break
+        pick = (rng.random(rep.shape) * avail).argmax(axis=1)   # uniform random among available per row
+        rows = np.where(has)[0]
+        rep[rows, pick[rows]] = True
+
+
+def copy_with_fidelity(src: np.ndarray, fidelity: float, rng: np.random.Generator) -> np.ndarray:
+    """Imperfect social transmission of a repertoire: keep each KNOWN technique with prob `fidelity`.
+    `src` is a boolean matrix [n, K] (the union of the models an agent learns from)."""
+    return src & (rng.random(src.shape) < fidelity)
+
+
+def max_level_known(rep: np.ndarray, level: np.ndarray) -> np.ndarray:
+    """Per-agent deepest technique level known (0 if it knows only seeds / nothing). This is the
+    scalar `tech` that drives the harvest payoff — so deeper mastery is selected."""
+    if rep.shape[0] == 0:
+        return np.zeros(0)
+    masked = np.where(rep, level[None, :], 0)
+    return masked.max(axis=1).astype(float)
