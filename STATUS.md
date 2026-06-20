@@ -1,28 +1,31 @@
 # STATUS — main
-updated: 2026-06-20T17:40 · loop 149
+updated: 2026-06-20T19:10 · loop 150
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — Stage-5 CUMULATIVE CULTURE ACHIEVED (R149, verified+red-teamed). Ladder stages 1,3,4,5 done.
+phase:    review — Stage-5 culture made OPEN-ENDED (R150, verified+red-teamed). Ladder stages 1,3,4,5 done; culture now lifts its R149 ceiling.
 owns:     all of ~/alife (single session)
-doing:    R149 DONE — Stage-5 cumulative culture = POSITIVE. culture=True gives each agent a LIFETIME-learned
-          scalar `tech` (NOT genetic): a newborn ACQUIRES it by copying (×culture_fidelity) the best technique
-          recorded at the nearest hearth (the built world = cultural repository) or its parent, +one innovation
-          step. Higher tech multiplies harvest energy (selected), but each generation must RE-LEARN it. Building
-          WRITES the builder's tech into the hearth record (keeps max) → a ratchet across generations. REAL-VERIFY
-          (2500-step technique-coloured 3D + controls, panel.png + GIF eye-verified: population BRIGHTENS dark→gold
-          as culture accumulates, mean frame brightness 24→51): FALSIFIABLE headline tech_mean cumulative 12.93 vs
-          ASOCIAL (learn=False) 0.19 = 66.6x, 3/3 seeds (asocial pinned exactly at innov_mean=0.19 — no
-          accumulation). FROZEN-GENOME (evolve=False) tech_mean 12.98 → cultural NOT genetic. FIDELITY THRESHOLD
-          (Lewis-Laland) monotone: 0.99→23.1, 0.90→5.85, 0.70→2.62, 0.50→1.82. RED-TEAM (general-purpose agent):
-          CONFIRMED — asocial ceiling is structural (max-order-stat ~√logN, can't reach cumulative even at N=5e5);
-          tech is a separate array never touched by mutate_brains; fidelity dose-response can't be faked. HONEST
-          caveats (applied): headline now LEADS tech_mean (falsifiable, collapses w/o transmission) not the
-          near-monotone tech_max high-water mark; "open-ended/keeps climbing" SOFTENED to fidelity-bounded ceiling
-          (~innov/(1-fidelity), high but finite). 77 genesis tests green (13 new). COMMITTED + PUSHED.
+doing:    R150 DONE — open-ended COMBINATORIAL culture = POSITIVE. R149's scalar `tech` ratchets to a FINITE
+          fixed point ~innov/(1-fidelity) (the acknowledged caveat). R150 replaces it with a discrete REPERTOIRE
+          on a fixed tech TREE (alife/genesis/combinatorial.py): a technique k>=n_seed is DISCOVERABLE only once
+          BOTH its prerequisites are known (Kauffman adjacent-possible / Arthur combinatorial evolution). Because
+          the adjacent possible GROWS with the repertoire, discovery ACCELERATES — open-ended, no dynamical fixed
+          point. Newborns inherit a repertoire by social learning (copy parent ∪ nearest-hearth record per-bit
+          @ culture_fidelity) then discover innov_steps from their adjacent possible; tech (harvest payoff) = the
+          deepest LEVEL known. Hearths ACCUMULATE the union of builders' repertoires (the open-ended cultural
+          store). All additive: combinatorial=False is R149 byte-identical (test guards). REAL-VERIFY
+          (panel.png + level-coloured 3D GIF eye-verified; 2 seeds × 1200 steps + controls): pop_distinct climbs
+          8→1040 (130x asocial's 8), discovery RATE RISES 63→120/window (accelerating = open-ended), frontier
+          level 0→13; far below the 8000 cap (not pool-filling). R149 scalar RATE FALLS 1.52→0.68 (saturating
+          fixed point) = the ceiling R150 lifts. Asocial (learn=False) flatlines at 8/level-0 (transmission
+          necessary). Tree depth tunable 21/25/28/31 @ cap 2k/4k/8k/16k (ceiling is design param, not intrinsic).
+          RED-TEAM (general-purpose agent): all 4 claims CONFIRMED — population-growth confound RULED OUT
+          (acceleration persists in fixed-pop-at-6000 windows: 84.6→93.8, 176.4→204.0); pop_distinct = living
+          union only (no dead-slot leak); same-seed byte-identical; tree seed-independent. 90 genesis tests green
+          (13 new). COMMITTED + PUSHED.
 blocked:  none
-docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool (bounded, <1GB); close GL ctx (r.ctx.release()). numpy/scipy+moderngl+imageio; torch DEFERRED CEO-gate.
-next:     R150 = the full ambition ladder (3D foundation→niches→arms race→DoL→niche construction→culture) is now
-          COMPLETE. Options: (1) INTEGRATE — run all stages in ONE world simultaneously (DoL+building+culture
-          coexisting) as the capstone living civilization; (2) genuinely OPEN-ENDED culture — combinatorial
-          innovation (tech enables better innovation, ideas-beget-ideas) so the metric does NOT saturate; (3)
-          revisit parked Stage-2 SIGNALLING with the substrate redesign (synchronous lethal predation rounds).
-          See progress.md ## Frontier. Decide via Decision Workflow if torn; default = (1) integrated capstone.
+docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool + bool repertoire (bounded, <100MB); close GL ctx (r.ctx.release()). numpy/scipy+moderngl+imageio; torch DEFERRED CEO-gate.
+next:     R151 = the ambition ladder is COMPLETE and culture is now open-ended. Options: (1) INTEGRATED CAPSTONE
+          — run all stages in ONE world simultaneously (DoL caste + building + open-ended culture coexisting) as
+          the capstone living civilization; (2) couple the open-ended tech tree to the 3D WORLD — techniques
+          that unlock new world-actions (build types, food processing, tools) so cultural depth changes what
+          agents physically DO, not just a harvest multiplier; (3) parked Stage-2 SIGNALLING substrate redesign
+          (synchronous lethal predation rounds). See progress.md ## Frontier. Default = (1) integrated capstone.

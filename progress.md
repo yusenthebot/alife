@@ -1,6 +1,50 @@
 # alife — progress
 
-## Current state (Round 147 — 2026-06-20) — GENESIS Stage 3: DIVISION OF LABOUR ACHIEVED (convex specialization trade-off → caste)
+## Current state (Round 150 — 2026-06-20) — GENESIS Stage 5 made OPEN-ENDED: COMBINATORIAL culture (the tech tree that lifts R149's finite ceiling)
+
+**R150 lifts R149's one acknowledged caveat — its scalar `tech` ratchets to a FINITE fixed point
+~innov/(1-fidelity) (cumulative but not open-ended) — by replacing the scalar with a discrete combinatorial
+tech tree, and the open-ended climb is verified + red-teamed.** New module `alife/genesis/combinatorial.py`
+(pure array functions) + additive wiring in `genesis.py` behind `combinatorial=True` (requires culture=True;
+`combinatorial=False` is R149 byte-identical, guarded by a test). The mechanism (Kauffman's "adjacent
+possible" / Arthur's combinatorial evolution of technology):
+- a fixed tech TREE: technique k>=n_seed_tech has two DETERMINISTIC prerequisites (`build_tech_tree`, fixed
+  `TREE_SEED` → identical across sim seeds); level(k)=1+max(level of prereqs);
+- a technique is DISCOVERABLE only once BOTH its prerequisites are known → the set of reachable techniques
+  (the adjacent possible) GROWS with the repertoire → discovery ACCELERATES (ideas-beget-ideas) → no
+  dynamical fixed point (open-ended; the only bound is the deliberate `max_techniques` cap);
+- each agent carries a boolean REPERTOIRE (World-owned `self.rep` [capacity, K], bounded mem); a newborn
+  inherits by social learning (`copy_with_fidelity`: copy parent ∪ nearest-strong-hearth record, each bit kept
+  w.p. `culture_fidelity`) then makes `innov_steps` discoveries from its adjacent possible (`discover_inplace`);
+- `tech` (the harvest payoff, unchanged path) = the deepest LEVEL known (`max_level_known`) → mastery is
+  selected; hearths ACCUMULATE the union of builders' repertoires (`np.bitwise_or.at`) = the open-ended
+  cultural store. Checkpoint round-trips `rep`/`struct_rep`. 13 new tests (90 genesis tests green).
+
+**REAL-VERIFY (`scripts/run_genesis_combinatorial.py`; level-coloured 3D GIF + 2-seed combinatorial/asocial/
+R149-scalar controls; `runs/r150_combinatorial/panel.png` + `combinatorial.gif` eye-verified):**
+- **OPEN-ENDED CLIMB** — living-population distinct techniques (`pop_distinct`) climb 8→**1040** (130x the
+  asocial floor of 8), and the per-window discovery RATE **RISES 63→120** (accelerating = the open-ended
+  signature), with the frontier (deepest tech-tree level) climbing **0→13**. Final 1040 << 8000 cap → not
+  pool-filling.
+- **REQUIRES TRANSMISSION** — asocial (`learn=False`) sustains a living reproducing population (→~2200, gen
+  7.8) yet flatlines at **8 distinct / level 0 forever** (one lifetime from an empty repertoire reaches only
+  seed primitives) → cumulative culture is impossible alone; this is the acid test.
+- **LIFTS R149's CEILING** — the R149 scalar ratchet (`combinatorial=False`) DECELERATES, its technique RATE
+  falling **1.52→0.68** toward a finite fixed point, while R150's rate rises. Tree depth is a TUNABLE design
+  parameter (max depth **21/25/28/31** at cap 2k/4k/8k/16k), NOT a dynamical attractor → genuinely open-ended.
+
+**RED-TEAM (mandatory; general-purpose agent, independent probes; 禁止造假 — all CONFIRMED):** (1) the
+**population-growth confound is RULED OUT** — restricting to windows where population is FIXED at the 6000 cap,
+the discovery rate still rises (seed0 84.6→93.8, seed1 176.4→204.0/window), so the acceleration is intrinsic to
+combinatorial discovery, not the 900→6000 ramp. (2) `pop_distinct` is the union over LIVING slots only (339 ==
+manual living-union; dead-slot union 0 — no slot-reuse leak; newborns full-overwrite their row). (3) asocial is
+a fair control (only transmission removed; population alive). (4) same seed+config twice → byte-identical
+pop_distinct; tech tree depends only on TREE_SEED, not the sim seed. (5) the count-vs-scalar framing is
+legitimate — the falsifiable signal is the unit-independent RATE DIRECTION (rises vs falls), and the
+apples-to-apples frontier-LEVEL comparison (R150 keeps deepening, R149 plateaus) is in the panel too.
+**This is a genuine open-ended combinatorial culture, not theatre.** Substrate committed + reusable.
+
+### Round 147 — GENESIS Stage 3: DIVISION OF LABOUR ACHIEVED (convex specialization trade-off → caste)
 
 **R147 fixed R146's honest negative and Stage 3 is now POSITIVE: a heritable processor/harvester CASTE
 emerges, the two roles are played by genetically distinct castes, and the specialised economy out-produces a
@@ -1023,18 +1067,24 @@ Locked decisions (CEO, R140):
   evolve, measure it, and red-team every "it's really evolving / a convention crystallised / culture
   accumulates" claim before believing it. NEVER scripted theatre (Yusen: 不是简单的测试，真的有自主意识的生物发展).
 
-### Frontier (post-R149 — the full ladder is built; what raises the ceiling now)
+### Frontier (post-R150 — full ladder built AND culture now open-ended; what raises the ceiling now)
 Current ceiling: each ladder rung (foundation/niches/arms-race/DoL/niche-construction/culture) is proven IN
-ISOLATION via its own `culture`/`building`/`specialize`/… flag. The next leaps in KIND:
+ISOLATION via its own flag, and culture is now OPEN-ENDED (R150 combinatorial tech tree — accelerating, no
+dynamical fixed point). The next leaps in KIND:
 - **(default next) INTEGRATED CAPSTONE — one world, all stages at once.** Turn building+specialize(DoL)+culture
-  ON together (they already compose: culture⊂building⊂processing; specialize⊂processing) and verify the
-  phenomena COEXIST — a settled, caste-divided population accumulating culture on an inherited built world. This
-  is the actual "living civilization," not six separate demos. Risk: the regimes may interfere (caste convexity
-  vs culture harvest multiplier); needs a viable joint parameter regime + a multi-signature panel.
-- **GENUINELY OPEN-ENDED culture (lifts the R149 caveat).** R149's ratchet saturates at ~innov/(1-fidelity).
-  Make innovation COMBINATORIAL — innovation step scales with current tech (ideas-beget-ideas / endogenous
-  growth, Arthur/Solé) — so the complexity metric does NOT converge. Gate: keep it bounded enough to red-team,
-  prove super-linear climb vs the additive-innovation control.
+  (now combinatorial) ON together (they already compose: culture⊂building⊂processing; specialize⊂processing)
+  and verify the phenomena COEXIST — a settled, caste-divided population accumulating open-ended culture on an
+  inherited built world. This is the actual "living civilization," not six separate demos. Risk: the regimes may
+  interfere (caste convexity vs the tech-level harvest multiplier); needs a viable joint regime + multi-panel.
+- **COUPLE the tech tree to the 3D WORLD (make culture MATTER physically).** Today a technique only multiplies
+  harvest energy (a scalar payoff). Next: techniques that UNLOCK new world-actions — new build types, food
+  processing recipes, tools, faster movement — so cultural DEPTH changes what agents physically DO and the
+  combinatorial frontier reshapes the world (a real tech-driven economy), not just a number. Highest ambition.
+- **GENUINELY UNBOUNDED tech space (lift the deliberate cap).** R150's ceiling is `max_techniques` (a fixed
+  pre-enumerated tree). Make techniques GENERATIVE — a new technique IS the pair of its parents, created on
+  combination — so the space is unbounded by construction (combinations of combinations). Gate: bounded memory
+  via a hashed/interned id pool + a complexity metric (max depth) that provably keeps climbing; red-team for
+  numeric explosion vs genuine structure.
 - **Stage-2 SIGNALLING redesign (the one parked rung).** Two honest negatives (R144/R145) traced to the
   signalling-bootstrap deadlock; the diagnosed fix is a SUBSTRATE change — synchronous, sharply lethal predation
   "rounds" where a missed warning reliably kills and a heeded one reliably saves (Floreano/Mitri arena). Only
