@@ -1,36 +1,52 @@
 # alife — progress
 
-## Current state (Round 144 — 2026-06-20) — GENESIS Stage 2: signalling substrate + an emergence protocol that caught the artifact
+## Current state (Round 145 — 2026-06-20) — GENESIS Stage 2: kin-selection attempt at signalling — SECOND honest negative (relatedness ≠ the missing piece)
 
-**R144 builds the Stage-2 SIGNALLING substrate and — crucially — a red-team-grade protocol that REFUSED to
-declare false emergence.** Each prey now emits an evolved scalar **utterance** (one extra brain output) and
-senses its nearest neighbour's previous-step utterance as a **new input channel**, over the existing
-kin-adjacency. Additive: `signalling=False` keeps the R143 brain shape byte-identical (n_in 13, n_out 3);
-`signalling=True` → n_in 14, n_out 4. The hard part of Stage 2 is not *adding* a channel (trivial) but
-*proving* communication actually emerged rather than a sensory-reaction coincidence — so R144's real
-deliverable is a **FOUR-CONTROL emergence protocol**: (1) scrambled-channel MI null, (2) **frozen-genome
-control** (random brains — if they match the evolved MI, the signal is just the emitter reacting to its own
-predator-sense, not evolved meaning), (3) **causal lesion** (silence the heard channel on the same
-brains/state → does flee-from-alarmer behaviour change?), (4) **intact-vs-deaf survival** (artifact-immune:
-does *hearing* causally improve survival, brain shape held fixed?).
+**R145 tested the decisive hypothesis from R144's diagnosis — that genuine alarm signalling failed for lack
+of RELATEDNESS — and the same four-control protocol REFUTED it.** R144's negative was traced to ~zero
+relatedness (n0 distinct founder genomes mix freely, so warning a neighbour helps a stranger; Floreano &
+Mitri 2009: communication evolves under HIGH relatedness, collapses without). R145 supplies exactly the
+missing kin-selection machinery, all additive (`alife/genesis/`, defaults off → R141..R144 byte-identical,
+32 genesis tests green incl. determinism guards):
+- **clonal founder demes** (`n_founder_genomes>0`): G genomes, each cloned into a tight spatial cluster
+  sharing one lineage, so a prey's nearest neighbour is its clone and warning it propagates the caller's OWN
+  genes (Hamilton rb>c). A `neighbour_relatedness` instrument confirms it took.
+- a **stronger informational asymmetry** (`prey_pred_range=8` ≪ `sense_range=32` — a neighbour closer to
+  the predator can warn earlier), and a small **honest-signalling emit cost** so silence is the default.
 
-**REAL-VERIFY (3 seeds × 3 conditions × 8000 steps, foreground; panel.png + utterance-coloured 3D GIF
-eye-verified):** the protocol caught the artifact and reported an **HONEST NEGATIVE** — genuine alarm
-communication did NOT emerge in the most-favourable config tested. Evolved signal-danger MI **0.0037 bits**
-≤ **frozen 0.0152 bits** (frozen ≥ evolved every comparison → sensory-reaction artifact, not meaning);
-HEAR pop 2002 vs DEAF pop 2086 (**ratio 0.96 → hearing gives no survival benefit**); causal flee intact
-0.148 vs deaf 0.149 (**no adaptive listening**); MI-over-time noisy around the null with no climb. The GIF
-shows prey almost entirely blue (silent) — utterances stay near-zero/uninformative. This is 禁止造假 working:
-a rigorous protocol that declines to fake a positive. 9 new tests (809 total).
+**REAL-VERIFY (2 seeds × 3 conditions × 12000 steps = 369 s foreground; panel.png + utterance-coloured 3D
+GIF eye-verified):** the kin manipulation clearly took — **mean nearest-neighbour relatedness 0.90** (vs ~0
+in R144) — and yet alarm signalling **STILL did not emerge**, all four controls failing across both seeds:
+evolved MI **0.0016** < **frozen 0.0047** (sensory-reaction artifact, not meaning) ≈ null 0.0010; HEAR pop
+1980 vs DEAF 2019 (**ratio 0.98 → no survival benefit**); causal flee intact 0.151 < deaf 0.206 (**no
+adaptive listening**); MI-over-time bounces around the null with no climb. **This is a real scientific
+finding, not a tuning failure: relatedness was high (0.90) and emergence still did not happen — so
+relatedness is necessary-but-NOT-sufficient here.** Two independent negatives (R144 no-kin, R145 high-kin)
+now agree. 4 new tests (813 total). 禁止造假: the protocol again declined to fake a positive.
 
-**Diagnosis → next frontier (why no emergence, and it's fixable):** the deaf control survives as well as the
-hearing population, so there is **no selective gradient for listening**; with no fitness reason to listen,
-there is no pressure for honest emission either — the classic signalling bootstrap/altruism problem. Missing
-ingredients for genuine emergence: (a) **hearing must genuinely improve survival** — a sender that detects
-danger the receiver truly cannot, where acting on the warning saves you (a real informational asymmetry, not
-the current redundant double-sensing); (b) **honest emission must pay** — via kin selection (spatially
-clustered clones + cheap signal, Hamilton) or a built-in emission cost. R145 = engineer these and re-run the
-**same** protocol; believe emergence only if it beats frozen AND deaf AND the causal test.
+**Diagnosis → why even kin selection wasn't enough (the bootstrap is the real wall):** with random brains
+the emitted utterance carries ~null information about danger (frozen MI ≈ evolved MI ≈ 0), so receivers have
+nothing honest to listen to; with no honest signal, listening has no survival gradient (hear≈deaf); with no
+listening, honest emission has no payoff — a chicken-and-egg deadlock that high relatedness alone does not
+break, because the marginal per-prey benefit of one neighbour's alarm is swamped by the noise of individual
+foraging/evasion outcomes. Breaking it likely needs a far sharper selective event structure (e.g. discrete
+synchronous predation "rounds" where a missed warning is reliably lethal and a heeded one reliably saves —
+the Floreano/Mitri foraging-arena design), which is a substrate change, not another parameter sweep.
+
+**DECISION (anti-thrash): PIVOT.** Two principled signalling attempts with different mechanisms have both
+returned clean negatives; a third parameter variation would be thrash. Per the loop's anti-thrash rule,
+**R146 pivots to Stage 3 — cooperation / division of labour**, seeded by the R142 diet specialists that
+already coexist. The signalling rung is logged honestly below for a future substrate-level redesign, not
+abandoned. See `## Decisions pending`.
+
+### R144 signalling substrate (previous round)
+
+**R144 built the Stage-2 SIGNALLING substrate + the four-control emergence protocol** (scrambled null ·
+frozen-genome control · causal lesion · intact-vs-deaf survival). Each prey emits an evolved scalar
+utterance and hears its nearest neighbour's, over the kin-adjacency. `signalling=False` is byte-identical to
+R143. REAL-VERIFY (3 seeds × 8000 steps): HONEST NEGATIVE — evolved MI 0.0037 ≤ frozen 0.0152 (artifact),
+HEAR/DEAF pop ratio 0.96 (no benefit), causal flee intact≈deaf (no listening). The protocol caught the
+artifact (禁止造假). Diagnosed as a relatedness problem → motivated R145's kin-selection test (which refuted it).
 
 ### R143 arms race (previous round)
 
@@ -621,6 +637,15 @@ Status: well past the stated goal and into a long frontier tail (running diverge
 order to keep going until told to stop; each round commits + pushes). Each round adds a genuinely
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
+## Decisions pending
+- **(R145) GENESIS Stage 2 signalling — PARKED for a substrate redesign, not a CEO gate.** Two honest
+  negatives (R144 no-kin, R145 clonal demes at r=0.90) show the signalling-bootstrap deadlock is not broken
+  by relatedness or parameter sweeps. Revisiting needs a substrate change (synchronous discrete-predation
+  selective rounds à la Floreano/Mitri, or explicit kin-fitness coupling) — a bigger build deferred to a
+  later dedicated round. The loop has PIVOTED to Stage 3 (division of labour). No CEO action required; logged
+  so the rung is resumed deliberately, not re-attempted blindly. Substrate (clonal demes, emit cost,
+  prey_pred_range, relatedness metric, 4-control protocol) is committed and reusable.
+
 ## The rungs (detail in git log + README)
 
 | | |
@@ -806,29 +831,29 @@ R142 niches (resource partitioning → 3 coexisting diet specialists, monocultur
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
 patchiness alone fails (need DIFFERENT resources + a trade-off, Gause); predator coexistence is a knife-edge
 (cap ~0.2× prey); a clean two-sided arms race is hard (R34 limit).
-**Stage 2 = EMERGENT SIGNALLING → language from scratch. [R144: substrate + protocol built; emergence NOT
-yet achieved — honest negative.]** The channel exists (evolved utterance output + heard-neighbour input,
-additive/byte-identical off) and a **four-control emergence protocol** (scrambled null · frozen-genome
-control · causal lesion · intact-vs-deaf survival) is in place and verified to *catch the artifact*. In the
-most-favourable config tested, no genuine alarm communication emerged: evolved MI (0.0037) ≤ frozen (0.0152)
-→ sensory-reaction artifact; deaf survives as well as hearing → no listening gradient; causal lesion flat.
-**Next (R145): engineer the missing selective pressure, then re-run the SAME protocol.** Diagnosis: hearing
-must genuinely improve survival (a real informational asymmetry — sender detects danger the receiver cannot,
-acting on the warning saves you; NOT today's redundant double-sensing) AND honest emission must pay (kin
-selection — spatially clustered clones + cheap signal, Hamilton — or a built-in emission cost). Candidate
-levers: (a) lethal predator + short prey self-sense so an earlier neighbour-warning is the only escape;
-(b) explicit kin fitness coupling / clonal patches; (c) co-evolve emit+listen with a deceptive-signal guard.
-Believe emergence ONLY if it beats frozen AND deaf AND the causal test, ≥3 seeds, red-team. Then Stage 3
-division of labour (the R142 diet specialists already seed it), Stage 4 niche construction, Stage 5 culture.
+**Stage 2 = EMERGENT SIGNALLING → language. [R144 + R145: substrate + 4-control protocol built; emergence
+NOT achieved — TWO honest negatives. Rung PARKED, loop PIVOTS to Stage 3.]** The channel + protocol work and
+demonstrably *catch the artifact*. R144 (no relatedness) and R145 (clonal demes, r=0.90) both returned clean
+negatives across seeds: evolved MI ≤ frozen (sensory-reaction artifact), hear≈deaf survival, causal lesion
+flat/negative. **Key finding: relatedness is necessary-but-not-sufficient** — at r=0.90 emergence still did
+not happen, so the wall is the **signalling bootstrap deadlock** (no honest signal → no listening gradient →
+no emission payoff), which kin selection alone doesn't break because the marginal benefit of one alarm is
+swamped by foraging/evasion noise. **Breaking it needs a SUBSTRATE change, not another parameter sweep:** a
+sharp synchronous selective-event structure (discrete predation "rounds" where a missed warning is reliably
+lethal and a heeded one reliably saves — the Floreano/Mitri foraging-arena design), or explicit fitness
+coupling. This is deferred as a future Stage-2 redesign. **Per anti-thrash, R146 PIVOTS to Stage 3 — division
+of labour (the R142 diet specialists already coexist as a seed), then Stage 4 niche construction, Stage 5
+culture.** When Stage 2 is revisited, believe emergence ONLY if it beats frozen AND deaf AND causal, ≥3 seeds, red-team.
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
   1. **Foundation + niches** [R141 foundation · R142 niches · R143 arms race DONE] — a persistent 3D world with embodied agents driven by **evolved neural brains**;
      sensing, movement, metabolism/energy, reproduction, death; behaviour genuinely EVOLVES as it runs.
-  2. **Emergent signalling → language** [R144: substrate + 4-control protocol built; emergence not yet — honest negative] —
+  2. **Emergent signalling → language** [R144 + R145: substrate + 4-control protocol built; emergence NOT
+     achieved across TWO honest negatives (no-kin + high-kin r=0.90) — rung PARKED for a substrate redesign] —
      agents evolve a shared communication code from scratch (Lewis/Skyrms signalling, naming-game / iterated
      learning); measure mutual-information / compositionality rising above frozen+deaf+causal controls.
-  3. **Cooperation + division of labour** — roles, group selection, specialisation emerge.
+  3. **Cooperation + division of labour** [R146 = NEXT, pivot target] — roles, group selection, specialisation emerge.
   4. **Building / niche construction / economy** — agents reshape the 3D world (gather, store, build,
      territory, trade); settlements appear (intentional niche construction, beyond R133 termite stigmergy).
   5. **Cumulative culture** — learned knowledge passes across generations (a cultural ratchet) →

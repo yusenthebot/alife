@@ -117,7 +117,7 @@ def gif(seed, steps, rng):
 
 def main():
     steps = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
-    seeds = (0, 1, 2)
+    seeds = (0, 1)
     rng = np.random.default_rng(20144)
     print(f"=== R144 emergent-signalling protocol: {len(seeds)} seeds x 3 conditions x {steps} steps ===",
           flush=True)
@@ -157,7 +157,7 @@ def main():
           f"  [MI {c_mi} · survival {c_survival} · causal {c_causal}]", flush=True)
 
     print("=== rendering utterance-coloured 3D GIF ===", flush=True)
-    gif(0, min(steps, 12000), rng)
+    gif(0, min(steps, 6000), rng)
 
     # ---- figure: the protocol verdict ----
     fig, ax = plt.subplots(2, 2, figsize=(15, 9))
