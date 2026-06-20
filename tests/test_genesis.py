@@ -1332,8 +1332,10 @@ def _tacfg(**kw):
     sustains a modest population even asocially, so the locked tiers are a real cultural BONUS (the world
     stays alive in both arms; transmission decides how much of it gets exploited)."""
     kw.setdefault("n0", 250)
-    return replace(_kcfg(), tech_actions=True, n_food_tiers=3, recipe_level_step=1, tier_value_bonus=2.0,
-                   tier0_frac=0.6, food_cap=700, food_regrow=35, **kw)
+    base = dict(tech_actions=True, n_food_tiers=3, recipe_level_step=1, tier_value_bonus=2.0,
+                tier0_frac=0.6, food_cap=700, food_regrow=35)
+    base.update(kw)
+    return replace(_kcfg(), **base)
 
 
 def test_tech_actions_requires_combinatorial():
@@ -1439,6 +1441,98 @@ def test_transmission_unlocks_more_tiers_than_asocial():
     assert s["realized_tiers"] > a["realized_tiers"]          # transmission unlocks strictly more tiers
     assert s["mean_edible_tiers"] > a["mean_edible_tiers"]    # the average agent eats a wider diet
     assert a["realized_tiers"] <= 2                           # asocial stays near the free tier (can't reach deep recipes)
+
+
+# ---------- R157: SPATIAL niches -> ECOLOGICALLY-SELECTED divergent traditions ----------
+def test_spatial_tiers_requires_tech_actions():
+    with pytest.raises(ValueError):
+        GenesisWorld(_kcfg(spatial_tiers=True), seed=0)           # spatial_tiers without tech_actions=True
+
+
+def test_spatial_tiers_off_is_byte_identical_to_r153():
+    a = GenesisWorld(_tacfg(n0=220), seed=2)                      # R153 random-tier world
+    b = GenesisWorld(_tacfg(n0=220, spatial_tiers=False), seed=2)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.vel, b.pop.vel)
+    assert np.array_equal(a.rep, b.rep)
+    assert np.array_equal(a.food_tier, b.food_tier)              # the spatial branch consumes no RNG -> identical
+
+
+def test_spatial_tiers_assigns_tier_by_region():
+    """The R157 mechanism: a locked mote's tier is its x-axis REGION index (region r -> tier r+1), so each
+    region rewards exactly one recipe branch. Verified directly on hand-placed positions."""
+    w = GenesisWorld(_tacfg(n0=200, spatial_tiers=True), seed=0)
+    size = w.cfg.world.size
+    R = w.cfg.n_food_tiers - 1
+    pos = np.zeros((300, 3))
+    pos[:, 0] = np.linspace(0.01, size - 0.01, 300)              # sweep across all x-regions
+    tiers = w._food_tiers(pos)
+    locked = tiers > 0
+    expect = 1 + np.clip((pos[:, 0] / size * R).astype(int), 0, R - 1)
+    assert np.array_equal(tiers[locked], expect[locked])         # every locked mote carries its region's tier
+    assert locked.any() and (tiers == 0).any()                  # both free (tier 0) and locked motes present
+
+
+def test_ecological_traditions_test_fields_and_off_empty():
+    w = GenesisWorld(_tacfg(n0=250, spatial_tiers=True), seed=0)
+    for _ in range(150):
+        w.step()
+    out = w.ecological_traditions_test(min_region=10)
+    assert {"alignment", "aligned_regions", "n_regions", "n_branches", "own_frac", "other_frac"} <= set(out)
+    assert GenesisWorld(_kcfg(), seed=0).ecological_traditions_test() == {}   # tech_actions off -> empty
+
+
+def _ecocfg(**kw):
+    """The R157 ecological-selection regime: tech_actions with 3 locked-tier branches, a recipe carry-BUDGET
+    (forced specialists), a free-tier LIFELINE (tier0_frac high so the population survives while branches sort),
+    and spatial_tiers ON. This is the regime where selection sorts each branch into its own region."""
+    base = dict(n_food_tiers=4, recipe_level_step=2, tier_value_bonus=3.0, tier0_frac=0.65,
+                recipe_budget=2, food_cap=900, food_regrow=45)
+    base.update(kw)
+    return _tacfg(**base)
+
+
+def test_spatial_selection_beats_random_null():
+    """The R157 headline (smoke, 2 seeds): with spatial_tiers + a recipe budget each region is ECONOMICALLY
+    enriched for its OWN branch (own-branch fraction > others'), an alignment the scrambled-niche null
+    (random tiers, same budget) does NOT produce -> traditions become spatially locked by SELECTION. The
+    magnitude + 3D patches are the REAL-VERIFY headline (scripts/run_genesis_ecotraditions.py)."""
+    sp, rn = [], []
+    for seed in (0, 1):
+        spat = GenesisWorld(_ecocfg(n0=500, spatial_tiers=True), seed=seed)
+        rand = GenesisWorld(_ecocfg(n0=500, spatial_tiers=False), seed=seed)
+        for _ in range(450):
+            spat.step(); rand.step()
+        sp.append(spat.ecological_traditions_test(min_region=12).get("alignment", 0.0))
+        rn.append(rand.ecological_traditions_test(min_region=12).get("alignment", 0.0))
+    assert np.mean(sp) > np.mean(rn)                              # selection sorts branches into regions
+    assert np.mean(sp) > 0.0                                      # each region net-enriched for its own branch
+
+
+def test_recipe_knobs_require_tech_actions():
+    for kw in (dict(recipe_budget=1), dict(recipe_upkeep=0.1)):
+        with pytest.raises(ValueError):
+            GenesisWorld(_kcfg(**kw), seed=0)                     # recipe knobs without tech_actions=True
+
+
+def test_recipe_budget_caps_carried_branches():
+    """With recipe_budget=1 no living agent ever carries more than one LOCKED-tier recipe branch (forced
+    specialists) — the keystone that lets spatial selection sort branches into regions."""
+    w = GenesisWorld(_ecocfg(n0=300, recipe_budget=1, spatial_tiers=True), seed=0)
+    for _ in range(200):
+        w.step()
+    act = w.pop.active()
+    carried = w.rep[np.ix_(act, w._recipe_tech[1:])].sum(axis=1)
+    assert carried.max() <= 1                                     # never a generalist holding >1 branch
+
+
+def test_recipe_budget_off_is_byte_identical():
+    a = GenesisWorld(_tacfg(n0=220), seed=2)                      # R153 (recipe_budget=0 default)
+    b = GenesisWorld(_tacfg(n0=220, recipe_budget=0, recipe_upkeep=0.0), seed=2)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.rep, b.rep)
 
 
 def test_checkpoint_roundtrips_food_tier(tmp_path):

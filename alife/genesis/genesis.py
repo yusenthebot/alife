@@ -301,6 +301,34 @@ class GenesisConfig:
     tier_value_bonus: float = 1.0     # a tier-t mote is worth food_value*(1+tier_value_bonus*t) (locked food is richer)
     tier0_frac: float = 0.4           # fraction of spawned food that is the free tier 0; the rest is locked tiers
 
+    # --- R157: SPATIAL niches -> ECOLOGICALLY-SELECTED divergent traditions ---
+    # R156's traditions are NEUTRAL DRIFT in a spatially-homogeneous world, so they stay MODEST (F_ST ~0.03)
+    # and (verified R157) naive forgetting cannot sharpen them — with no force maintaining divergence, decay
+    # only erodes the deep techniques that define a tradition. The missing ingredient is SELECTION. When
+    # spatial_tiers=True a recipe-locked mote's TIER is set by its SPATIAL REGION (x-axis slab) instead of
+    # uniformly at random: region r yields only tier-(r+1) locked food, edible (via tech_actions) ONLY by
+    # holders of that tier's recipe branch. So each region ECONOMICALLY REWARDS one branch — recipe-r holders
+    # accumulate energy and reproduce in region r while a wrong-branch wanderer starves on its locked food, so
+    # selection LOCKS each region to its own tradition: discrete, spatially-structured, economically-distinct
+    # cultures MAINTAINED by local adaptation (gene-culture coevolution), not drift. The causal NULL is
+    # spatial_tiers=False (the R153 random-tier world, same tech_actions gate) — same learners + same recipes,
+    # only the region<->branch correlation is cut. Requires tech_actions=True; off is byte-identical to R153.
+    spatial_tiers: bool = False
+    # Knowledge has UPKEEP: each step an agent pays recipe_upkeep per LOCKED-tier recipe it carries (the
+    # cognitive/maintenance cost of a technique). With cheap, freely-transmitted branches every agent learns
+    # EVERY branch (R154's convergence trap) and no region differentiates. A real upkeep makes carrying a branch
+    # you don't use a net LOSS, so in region r holding recipe r pays (you eat tier r+1) but holding the others is
+    # pure cost -> selection purifies each region to its OWN branch. This is what turns spatial_tiers from "no
+    # effect" into genuine ecological selection of discrete traditions. recipe_upkeep=0.0 = byte-identical (no cost).
+    recipe_upkeep: float = 0.0
+    # The keystone: a newborn can carry at most recipe_budget LOCKED-tier recipe branches (the R155 capability-
+    # budget mechanism applied to recipes). With cheap transmission every agent otherwise learns EVERY branch (a
+    # generalist) and no region differentiates. A hard budget FORCES each agent to be a branch SPECIALIST, so in
+    # region r only recipe-r specialists can eat -> selection sorts each branch into its own region: SHARP,
+    # spatially-locked, economically-distinct traditions. Kept branches PREFER the parent's (heritable cultural
+    # lineage). recipe_budget=0 = unlimited (no-op, byte-identical to R153/R156). Requires tech_actions.
+    recipe_budget: int = 0
+
     # --- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape MOVEMENT + harvest REACH) ---
     # R153 made culture gate ONE physical action (what an agent can EAT). R154 generalises that to a
     # multi-dimensional capability VECTOR: deep tech-tree nodes also unlock LOCOMOTION (a higher max speed)
@@ -372,6 +400,10 @@ class GenesisWorld:
             raise ValueError("panmictic_culture (R156 traditions null) requires combinatorial=True")
         if self.culture_decay and not self.combinatorial:
             raise ValueError("culture_decay (R157 lossy cultural memory) requires combinatorial=True")
+        if self.cfg.spatial_tiers and not self.tech_actions:
+            raise ValueError("spatial_tiers (R157 ecologically-selected traditions) requires tech_actions=True")
+        if (self.cfg.recipe_budget > 0 or self.cfg.recipe_upkeep > 0.0) and not self.tech_actions:
+            raise ValueError("recipe_budget/recipe_upkeep (R157) require tech_actions=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -430,7 +462,7 @@ class GenesisWorld:
                                                   size=(self.cfg.n_patches, 3))
         self.food = self._spawn_food(self.cfg.food_cap)
         self.food_type = self._food_types(self.cfg.food_cap)
-        self.food_tier = self._food_tiers(self.food.shape[0])    # R153 recipe-locked tiers (all-zero when off)
+        self.food_tier = self._food_tiers(self.food)             # R153 recipe-locked tiers (all-zero when off)
         self.food_niche = self._food_niches(self.food.shape[0])  # R155 capability-keyed niches (all -1 when off)
         # ripeness state (R146): food is edible only when ripe. processing OFF -> all ripe always (the
         # R141..R145 world, byte-identical); processing ON -> food spawns RAW and is ripened by processors.
@@ -527,18 +559,27 @@ class GenesisWorld:
             return np.zeros(n, dtype=np.int64)
         return self.rng.integers(0, self.cfg.n_food_types, size=n)
 
-    def _food_tiers(self, n: int) -> np.ndarray:
+    def _food_tiers(self, pos: np.ndarray) -> np.ndarray:
         """Recipe-tier label per food mote (R153). Off (or single tier) -> all tier 0, NO RNG draw (so
         tech_actions=False is byte-identical to R150/R151). On -> tier 0 with prob tier0_frac (the free,
-        always-edible resource), else a uniformly random LOCKED tier in 1..n_food_tiers-1."""
+        always-edible resource), else a LOCKED tier in 1..n_food_tiers-1. R157 spatial_tiers: a locked mote's
+        tier is its SPATIAL-REGION index (x-axis slab) so each region yields ONE branch (ecological selection);
+        off (R153) it is uniformly random. The tier0_frac RNG draw is identical in both, so spatial_tiers=False
+        is byte-identical to R153 (the spatial branch consumes no RNG)."""
         cfg = self.cfg
+        n = pos.shape[0]
         if not self.tech_actions or cfg.n_food_tiers <= 1:
             return np.zeros(n, dtype=np.int64)
         tiers = np.zeros(n, dtype=np.int64)
         locked = self.rng.random(n) >= cfg.tier0_frac
         n_locked = int(locked.sum())
         if n_locked:
-            tiers[locked] = self.rng.integers(1, cfg.n_food_tiers, size=n_locked)
+            if cfg.spatial_tiers:                                 # R157: tier = spatial region -> region<->branch map
+                ntiers = cfg.n_food_tiers - 1
+                slab = np.clip((pos[locked, 0] / cfg.world.size * ntiers).astype(int), 0, ntiers - 1)
+                tiers[locked] = 1 + slab                          # region r yields only tier r+1 (no RNG)
+            else:                                                 # R153: uniformly random locked tier
+                tiers[locked] = self.rng.integers(1, cfg.n_food_tiers, size=n_locked)
         return tiers
 
     def _food_niches(self, n: int) -> np.ndarray:
@@ -644,7 +685,10 @@ class GenesisWorld:
                 p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
                 emit = cfg.emit_cost * np.abs(p.utterance[act])  # honest-signalling cost -> silence default
             speed = np.linalg.norm(newvel, axis=1)
-            p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit),
+            upkeep = 0.0
+            if self.tech_actions and cfg.recipe_upkeep > 0.0:    # R157: metabolic cost of carried recipe knowledge
+                upkeep = cfg.recipe_upkeep * self.rep[act][:, self._recipe_tech[1:]].sum(axis=1)
+            p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit + upkeep),
                                        cfg.e_max)
             if self.building:                               # deposit/reinforce a persistent hearth (R148)
                 self._build(act, out)
@@ -947,8 +991,35 @@ class GenesisWorld:
                             cfg.combo_prereqs, self.rng, cfg.innov_steps)
         if self.cap_niches:                                  # R155: bound the capability keys to the somatic budget
             child = self._enforce_cap_budget(child, parents)
+        if self.tech_actions and cfg.recipe_budget > 0:      # R157: bound carried recipe BRANCHES -> specialists
+            child = self._enforce_recipe_budget(child, parents)
         self.rep[slots] = child
         self.pop.tech[slots] = cb.max_level_known(child, self._tree_level)
+
+    def _enforce_recipe_budget(self, child: np.ndarray, parents: np.ndarray) -> np.ndarray:
+        """R157: bound each newborn to at most recipe_budget LOCKED-tier recipe branches so it cannot be a
+        generalist holding every branch — the keystone that lets spatial selection sort branches into regions.
+        Kept branches PREFER the parent's (a heritable cultural lineage), filling any remaining budget from
+        newly-acquired branches (random tie-break). Only the recipe columns are touched. Mirrors R155's
+        _enforce_cap_budget exactly, on self._recipe_tech[1:] instead of the capability nodes."""
+        cfg = self.cfg
+        rec = self._recipe_tech[1:]                            # locked-tier recipe ids, len n_food_tiers-1
+        held = child[:, rec]                                  # [n, B] branches the child acquired
+        budget = cfg.recipe_budget
+        if budget >= rec.size:
+            return child
+        over = held.sum(axis=1) > budget
+        if not over.any():
+            return child
+        parent_held = self.rep[parents][:, rec]              # [n, B] the parent's branches (heritable preference)
+        jitter = 1e-3 * self.rng.random(held.shape)
+        score = np.where(held, (1.0 + parent_held.astype(float)) + jitter, -1.0)
+        for r in np.where(over)[0]:
+            keep_idx = np.argsort(score[r])[::-1][:budget]   # the budget highest-priority HELD branches
+            newrow = np.zeros(rec.size, dtype=bool)
+            newrow[keep_idx] = True
+            child[r, rec] = newrow & held[r]                 # never resurrect a branch the child did not acquire
+        return child
 
     def _enforce_cap_budget(self, child: np.ndarray, parents: np.ndarray) -> np.ndarray:
         """R155: bound each newborn to at most cap_budget capability KEYS, so it cannot carry every key and
@@ -1053,6 +1124,45 @@ class GenesisWorld:
         return {
             "fst": fst, "n_demes": int(len(freqs)), "n_distinct_traditions": int(len(set(dom))),
             "dom_tech": dom, "H_T": H_T, "H_S": H_S, "n": int(act.size),
+        }
+
+    def ecological_traditions_test(self, min_region: int = 20) -> dict:
+        """R157 read-out: does ECOLOGICAL selection lock each spatial REGION to its OWN recipe BRANCH? Partitions
+        the living population into n_food_tiers-1 x-axis slabs (the same regions spatial_tiers uses to assign
+        food) and, per region r, measures the fraction of agents holding region r's OWN branch (recipe for tier
+        r+1) vs the mean fraction holding the OTHER regions' branches. ALIGNMENT = own - other (averaged over
+        regions): >0 means each region is enriched for its own branch (a spatially-locked, economically-distinct
+        tradition); ~0 means branches are spatially mixed (drift). `aligned_regions` = regions whose own branch
+        is their MODAL branch. In situ; never feeds selection. Requires tech_actions."""
+        if not self.tech_actions:
+            return {}
+        p = self.pop
+        act = p.active()
+        recipes = self._recipe_tech[1:]                          # recipe id for tier 1..T-1; region r -> tier r+1
+        R = recipes.size
+        if act.size < min_region * 2 or R < 2:
+            return {}
+        pos = p.pos[act]
+        held = self.rep[np.ix_(act, recipes)]                    # [n, R] which branch each agent holds
+        size = self.cfg.world.size
+        region = np.clip((pos[:, 0] / size * R).astype(int), 0, R - 1)   # x-slab region per agent
+        own, other, modal_own, n_reg = [], [], 0, 0
+        for r in range(R):
+            rows = np.where(region == r)[0]
+            if rows.size < min_region:
+                continue
+            frac = held[rows].mean(axis=0)                       # [R] fraction holding each branch in region r
+            own.append(float(frac[r]))
+            other.append(float((frac.sum() - frac[r]) / (R - 1)))
+            if frac.argmax() == r and frac[r] > 0:
+                modal_own += 1
+            n_reg += 1
+        if not own:
+            return {"n_regions": 0, "alignment": 0.0, "aligned_regions": 0, "n_branches": int(R)}
+        own_m, other_m = float(np.mean(own)), float(np.mean(other))
+        return {
+            "n_regions": int(n_reg), "n_branches": int(R), "own_frac": own_m, "other_frac": other_m,
+            "alignment": own_m - other_m, "aligned_regions": int(modal_own), "n": int(act.size),
         }
 
     def tech_actions_test(self) -> dict:
@@ -1459,9 +1569,10 @@ class GenesisWorld:
         cfg = self.cfg
         need = min(cfg.food_regrow, cfg.food_cap - self.food.shape[0])
         if need > 0:
-            self.food = np.vstack([self.food, self._spawn_food(need)])
+            new_food = self._spawn_food(need)
+            self.food = np.vstack([self.food, new_food])
             self.food_type = np.concatenate([self.food_type, self._food_types(need)])
-            self.food_tier = np.concatenate([self.food_tier, self._food_tiers(need)])
+            self.food_tier = np.concatenate([self.food_tier, self._food_tiers(new_food)])
             if self.cap_niches:                              # R155 niche labels for the new motes (in sync only when on)
                 self.food_niche = np.concatenate([self.food_niche, self._food_niches(need)])
             new_ripe = np.zeros(need, dtype=bool) if self.processing else np.ones(need, dtype=bool)
