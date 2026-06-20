@@ -13,6 +13,11 @@ Each round clears the current bar, researches the frontier, then raises it — a
 really run**: frames rendered, screenshots inspected, metrics plotted and red-teamed, never faked.
 Each model is one self-contained Python module with its own tests and a reproducible figure.
 
+**Now building GENESIS** (`alife/genesis/`, R141+): a persistent, real 3D living world where embodied
+agents driven *entirely* by evolved neural genomes — no GA, no fitness function, no scripted behaviour —
+sense, move, reproduce, die and genuinely evolve, staged across many rounds toward an emergent
+proto-civilization (foundation → language → division of labour → economy → cumulative culture).
+
 - **Full round-by-round catalog and current state:** [`progress.md`](progress.md)
 - **How the codebase is organized:** [`CODEBASE_GUIDE.md`](CODEBASE_GUIDE.md)
 - **Operator's walkthrough (which command shows what):** [`QUICKSTART.md`](QUICKSTART.md)
