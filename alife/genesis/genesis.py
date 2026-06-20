@@ -284,6 +284,31 @@ class GenesisConfig:
     cap_level_step: int = 4           # axis i's node sits at tree-level >= cap_level_step*(i+1) (deeper = harder)
     cap_speed_mult: float = 1.0       # locomotion node -> max speed cfg.speed*(1+cap_speed_mult)
     cap_reach_mult: float = 1.0       # reach node -> eat radius cfg.eat_radius*(1+cap_reach_mult)
+
+    # --- R155: COSTLY/BOUNDED capabilities -> emergent SPECIALIZATION (a division of labour through the tech tree) ---
+    # R154's capabilities are FREE, so social transmission converges the WHOLE population to the full vector
+    # (everyone learns every axis -> no specialization). R155 makes each capability EXCLUDABLE and BOUNDED so
+    # distinct lineages specialize, attacking the R152 public-good negative from the EXCLUDABLE door:
+    #   - each of the n_capabilities deep nodes is the EXCLUSIVE harvesting KEY to one PARALLEL food NICHE
+    #     (a ripe mote in niche i is edible ONLY by an agent holding capability node i). A fraction
+    #     niche_free_frac of food stays FREE (niche -1, edible by anyone) so culturally-naive founders survive
+    #     while the keys bootstrap; keyed motes are richer (niche_value_bonus) so holding a key PAYS.
+    #   - a finite somatic BUDGET cap_budget bounds how many capability keys an agent may carry, so it CANNOT
+    #     hold every key -> it must specialize. On acquisition a newborn keeps its PARENT's keys first (the
+    #     capability profile is heritable = a cultural lineage), then fills the remaining budget.
+    #   - resource depletion makes a crowded niche pay less -> negative frequency dependence -> a STABLE
+    #     polymorphism of capability profiles (a division of labour), where R154 gave convergence; and a
+    #     freely-specializing MIXED population out-survives a forced MONOCULTURE (cap_force_mono) that wastes
+    #     the other niches' food.
+    # Requires tech_capabilities=True. cap_niches=False is byte-identical to R154 (all motes free, no niche RNG
+    # draw, no budget enforced). cap_skew_key0 (>=0) seeds founders' keys skewed for the frequency-dependence
+    # probe; -1 (default) keeps founders culturally naive (the standard invariant).
+    cap_niches: bool = False
+    cap_budget: int = 1               # max capability keys an agent may hold (somatic budget) -> forces a choice
+    niche_free_frac: float = 0.5      # fraction of food that is FREE (edible by anyone); rest split among keyed niches
+    niche_value_bonus: float = 1.0    # a keyed mote is worth food_value*(1+niche_value_bonus) (specializing pays)
+    cap_force_mono: bool = False      # CONTROL: force every agent to key 0 only (a monoculture) -> wastes niche>0 food
+    cap_skew_key0: float = -1.0       # PROBE: seed founders key0 w.p. this, else key1 (>=0 grants founder keys); -1 off
     # metric
     persist_steps: int = 200
 
@@ -303,12 +328,15 @@ class GenesisWorld:
         self.combinatorial = self.cfg.combinatorial
         self.tech_actions = self.cfg.tech_actions
         self.tech_capabilities = self.cfg.tech_capabilities
+        self.cap_niches = self.cfg.cap_niches
         if self.combinatorial and not self.culture:
             raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
         if self.tech_actions and not self.combinatorial:
             raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
         if self.tech_capabilities and not self.combinatorial:
             raise ValueError("tech_capabilities (R154 culture-gated physical capabilities) requires combinatorial=True")
+        if self.cap_niches and not self.tech_capabilities:
+            raise ValueError("cap_niches (R155 capability specialization) requires tech_capabilities=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -350,6 +378,12 @@ class GenesisWorld:
             if self.tech_capabilities:                       # R154: which deep node unlocks each PHYSICAL axis
                 self._cap_tech = cb.capability_techniques(
                     self._tree_level, ns, self.cfg.n_capabilities, self.cfg.cap_level_step)
+                if self.cap_niches and self.cfg.cap_skew_key0 >= 0.0:  # R155 probe: seed founder keys skewed
+                    key0 = self.rng.random(act.size) < self.cfg.cap_skew_key0    # else key1 (only for C>=2)
+                    self.rep[act[key0], self._cap_tech[0]] = True
+                    if self.cfg.n_capabilities >= 2:
+                        self.rep[act[~key0], self._cap_tech[1]] = True
+                    self.pop.tech[act] = cb.max_level_known(self.rep[act], self._tree_level)
         elif self.culture:                                   # R149 scalar: founders are culturally NAIVE: one
             act = self.pop.active()                           # innovation each, no ancestors to copy -> start ~0
             self.pop.tech[act] = np.maximum(0.0, self.rng.normal(self.cfg.innov_mean, self.cfg.innov_sigma,
@@ -362,6 +396,7 @@ class GenesisWorld:
         self.food = self._spawn_food(self.cfg.food_cap)
         self.food_type = self._food_types(self.cfg.food_cap)
         self.food_tier = self._food_tiers(self.food.shape[0])    # R153 recipe-locked tiers (all-zero when off)
+        self.food_niche = self._food_niches(self.food.shape[0])  # R155 capability-keyed niches (all -1 when off)
         # ripeness state (R146): food is edible only when ripe. processing OFF -> all ripe always (the
         # R141..R145 world, byte-identical); processing ON -> food spawns RAW and is ripened by processors.
         self.food_ripe = np.zeros(self.food.shape[0], dtype=bool) if self.processing \
@@ -468,6 +503,22 @@ class GenesisWorld:
         if n_locked:
             tiers[locked] = self.rng.integers(1, cfg.n_food_tiers, size=n_locked)
         return tiers
+
+    def _food_niches(self, n: int) -> np.ndarray:
+        """Capability-niche label per food mote (R155). -1 = FREE (edible by anyone). cap_niches OFF (or no
+        capability axes) -> all -1, NO RNG draw (so cap_niches=False is byte-identical to R154). ON -> FREE with
+        prob niche_free_frac, else a uniformly random KEYED niche in 0..n_capabilities-1 (edible only by a holder
+        of that niche's capability node). The free niche lets culturally-naive founders survive while the deep
+        capability keys bootstrap via transmission; the keyed niches are the excludable specialist resources."""
+        cfg = self.cfg
+        if not self.cap_niches or cfg.n_capabilities < 1:
+            return np.full(n, -1, dtype=np.int64)
+        niche = np.full(n, -1, dtype=np.int64)
+        keyed = self.rng.random(n) >= cfg.niche_free_frac
+        nk = int(keyed.sum())
+        if nk:
+            niche[keyed] = self.rng.integers(0, cfg.n_capabilities, size=nk)
+        return niche
 
     # --- sensing ---
     def _sense_neighbours(self, pos, right, up, fwd, sense_range):
@@ -581,6 +632,8 @@ class GenesisWorld:
         self.food = self.food[keep]
         self.food_type = self.food_type[keep]
         self.food_tier = self.food_tier[keep]
+        if self.cap_niches:                                 # R155 niche labels: only live (and kept in sync) when on
+            self.food_niche = self.food_niche[keep]
         self.food_ripe = self.food_ripe[keep]
         self.ripe_age = self.ripe_age[keep]
         self.food_proc = self.food_proc[keep]
@@ -627,6 +680,9 @@ class GenesisWorld:
         cfg, p = self.cfg, self.pop
         act = p.active()
         if act.size == 0 or self.food.shape[0] == 0:
+            return
+        if self.cap_niches:                                 # R155: ripe AND capability-key-gated niche
+            self._eat_cap_niches()
             return
         if self.tech_actions:                               # R153: ripe AND recipe-unlocked tier
             self._eat_tech_actions()
@@ -709,6 +765,49 @@ class GenesisWorld:
             keep[fm[eaten]] = False
             eaten_agent[elig[winners]] = True
             self._tier_eat_count[t] += int(eaten.size)
+        if not keep.all():
+            self._keep_food(keep)
+
+    def _eat_cap_niches(self) -> None:
+        """R155 eat: ripe food in a KEYED niche is harvestable ONLY by an agent holding that niche's capability
+        node; the FREE niche (-1) is edible by anyone. Each agent eats at most one mote/step. Keyed motes are
+        richer (food_value*(1+niche_value_bonus)) so holding a key PAYS, and the harvest flows through the usual
+        caste/technique multipliers via _harvest_gain and pays the processor wage when specialize is on. Because
+        an agent's capability budget bounds how many keys it can hold (see _enforce_cap_budget), different
+        lineages exploit different niches -> a division of labour; the free niche keeps naive founders alive
+        while the keys bootstrap. Per-eater reach is the R154 culture-gated radius. Keyed niches are resolved
+        before the free one so a specialist gets first claim on its own resource."""
+        cfg, p = self.cfg, self.pop
+        act = p.active()
+        ripe = np.where(self.food_ripe)[0]
+        if ripe.size == 0:
+            return
+        keep = np.ones(self.food.shape[0], dtype=bool)
+        eaten_agent = np.zeros(act.size, dtype=bool)         # at most one harvest per agent per step
+        ripe_niche = self.food_niche[ripe]
+        for nv in list(range(cfg.n_capabilities)) + [-1]:    # keyed niches first, then the free niche
+            fm = ripe[(ripe_niche == nv) & keep[ripe]]       # ripe, this niche, not already eaten this step
+            if fm.size == 0:
+                continue
+            if nv < 0:
+                elig = np.where(~eaten_agent)[0]             # free resource: anyone may harvest
+            else:
+                elig = np.where(self.rep[act, self._cap_tech[nv]] & ~eaten_agent)[0]  # key-holders only
+            if elig.size == 0:
+                continue
+            dist, idx = cKDTree(self.food[fm]).query(p.pos[act[elig]], k=1)
+            reach = self._cap_reach(act[elig])               # R154: per-eater harvest reach (culture-gated)
+            winners, eaten = _resolve(dist, idx, reach)      # winners index into elig; eaten into fm
+            if winners.size == 0:
+                continue
+            eaters = act[elig[winners]]
+            bonus = 0.0 if nv < 0 else cfg.niche_value_bonus
+            base = np.full(eaters.size, cfg.food_value * (1.0 + bonus))
+            p.energy[eaters] += self._harvest_gain(eaters, base=base)
+            if self.specialize:                              # wage to whoever ripened each eaten mote (trade)
+                self._pay_processors(fm[eaten])
+            keep[fm[eaten]] = False
+            eaten_agent[elig[winners]] = True
         if not keep.all():
             self._keep_food(keep)
 
@@ -804,8 +903,44 @@ class GenesisWorld:
             child = np.zeros((slots.size, K), dtype=bool)    # asocial: no copying, reinvent from scratch
         cb.discover_inplace(child, self._tree_pa, self._tree_pb, cfg.n_seed_tech,
                             cfg.combo_prereqs, self.rng, cfg.innov_steps)
+        if self.cap_niches:                                  # R155: bound the capability keys to the somatic budget
+            child = self._enforce_cap_budget(child, parents)
         self.rep[slots] = child
         self.pop.tech[slots] = cb.max_level_known(child, self._tree_level)
+
+    def _enforce_cap_budget(self, child: np.ndarray, parents: np.ndarray) -> np.ndarray:
+        """R155: bound each newborn to at most cap_budget capability KEYS, so it cannot carry every key and
+        must specialize. The kept keys PREFER the parent's keys (the capability profile is heritable -> a
+        cultural lineage), filling any remaining budget from newly-acquired keys (random tie-break). Only the
+        capability columns are touched; the rest of the repertoire is left intact. cap_force_mono is the
+        MONOCULTURE control: every agent keeps ONLY key 0 (so niche>0 food is wasted -> a smaller population
+        than the freely-specializing mixed world). With cap_budget >= n_capabilities and no force_mono this is
+        a no-op."""
+        cfg = self.cfg
+        cap = self._cap_tech                                  # capability node ids, len n_capabilities
+        held = child[:, cap]                                  # [n, C] keys the child acquired
+        if cfg.cap_force_mono:                                # control: collapse to key 0 only
+            newcols = np.zeros_like(held)
+            newcols[:, 0] = held[:, 0]
+            child[:, cap] = newcols
+            return child
+        budget = cfg.cap_budget
+        if budget >= cap.size:
+            return child
+        over = held.sum(axis=1) > budget
+        if not over.any():
+            return child
+        parent_held = self.rep[parents][:, cap]              # [n, C] the parent's keys (heritable preference)
+        # priority of a HELD key: parent's keys score ~2, other acquired keys ~1, with a small random jitter
+        # to break ties; non-held keys score -1 so they are never kept.
+        jitter = 1e-3 * self.rng.random(held.shape)
+        score = np.where(held, (1.0 + parent_held.astype(float)) + jitter, -1.0)
+        for r in np.where(over)[0]:
+            keep_idx = np.argsort(score[r])[::-1][:budget]   # the budget highest-priority HELD keys
+            newrow = np.zeros(cap.size, dtype=bool)
+            newrow[keep_idx] = True
+            child[r, cap] = newrow & held[r]                 # never resurrect a key the child did not acquire
+        return child
 
     def combinatorial_test(self) -> dict:
         """The R150 open-ended-culture read-out (in situ; never feeds selection). The headline complexity
@@ -907,6 +1042,50 @@ class GenesisWorld:
             "mean_speed_cap": float(speed_cap.mean()),
             "mean_reach": float(reach.mean()),
             "mean_realized_speed": float(np.linalg.norm(p.vel[act], axis=1).mean()),
+            "n": int(act.size),
+        }
+
+    def cap_specialize_test(self) -> dict:
+        """The R155 read-out: has a DIVISION OF LABOUR over capability keys emerged in the LIVING population?
+        In situ; never feeds selection.
+          - frac_per_key    : fraction of living agents holding each capability key [list, len C].
+          - mean_keys       : mean keys held per agent (the budget bounds this; R154/free converges to C).
+          - profile_entropy : Shannon entropy (bits) of the distribution of capability PROFILES (the held-key
+                              subset) across agents -> 0 when everyone shares one profile (monoculture /
+                              R154 convergence), high when many distinct profiles coexist (a division of labour).
+          - frac_keyed      : fraction holding >=1 key (vs naive agents living on free food only).
+          - balance         : 1 - mean|frac_per_key - mean(frac_per_key)| normalised -> 1 when the keyed
+                              niches are evenly covered (a balanced polymorphism), 0 when one key dominates.
+          - keyed_food_frac : fraction of RIPE food sitting in keyed niches (the exploitable specialist resource).
+        """
+        if not self.cap_niches:
+            return {}
+        cfg, p = self.cfg, self.pop
+        act = p.active()
+        C = cfg.n_capabilities
+        ripe = self.food_ripe
+        keyed_food_frac = float((self.food_niche[ripe] >= 0).mean()) if ripe.any() else 0.0
+        if act.size == 0:
+            return {"frac_per_key": [0.0] * C, "mean_keys": 0.0, "profile_entropy": 0.0,
+                    "frac_keyed": 0.0, "balance": 0.0, "keyed_food_frac": keyed_food_frac, "n": 0}
+        held = self.rep[np.ix_(act, self._cap_tech)]             # [n, C] which keys each agent holds
+        frac = held.mean(axis=0)
+        # profile = the integer bitmask of held keys; entropy over its distribution across agents
+        weights = (1 << np.arange(C)).astype(np.int64)
+        profiles = (held.astype(np.int64) * weights[None, :]).sum(axis=1)
+        _, counts = np.unique(profiles, return_counts=True)
+        pr = counts / counts.sum()
+        entropy = float(-(pr * np.log2(pr)).sum())
+        mean_frac = float(frac.mean())
+        spread = float(np.abs(frac - mean_frac).mean())
+        balance = float(1.0 - spread / mean_frac) if mean_frac > 0 else 0.0
+        return {
+            "frac_per_key": [float(x) for x in frac],
+            "mean_keys": float(held.sum(axis=1).mean()),
+            "profile_entropy": entropy,
+            "frac_keyed": float(held.any(axis=1).mean()),
+            "balance": balance,
+            "keyed_food_frac": keyed_food_frac,
             "n": int(act.size),
         }
 
@@ -1180,6 +1359,8 @@ class GenesisWorld:
             self.food = np.vstack([self.food, self._spawn_food(need)])
             self.food_type = np.concatenate([self.food_type, self._food_types(need)])
             self.food_tier = np.concatenate([self.food_tier, self._food_tiers(need)])
+            if self.cap_niches:                              # R155 niche labels for the new motes (in sync only when on)
+                self.food_niche = np.concatenate([self.food_niche, self._food_niches(need)])
             new_ripe = np.zeros(need, dtype=bool) if self.processing else np.ones(need, dtype=bool)
             self.food_ripe = np.concatenate([self.food_ripe, new_ripe])
             self.ripe_age = np.concatenate([self.ripe_age, np.zeros(need, dtype=np.int32)])
@@ -1223,6 +1404,13 @@ class GenesisWorld:
             snap["mean_speed_cap"] = float(tc.get("mean_speed_cap", cfg.speed))
             snap["mean_reach"] = float(tc.get("mean_reach", cfg.eat_radius))
             snap["mean_realized_speed"] = float(tc.get("mean_realized_speed", 0.0))
+        if self.cap_niches:                                 # R155: emergent capability specialization
+            cs = self.cap_specialize_test()
+            snap["profile_entropy"] = float(cs.get("profile_entropy", 0.0))
+            snap["mean_keys"] = float(cs.get("mean_keys", 0.0))
+            snap["balance"] = float(cs.get("balance", 0.0))
+            snap["frac_keyed"] = float(cs.get("frac_keyed", 0.0))
+            snap["keyed_food_frac"] = float(cs.get("keyed_food_frac", 0.0))
         return snap
 
     def caste_test(self) -> dict:
@@ -1393,6 +1581,8 @@ class GenesisWorld:
     def save_checkpoint(self, path: str) -> None:
         st = self.pop.state()
         combo = {"rep": self.rep, "struct_rep": self.struct_rep} if self.combinatorial else {}
+        if self.cap_niches:                                  # R155 niche labels (kept in sync only when on)
+            combo["food_niche"] = self.food_niche
         np.savez_compressed(
             path,
             step=np.int64(self.step_count),
@@ -1425,6 +1615,8 @@ class GenesisWorld:
         self.food_type = d["food_type"]
         self.food_tier = (d["food_tier"] if "food_tier" in d.files
                           else np.zeros(self.food.shape[0], dtype=np.int64))
+        self.food_niche = (d["food_niche"] if "food_niche" in d.files
+                           else np.full(self.food.shape[0], -1, dtype=np.int64))
         self.food_ripe = (d["food_ripe"] if "food_ripe" in d.files
                           else np.ones(self.food.shape[0], dtype=bool))
         self.ripe_age = (d["ripe_age"] if "ripe_age" in d.files

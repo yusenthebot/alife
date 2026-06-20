@@ -1470,3 +1470,135 @@ def test_checkpoint_preserves_capability_phenotype(tmp_path):
     assert np.array_equal(w._cap_tech, w2._cap_tech)          # capability table is deterministic from the fixed tree
     assert np.allclose(w.tech_capabilities_test()["mean_speed_cap"],
                        w2.tech_capabilities_test()["mean_speed_cap"])   # realized phenotype survives a restart
+
+
+# ---------- R155: COSTLY/BOUNDED capabilities -> emergent SPECIALIZATION (division of labour via the tech tree) ----------
+def _cncfg(**kw):
+    """The R155 regime: combinatorial-culture world + tech_capabilities + cap_niches — each capability node is
+    the EXCLUSIVE key to a parallel food niche, bounded by a somatic budget (cap_budget) so lineages must
+    specialize. No tech_actions: eating routes through the capability-niche path."""
+    return replace(_kcfg(**kw), tech_capabilities=True, n_capabilities=2, cap_level_step=2,
+                   cap_speed_mult=1.0, cap_reach_mult=1.0, cap_niches=True, cap_budget=1,
+                   niche_free_frac=0.5, niche_value_bonus=1.0)
+
+
+def test_cap_niches_requires_tech_capabilities():
+    with pytest.raises(ValueError):
+        GenesisWorld(_kcfg(cap_niches=True), seed=0)           # cap_niches without tech_capabilities=True
+
+
+def test_cap_niches_off_draws_no_niche_labels_and_is_inert():
+    a = GenesisWorld(_kcfg(n0=200, tech_capabilities=True, n_capabilities=2, cap_level_step=2), seed=4)
+    b = GenesisWorld(_kcfg(n0=200, tech_capabilities=True, n_capabilities=2, cap_level_step=2,
+                           cap_niches=False), seed=4)
+    assert (a.food_niche == -1).all()                          # OFF -> every mote is FREE, no niche RNG draw
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                # cap_niches=False is the default -> identical run
+    assert np.array_equal(a.food, b.food)
+
+
+def test_food_niches_partition_into_free_and_keyed():
+    w = GenesisWorld(_cncfg(n0=80, niche_free_frac=0.5), seed=2)
+    niche = w.food_niche
+    assert set(np.unique(niche)).issubset({-1, 0, 1})         # free (-1) + the two keyed niches
+    assert (niche == -1).any() and (niche >= 0).any()         # both free and keyed motes spawn
+    free_frac = float((niche == -1).mean())
+    assert 0.35 < free_frac < 0.65                            # ~niche_free_frac of food is free
+
+
+def test_keyed_food_needs_the_matching_capability_key():
+    """The excludable-resource core: a ripe mote in keyed niche 0 is harvestable ONLY by a holder of capability
+    node 0; the FREE niche is edible by anyone. A categorical key, not a payoff scalar."""
+    w = GenesisWorld(_cncfg(n0=2), seed=0)
+    a, b = w.pop.active()[:2]
+    w.pop.energy[a] = w.pop.energy[b] = 50.0
+    w.pop.spec[a] = w.pop.spec[b] = 0.0; w.pop.tech[a] = w.pop.tech[b] = 0.0
+    w.rep[a] = w.rep[b] = False
+    w.rep[b, w._cap_tech[0]] = True                            # only b holds the niche-0 key
+    off = np.array([1.0, 0.0, 0.0])                            # within base eat radius (3)
+    w.food = np.array([w.pop.pos[a] + off, w.pop.pos[b] + off])
+    w.food_type = np.zeros(2, dtype=np.int64); w.food_tier = np.zeros(2, dtype=np.int64)
+    w.food_niche = np.array([0, 0], dtype=np.int64)            # both motes are keyed niche 0
+    w.food_ripe = np.array([True, True]); w.ripe_age = np.zeros(2, dtype=np.int32)
+    w.food_proc = np.full(2, -1, dtype=np.int64)
+    w._eat()
+    assert w.pop.energy[a] == 50.0                             # a lacks the key -> cannot harvest keyed niche 0
+    keyed_value = w.cfg.food_value * (1.0 + w.cfg.niche_value_bonus)
+    assert abs(w.pop.energy[b] - (50.0 + keyed_value)) < 1e-9  # b holds the key -> harvests the richer keyed mote
+
+
+def test_free_niche_is_edible_by_anyone():
+    w = GenesisWorld(_cncfg(n0=1), seed=0)
+    a = w.pop.active()[0]
+    w.pop.energy[a] = 50.0; w.pop.spec[a] = 0.0; w.pop.tech[a] = 0.0
+    w.rep[a] = False                                           # no capability keys at all
+    w.food = np.array([w.pop.pos[a] + np.array([1.0, 0.0, 0.0])])
+    w.food_type = np.zeros(1, dtype=np.int64); w.food_tier = np.zeros(1, dtype=np.int64)
+    w.food_niche = np.array([-1], dtype=np.int64)             # the FREE niche
+    w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_proc = np.full(1, -1, dtype=np.int64)
+    w._eat()
+    assert abs(w.pop.energy[a] - (50.0 + w.cfg.food_value)) < 1e-9   # free food eaten with no key
+
+
+def test_cap_budget_keep_is_parent_preferential():
+    """A newborn that acquires BOTH keys but has budget 1 keeps its PARENT's key (heritable profile)."""
+    w = GenesisWorld(_cncfg(n0=4), seed=0)
+    cap = w._cap_tech
+    w.rep[:] = False
+    w.rep[0, cap[0]] = True                                    # parent 0 is a niche-0 specialist
+    w.rep[1, cap[1]] = True                                    # parent 1 is a niche-1 specialist
+    K = w.cfg.max_techniques
+    child = np.zeros((2, K), dtype=bool)
+    child[:, cap[0]] = True; child[:, cap[1]] = True          # both children acquired BOTH keys
+    out = w._enforce_cap_budget(child.copy(), np.array([0, 1]))
+    assert out[0, cap[0]] and not out[0, cap[1]]              # child of parent 0 keeps key 0
+    assert out[1, cap[1]] and not out[1, cap[0]]              # child of parent 1 keeps key 1
+    assert out[:, cap].sum(axis=1).max() <= w.cfg.cap_budget   # never exceeds the somatic budget
+
+
+def test_cap_force_mono_collapses_every_profile_to_key0():
+    w = GenesisWorld(_cncfg(n0=4, cap_force_mono=True), seed=0)
+    cap = w._cap_tech
+    K = w.cfg.max_techniques
+    child = np.zeros((3, K), dtype=bool)
+    child[:, cap[0]] = True; child[:, cap[1]] = True
+    out = w._enforce_cap_budget(child.copy(), np.array([0, 1, 2]))
+    assert out[:, cap[0]].all() and not out[:, cap[1]].any()  # monoculture: only key 0 survives
+
+
+def test_cap_budget_bounds_keys_held_over_a_run():
+    w = GenesisWorld(_cncfg(n0=250, cap_budget=1), seed=1)
+    for _ in range(200):
+        w.step()
+    act = w.pop.active()
+    held = w.rep[np.ix_(act, w._cap_tech)]
+    assert held.sum(axis=1).max() <= 1                        # the budget is enforced for every living agent
+
+
+def test_cap_specialize_test_fields_and_off_empty():
+    w = GenesisWorld(_cncfg(n0=200), seed=0)
+    for _ in range(150):
+        w.step()
+    out = w.cap_specialize_test()
+    assert {"frac_per_key", "mean_keys", "profile_entropy",
+            "frac_keyed", "balance", "keyed_food_frac"} <= set(out)
+    assert len(out["frac_per_key"]) == w.cfg.n_capabilities
+    assert out["mean_keys"] <= w.cfg.cap_budget + 1e-9
+    assert GenesisWorld(_tccfg(), seed=0).cap_specialize_test() == {}   # off (no cap_niches) -> empty
+
+
+def test_division_of_labour_beats_forced_monoculture():
+    """The R155 headline (smoke at unit scale; the full naive-bootstrap claim is the REAL-VERIFY job). Founders
+    are seeded 50/50 with the two keys (cap_skew_key0=0.5) so the dynamics — not the slow deep-node bootstrap —
+    are under test: a freely-specializing MIXED population keeps BOTH keyed niches covered and out-survives a
+    forced MONOCULTURE that can exploit only niche 0 (wasting niche-1 food)."""
+    mix = GenesisWorld(_cncfg(n0=300, cap_skew_key0=0.5), seed=3)
+    mono = GenesisWorld(_cncfg(n0=300, cap_skew_key0=0.5, cap_force_mono=True), seed=3)
+    for _ in range(500):
+        mix.step(); mono.step()
+    cs_mix = mix.cap_specialize_test()
+    assert min(cs_mix["frac_per_key"]) > 0.0                  # mixed: BOTH keyed niches stay covered
+    assert cs_mix["profile_entropy"] > 0.3                    # multiple capability profiles coexist
+    assert mix.pop.active().size > mono.pop.active().size     # the division of labour out-survives monoculture
