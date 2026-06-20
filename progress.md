@@ -1,5 +1,48 @@
 # alife — progress
 
+## Current state (Round 152 — 2026-06-20) — can coupling building to the caste flip R151's SUBSTITUTION into COMPLEMENT? HONEST NEGATIVE: substitution is robust
+
+**R151 found niche construction SUBSTITUTES for the division of labour (caste-free building lets hearths ripen
+food for free → the processor caste is selected away). R152 tried to FLIP that into COMPLEMENT — to make a
+genuine division-of-labour economy RE-EMERGE around niche construction — by coupling building to the caste.
+It did NOT emerge. Honest finding: SUBSTITUTION is the robust attractor.**
+
+**The mechanism built (additive, correct, unit-tested, byte-identical when off — `build_specialized=False`
+default = exact R148..R151).** New flag `build_specialized` (requires `building` AND `specialize`), `genesis.py`:
+- build STRENGTH is CONVEX in the caste trait — a build act deposits `build_gain · spec^build_spec_gamma`, so a
+  pure builder (spec=1) raises a real hearth and a harvester (spec≈0) leaves a dead ember (the R147 convexity
+  lesson applied to building);
+- a builder earns a maintenance WAGE (reusing the R147 `_pay_processors` path): `_build` records each hearth's
+  last maintainer in `struct_last_builder`; `_ripen_hearths` credits that maintainer on `food_proc` for the
+  motes it ripens; when a harvester eats one, the wage flows back to the builder. So value flows from the
+  consumers of the shared infrastructure back to its maintainers.
+- 6 new tests (99 genesis tests green): requires-both validation, byte-identical-when-off, convex build
+  strength, wage-to-maintainer, viable-world smoke, checkpoint round-trip of `struct_last_builder`.
+
+**REAL-VERIFY (`scripts/run_genesis_complement.py`; `runs/r152_complement/panel.png` + caste-coloured 3D
+`complement.gif` eye-verified — COMPLEMENT and SUBSTITUTE worlds both uniformly teal/harvester):** the intended
+builder caste did NOT re-emerge, across THREE distinct mechanistic regimes (NOT parameter jiggling — each
+attacks a different reason the caste might fail):
+- **food-rich** (R151's regime): the caste FULLY collapses, identical to R151 — under slow decay the crowd's
+  incidental weak deposits ACCRETE enough hearths that no dedicated builder is needed (building = free public good);
+- **scarce + fast-decay hearths** (the viable regime SHOWN): the world survives at carrying capacity but only a
+  **~3% maintainer MINORITY** forms (`frac_build` 0.03 COMPLEMENT vs 0.00 SUBSTITUTE, coupling shift **+0.029 ≈
+  0**; `spec_mean` 0.13 vs 0.11 — both harvester-dominated). One tall hearth (high reach) feeds hundreds, so the
+  economic EQUILIBRIUM needs only a handful of builders — NOT a balanced Smithian split;
+- **many-small-hearths** (low reach, to force more maintainers): the whole world STARVES (non-viable, all 3
+  conditions extinct).
+**Conclusion: even an explicit convex-build + maintenance-wage coupling does not flip substitution; the shared,
+accretive, persistent nature of built infrastructure keeps building a near-public good that a tiny minority
+supplies, so the harvester caste still dominates. This EXTENDS R151 — substitution isn't a fluke of one regime,
+it resists a direct engineering attempt to flip it.** 禁止造假 — `frac_build` read from the live `spec` trait.
+
+**HONEST caveats (flagged, not hidden):** (1) the `WAGE-OFF` control (coupling on, `process_payment=0`) kills
+the whole population, but that is CONFOUNDED — the wage is also a raw energy injection, so its removal starves
+the world independently of caste dynamics → it is NOT clean evidence the caste is load-bearing, and is not
+claimed as such. (2) A ~3% builder minority is a real persistent specialist niche, just not the balanced
+division of labour the round set out to grow; the negative is on the STRONG claim. The coupling mechanism stays
+in the codebase behind its default-off flag — a correct, reusable tool for a future substrate-level redesign.
+
 ## Current state (Round 151 — 2026-06-20) — GENESIS INTEGRATED CAPSTONE: the ladder stages INTERACT, they don't sum (niche construction substitutes for the division of labour)
 
 **Every ladder stage (R143 predator arms race · R147 caste division of labour · R148 niche-construction
@@ -816,6 +859,13 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R152) Stages 3+4 COMPLEMENT (a division of labour re-emerging around niche construction) — HONEST
+  NEGATIVE, PARKED.** Coupling building to the caste (convex build skill + maintenance wage) did NOT flip
+  R151's substitution across 3 distinct regimes — at most a ~3% maintainer minority, not a balanced caste,
+  because shared/accretive/persistent infrastructure stays a near-public good a tiny minority supplies. The
+  mechanism (`build_specialized`, default off) is committed + unit-tested for a future substrate redesign
+  (e.g. make hearths INDIVIDUALLY owned/excludable so a builder captures the value, or require a distinct
+  non-substitutable builder-only ACTION). NOT a CEO gate; logged so it's revisited deliberately. No CEO action.
 - **(R147) GENESIS Stage 3 division of labour — RESOLVED, POSITIVE.** Attempt 2 (convex specialization
   trade-off → heritable caste) worked: a bimodal processor/harvester caste emerges, role↔caste alignment is
   built by selection (caste-gap 0→+0.32, ~0 frozen), and the specialised economy out-produces force-generalist
@@ -1127,15 +1177,14 @@ and (b) an emergent SUBSTITUTION — niche-construction hearths (Stage 4) displa
 because the built world ripens food and the `building` path replaces the per-agent `_process` action (so the
 caste collapses to 0% with hearths, persists at ~60% without; red-teamed ROBUST). Predator arms race +
 niche construction + open-ended culture DO coexist alive. The next leaps in KIND:
-- **(default next) MAKE STAGES 3+4 COMPLEMENT, NOT SUBSTITUTE — a genuine division-of-labour building economy.**
-  R151 showed hearths make the processor caste redundant. The fix is to make niche construction REQUIRE a
-  labour caste: e.g. building a hearth needs a dedicated BUILDER caste (costly, specialised — high `spec`
-  builds, low `spec` harvests), or hearths DECAY fast and need continual maintenance labour, so a settled
-  civilization can only persist with a standing division of labour. Then DoL and niche construction
-  INTERDEPEND (the balanced caste the capstone is currently missing re-emerges around the built world).
-  Verify: a stable bimodal builder/harvester caste that is NECESSARY for the hearths to stand (knock out the
-  builders → settlements collapse), red-teamed, ≥3 seeds. This is the real "civilization needs specialists."
-- **COUPLE the tech tree to the 3D WORLD (make culture MATTER physically).** Today a technique only multiplies
+- **(R152, ATTEMPTED — HONEST NEGATIVE) make Stages 3+4 COMPLEMENT via convex-build + maintenance-wage.** Did
+  NOT flip substitution across 3 regimes (food-rich → caste collapses; scarce/fast-decay → ~3% minority only;
+  small-reach → world starves). Root cause: shared/accretive/persistent infrastructure is a near-public good a
+  tiny minority supplies, so a balanced caste is not the economic equilibrium. To revisit, the fix must make
+  the builder's product EXCLUDABLE/individually-captured (a builder OWNS its hearth and gates who eats; or a
+  distinct non-substitutable builder-only action), so the wage can't be free-ridden. `build_specialized`
+  mechanism stays committed (default off) for that redesign. PARKED (see `## Decisions pending`).
+- **(default next) COUPLE the tech tree to the 3D WORLD (make culture MATTER physically).** Today a technique only multiplies
   harvest energy (a scalar payoff). Next: techniques that UNLOCK new world-actions — new build types, food
   processing recipes, tools, faster movement — so cultural DEPTH changes what agents physically DO and the
   combinatorial frontier reshapes the world (a real tech-driven economy), not just a number. Highest ambition.
