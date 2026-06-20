@@ -151,6 +151,20 @@ def neighbour_relatedness(pos: np.ndarray, lineage: np.ndarray) -> float:
     return float((lineage == lineage[idx[:, 1]]).mean())
 
 
+def point_biserial(x: np.ndarray, group: np.ndarray) -> float:
+    """Correlation between a continuous x and a binary group (the Pearson r with group as 0/1).
+
+    The R146 task-allocation read-out: x = local food proximity, group = the process decision. A NEGATIVE
+    value of corr(ripe-proximity, process) means agents process when ripe food is scarce nearby (response-
+    threshold division of labour); ~0 means the decision ignores local need (a frozen-genome control). 0 if
+    either side has no variance."""
+    x = np.asarray(x, dtype=float)
+    g = np.asarray(group, dtype=float)
+    if x.shape[0] < 3 or x.std() < 1e-12 or g.std() < 1e-12:
+        return 0.0
+    return float(np.corrcoef(x, g)[0, 1])
+
+
 def diet_diversity(diet: np.ndarray, n_types: int) -> float:
     """Effective number of occupied diet niches = exp(Shannon) over the rounded-diet histogram.
 

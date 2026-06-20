@@ -123,6 +123,22 @@ class GenesisConfig:
                                        # forced silent. Compared against signalling=True (intact), this
                                        # is the ARTIFACT-IMMUNE test — does HEARING causally help, holding
                                        # brain shape fixed? (MI alone is fooled by sensory-reaction mimicry.)
+    # division of labour (R146 — Stage 3): processing=True makes food spawn RAW (inedible); an agent
+    # ripens nearby raw food into edible food via an evolved PROCESS output (an extra brain output), paying
+    # process_cost. Ripe food is a LOCAL PUBLIC GOOD — any neighbour can harvest it — and decays back to raw
+    # after ripe_ttl, so it is a continuous FLOW, not a stock. With clonal kin demes the costly processing
+    # pays (Hamilton, rb>c), and a RESPONSE-THRESHOLD division of labour can emerge: agents process when
+    # local ripe food is scarce and harvest when it is abundant (a self-organised processor/harvester mix).
+    # Prey gain a nearest-RAW-food sense channel so they can navigate to processing sites. processing=False
+    # is the R141..R145 world (all food edible, no extra channel), byte-identical. Assumes n_food_types==1.
+    processing: bool = False
+    process_radius: float = 7.0        # a process act ripens raw food within this radius of the processor
+    process_cost: float = 2.5          # energy a successful process act costs (keeps harvesting attractive)
+    ripe_ttl: int = 70                 # ripe food reverts to raw after this many uneaten steps (the flow)
+    scramble_allocation: bool = False  # ablation: replace the evolved process gate with a Bernoulli draw at
+                                       # the population's CURRENT mean gate rate -> identical processing
+                                       # BUDGET, but allocation conditioning destroyed. Isolates the value
+                                       # of the division of labour (conditional allocation) on productivity.
     # metric
     persist_steps: int = 200
 
@@ -134,9 +150,16 @@ class GenesisWorld:
         self.evolve = evolve
         self.has_predators = self.cfg.n_predators0 > 0
         self.signalling = self.cfg.signalling
+        self.processing = self.cfg.processing
+        if self.processing and self.cfg.n_food_types > 1:
+            raise ValueError("processing (R146 division of labour) assumes a single food type")
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
-                   + (1 if self.signalling else 0))          # +heard-neighbour-utterance channel (R144)
-        prey_out = N_OUT + (1 if self.signalling else 0)     # +utterance output (R144); _act ignores it
+                   + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
+                   + (4 if self.processing else 0))          # +nearest-RAW-food sense channel (R146)
+        prey_out = (N_OUT + (1 if self.signalling else 0)    # +utterance output (R144); _act ignores it
+                    + (1 if self.processing else 0))         # +process gate output (R146); _act ignores it
+        # index of the process-gate output (after movement and the optional utterance output)
+        self._proc_out = N_OUT + (1 if self.signalling else 0)
         self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=prey_out)
         self.pop = Population(PopConfig(self.cfg.capacity, self.spec.n_weights))
         self.step_count = 0
@@ -149,6 +172,11 @@ class GenesisWorld:
                                                   size=(self.cfg.n_patches, 3))
         self.food = self._spawn_food(self.cfg.food_cap)
         self.food_type = self._food_types(self.cfg.food_cap)
+        # ripeness state (R146): food is edible only when ripe. processing OFF -> all ripe always (the
+        # R141..R145 world, byte-identical); processing ON -> food spawns RAW and is ripened by processors.
+        self.food_ripe = np.zeros(self.food.shape[0], dtype=bool) if self.processing \
+            else np.ones(self.food.shape[0], dtype=bool)
+        self.ripe_age = np.zeros(self.food.shape[0], dtype=np.int32)
         # predators (R143) — a second evolved-neural species; absent unless n_predators0>0
         self.pred_spec = BrainSpec(n_in=5, n_hidden=self.cfg.n_hidden, n_out=N_OUT)  # nearest prey(4)+energy(1)
         self.pred = None
@@ -275,7 +303,10 @@ class GenesisWorld:
         if act.size:
             pos, vel = p.pos[act], p.vel[act]
             r, u, f = _body_frame(vel)
-            fs = self._sense_food(pos, r, u, f, act)
+            if self.processing:                             # harvest target = ripe (edible) food only
+                fs = _sense_kd(pos, r, u, f, self.food[self.food_ripe], cfg.sense_range)
+            else:
+                fs = self._sense_food(pos, r, u, f, act)
             ns, ni, nprox = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
             e = (p.energy[act] / cfg.e_repro).reshape(-1, 1)
             parts = [fs, ns]
@@ -283,6 +314,8 @@ class GenesisWorld:
                 parts.append(self._sense_predators(pos, r, u, f))
             if self.signalling:                             # +heard-neighbour-utterance channel (R144)
                 parts.append(self._heard(act, ni, nprox))
+            if self.processing:                             # +nearest-RAW-food sense channel (R146)
+                parts.append(_sense_kd(pos, r, u, f, self.food[~self.food_ripe], cfg.sense_range))
             parts.append(e)
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)  # _act reads out[:,:3]
@@ -295,8 +328,12 @@ class GenesisWorld:
             speed = np.linalg.norm(newvel, axis=1)
             p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit),
                                        cfg.e_max)
+            if self.processing:                             # ripen nearby raw food (the costly labour)
+                self._process(act, out)
             p.age[act] += 1
         self._eat()
+        if self.processing:
+            self._decay_ripe()
         if self.has_predators:
             self._step_predators()
         self._die()
@@ -304,10 +341,29 @@ class GenesisWorld:
         self._regrow()
         self.step_count += 1
 
+    def _keep_food(self, keep: np.ndarray) -> None:
+        """Filter all per-mote food arrays by the same boolean mask (keeps ripeness state in sync)."""
+        self.food = self.food[keep]
+        self.food_type = self.food_type[keep]
+        self.food_ripe = self.food_ripe[keep]
+        self.ripe_age = self.ripe_age[keep]
+
     def _eat(self) -> None:
         cfg, p = self.cfg, self.pop
         act = p.active()
         if act.size == 0 or self.food.shape[0] == 0:
+            return
+        if self.processing:                                 # only RIPE food is edible (R146)
+            edible = np.where(self.food_ripe)[0]
+            if edible.size == 0:
+                return
+            dist, idx = cKDTree(self.food[edible]).query(p.pos[act], k=1)
+            winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # eaten indexes into `edible`
+            if winners.size:
+                p.energy[act[winners]] += cfg.food_value
+                keep = np.ones(self.food.shape[0], dtype=bool)
+                keep[edible[eaten]] = False
+                self._keep_food(keep)
             return
         if cfg.n_food_types <= 1:
             dist, idx = cKDTree(self.food).query(p.pos[act], k=1)
@@ -316,7 +372,7 @@ class GenesisWorld:
                 p.energy[act[winners]] += cfg.food_value
                 keep = np.ones(self.food.shape[0], dtype=bool)
                 keep[eaten] = False
-                self.food, self.food_type = self.food[keep], self.food_type[keep]
+                self._keep_food(keep)
             return
         # typed: each agent eats only food of its own diet type (the resource-partitioning trade-off)
         types = self._agent_types(act)
@@ -332,7 +388,41 @@ class GenesisWorld:
                 p.energy[act[am[winners]]] += cfg.food_value
                 keep[fm[eaten]] = False
         if not keep.all():
-            self.food, self.food_type = self.food[keep], self.food_type[keep]
+            self._keep_food(keep)
+
+    # --- division of labour (R146) ---
+    def _process(self, act: np.ndarray, out: np.ndarray) -> None:
+        """Processors ripen nearby RAW food into edible food (a local public good), paying process_cost.
+
+        The evolved process-gate output decides who processes; scramble_allocation replaces it with a
+        Bernoulli draw at the same mean rate (the allocation-ablation control). A single process act
+        ripens every raw mote within process_radius — a strong public good (one processor can feed many
+        harvesters), so the kin-structured division of labour has a real fitness gradient to climb."""
+        cfg, p = self.cfg, self.pop
+        gate = out[:, self._proc_out] > 0.0                 # tanh>0 -> intends to process
+        if cfg.scramble_allocation:                         # same budget, conditioning destroyed
+            rate = float(gate.mean()) if gate.size else 0.0
+            gate = self.rng.random(act.size) < rate
+        procs = np.where(gate)[0]                            # rows in act
+        raw = np.where(~self.food_ripe)[0]
+        if procs.size == 0 or raw.size == 0:
+            return
+        d, near = cKDTree(p.pos[act[procs]]).query(self.food[raw], k=1)  # nearest processor per raw mote
+        in_range = d < cfg.process_radius
+        if not in_range.any():
+            return
+        ripened = raw[in_range]
+        self.food_ripe[ripened] = True
+        self.ripe_age[ripened] = 0
+        workers = np.unique(near[in_range])                  # processors that ripened >=1 mote -> pay
+        p.energy[act[procs[workers]]] -= cfg.process_cost
+
+    def _decay_ripe(self) -> None:
+        """Uneaten ripe food ages and reverts to raw after ripe_ttl — ripe food is a FLOW, not a stock."""
+        self.ripe_age[self.food_ripe] += 1
+        expired = self.food_ripe & (self.ripe_age >= self.cfg.ripe_ttl)
+        self.food_ripe[expired] = False
+        self.ripe_age[expired] = 0
 
     def _die(self) -> None:
         cfg, p = self.cfg, self.pop
@@ -456,6 +546,9 @@ class GenesisWorld:
         if need > 0:
             self.food = np.vstack([self.food, self._spawn_food(need)])
             self.food_type = np.concatenate([self.food_type, self._food_types(need)])
+            new_ripe = np.zeros(need, dtype=bool) if self.processing else np.ones(need, dtype=bool)
+            self.food_ripe = np.concatenate([self.food_ripe, new_ripe])
+            self.ripe_age = np.concatenate([self.ripe_age, np.zeros(need, dtype=np.int32)])
 
     # --- read-outs (in situ, never feed selection) ---
     def snapshot(self) -> dict:
@@ -476,6 +569,7 @@ class GenesisWorld:
                      self.pred.pos[self.pred.active()], cfg.sense_range)
                      if self.pred is not None else 0.0),
             "signal_mi": self._signal_mi(act),
+            "ripe_food": float(self.food_ripe.sum()) if self.processing else 0.0,
         }
 
     def _danger(self, act):
@@ -542,6 +636,56 @@ class GenesisWorld:
             "n_alarmed": int(loud.sum()),
         }
 
+    def _gate_decision(self, act: np.ndarray):
+        """Recompute the active agents' brain outputs and return (process-gate bool, out). In situ."""
+        cfg, p = self.cfg, self.pop
+        pos, vel = p.pos[act], p.vel[act]
+        r, u, f = _body_frame(vel)
+        fs = _sense_kd(pos, r, u, f, self.food[self.food_ripe], cfg.sense_range)
+        ns, ni, nprox = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
+        parts = [fs, ns]
+        if self.has_predators:
+            parts.append(self._sense_predators(pos, r, u, f))
+        if self.signalling:
+            parts.append(self._heard(act, ni, nprox))
+        parts.append(_sense_kd(pos, r, u, f, self.food[~self.food_ripe], cfg.sense_range))
+        parts.append((p.energy[act] / cfg.e_repro).reshape(-1, 1))
+        out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
+        return out[:, self._proc_out] > 0.0, out
+
+    def process_allocation_test(self) -> dict:
+        """The response-threshold DIVISION-OF-LABOUR read-out (R146). For each living agent, recompute its
+        process decision and its LOCAL ripe-food proximity (nearest edible mote). Returns:
+          - frac_processing: the processor/harvester split at this instant (a spatial division of labour
+            shows as a stable interior fraction, not 0 or 1).
+          - cond_ripe: corr(process-decision, local ripe proximity). NEGATIVE = agents process when ripe
+            food is SCARCE nearby and harvest when it is abundant — i.e. role is allocated by local need.
+          - cond_raw: corr(process-decision, local raw proximity). POSITIVE = they process where there is
+            raw food to ripen. Under a frozen genome both correlations sit near 0 (no task allocation).
+        In situ; never feeds selection."""
+        if not self.processing:
+            return {}
+        p, cfg = self.pop, self.cfg
+        act = p.active()
+        if act.size < 20:
+            return {}
+        gate, _ = self._gate_decision(act)
+        ripe = self.food[self.food_ripe]
+        raw = self.food[~self.food_ripe]
+
+        def prox(food):
+            if food.shape[0] == 0:
+                return np.zeros(act.size)
+            d, _ = cKDTree(food).query(p.pos[act], k=1)
+            return np.where(d < cfg.sense_range, 1.0 - d / cfg.sense_range, 0.0)
+
+        return {
+            "frac_processing": float(gate.mean()),
+            "cond_ripe": metrics.point_biserial(prox(ripe), gate),
+            "cond_raw": metrics.point_biserial(prox(raw), gate),
+            "n": int(act.size),
+        }
+
     def render_arrays(self):
         """(pos, vel, color, food) of the living agents — prey + predators — for render3d.Renderer3D."""
         p, act = self.pop, self.pop.active()
@@ -561,6 +705,8 @@ class GenesisWorld:
             step=np.int64(self.step_count),
             food=self.food,
             food_type=self.food_type,
+            food_ripe=self.food_ripe,
+            ripe_age=self.ripe_age,
             evolve=np.bool_(self.evolve),
             rng=np.array(json.dumps(self.rng.bit_generator.state)),
             lin_keys=np.array(list(self.lineage_first_step.keys()), dtype=np.int64),
@@ -573,6 +719,10 @@ class GenesisWorld:
         self.step_count = int(d["step"])
         self.food = d["food"]
         self.food_type = d["food_type"]
+        self.food_ripe = (d["food_ripe"] if "food_ripe" in d.files
+                          else np.ones(self.food.shape[0], dtype=bool))
+        self.ripe_age = (d["ripe_age"] if "ripe_age" in d.files
+                         else np.zeros(self.food.shape[0], dtype=np.int32))
         self.evolve = bool(d["evolve"])
         self.rng.bit_generator.state = json.loads(str(d["rng"]))
         st = {k[len("pop__"):]: d[k] for k in d.files if k.startswith("pop__")}

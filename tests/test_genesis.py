@@ -190,9 +190,11 @@ def test_typed_agents_eat_only_their_type():
     w.pop.energy[a] = 50.0
     w.food = np.array([w.pop.pos[a]])                     # one mote exactly on the agent
     w.food_type = np.array([1], dtype=np.int64)           # ...but it is type 1 (wrong)
+    w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
     w._eat()
     assert w.pop.energy[a] == 50.0                        # mismatched type -> no food gained
     w.food = np.array([w.pop.pos[a]]); w.food_type = np.array([0], dtype=np.int64)
+    w.food_ripe = np.array([True]); w.ripe_age = np.zeros(1, dtype=np.int32)
     w._eat()
     assert w.pop.energy[a] == 50.0 + w.cfg.food_value     # matching type -> eats
 
@@ -411,6 +413,102 @@ def test_neighbour_relatedness_bounds():
     lin_mix = np.array([0, 1, 2, 3])                       # all distinct
     assert metrics.neighbour_relatedness(pos, lin_kin) == 1.0
     assert metrics.neighbour_relatedness(pos, lin_mix) == 0.0
+
+
+# ---------- R146: division of labour (two-stage food processing) ----------
+def test_processing_off_is_byte_identical():
+    # processing=False keeps the R141..R145 brain shape and all-edible food: two runs match bit-for-bit
+    a = GenesisWorld(fast_cfg(), seed=3)
+    b = GenesisWorld(fast_cfg(), seed=3)
+    for _ in range(150):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.brains, b.pop.brains)
+    assert a.spec.n_in == 9 and a.spec.n_out == 3            # unchanged
+    assert a.food_ripe.all()                                 # all food edible (no raw state)
+
+
+def test_processing_on_adds_channels_and_raw_food():
+    w = GenesisWorld(fast_cfg(processing=True), seed=0)
+    assert w.processing and w.spec.n_in == 13                # +nearest-raw-food sense (4)
+    assert w.spec.n_out == 4                                 # +process gate
+    assert not w.food_ripe.any()                             # food spawns RAW (inedible until ripened)
+    # processing assumes a single food type
+    with pytest.raises(ValueError):
+        GenesisWorld(fast_cfg(processing=True, n_food_types=3), seed=0)
+
+
+def test_only_ripe_food_is_edible():
+    w = GenesisWorld(fast_cfg(n0=1, processing=True), seed=0)
+    a = w.pop.active()[0]
+    w.pop.energy[a] = 50.0
+    w.food = np.array([w.pop.pos[a]])                        # one mote exactly on the agent
+    w.food_type = np.zeros(1, dtype=np.int64)
+    w.ripe_age = np.zeros(1, dtype=np.int32)
+    w.food_ripe = np.array([False])                          # raw -> not edible
+    w._eat()
+    assert w.pop.energy[a] == 50.0
+    w.food_ripe = np.array([True])                           # ripe -> edible
+    w._eat()
+    assert w.pop.energy[a] == 50.0 + w.cfg.food_value
+
+
+def test_process_ripens_raw_food_and_charges_cost():
+    w = GenesisWorld(fast_cfg(n0=1, processing=True), seed=0)
+    a = w.pop.active()[0]
+    w.pop.energy[a] = 50.0
+    # two raw motes within process_radius, one far away
+    base = w.pop.pos[a]
+    w.food = np.array([base + [1.0, 0, 0], base + [2.0, 0, 0], base + [60.0, 0, 0]])
+    w.food_type = np.zeros(3, dtype=np.int64)
+    w.food_ripe = np.zeros(3, dtype=bool)
+    w.ripe_age = np.zeros(3, dtype=np.int32)
+    act = w.pop.active()
+    out = np.zeros((act.size, w.spec.n_out))
+    out[:, w._proc_out] = 1.0                                # force the process gate ON
+    w._process(act, out)
+    assert w.food_ripe[0] and w.food_ripe[1]                 # nearby raw food ripened (public good)
+    assert not w.food_ripe[2]                                # the far mote stays raw
+    assert w.pop.energy[a] == 50.0 - w.cfg.process_cost      # the processor paid the labour cost
+
+
+def test_ripe_food_decays_back_to_raw():
+    w = GenesisWorld(fast_cfg(processing=True, ripe_ttl=5), seed=0)
+    w.food_ripe[:] = True
+    w.ripe_age[:] = 0
+    for _ in range(4):
+        w._decay_ripe()
+    assert w.food_ripe.all()                                 # not yet expired
+    w._decay_ripe()
+    assert not w.food_ripe.any()                             # ttl reached -> reverts to raw (a flow)
+
+
+def test_processing_world_sustains_population():
+    # the two-stage economy closes: processors ripen food, harvesters eat it, the population persists
+    w = GenesisWorld(replace(GenesisConfig(), processing=True, n_founder_genomes=8), seed=0)
+    for _ in range(1500):
+        w.step()
+    assert w.pop.n_alive > 50                                # not extinct — the labour economy sustains life
+    assert w.food_ripe.any()                                 # ripe food is being produced
+
+
+def test_point_biserial_metric():
+    rng = np.random.default_rng(0)
+    g = rng.integers(0, 2, 500).astype(float)
+    x_neg = -g + rng.normal(0, 0.1, 500)                     # x falls when group=1
+    assert metrics.point_biserial(x_neg, g) < -0.8
+    assert abs(metrics.point_biserial(rng.normal(0, 1, 500), g)) < 0.2   # independent -> ~0
+    assert metrics.point_biserial(np.ones(500), g) == 0.0    # no variance -> 0
+
+
+def test_allocation_test_shape():
+    w = GenesisWorld(replace(fast_cfg(n0=200), processing=True, n_founder_genomes=6), seed=0)
+    for _ in range(60):
+        w.step()
+    out = w.process_allocation_test()
+    assert {"frac_processing", "cond_ripe", "cond_raw", "n"} <= set(out)
+    assert 0.0 <= out["frac_processing"] <= 1.0
+    # a non-processing world returns no allocation result
+    assert GenesisWorld(fast_cfg(), seed=0).process_allocation_test() == {}
 
 
 # ---------- 3D render smoke (headless moderngl) ----------
