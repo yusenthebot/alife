@@ -1161,6 +1161,55 @@ def test_checkpoint_roundtrip_combinatorial(tmp_path):
     assert np.array_equal(w.pop.tech, w2.pop.tech)
 
 
+# ---------- R156: emergent divergent cultural TRADITIONS (cultural F_ST) ----------
+def test_panmictic_requires_combinatorial():
+    with pytest.raises(ValueError):
+        GenesisWorld(_ccfg(panmictic_culture=True), seed=0)        # panmictic without combinatorial=True
+
+
+def test_panmictic_off_is_byte_identical():
+    a = GenesisWorld(_kcfg(n0=250), seed=3)
+    b = GenesisWorld(_kcfg(n0=250, panmictic_culture=False), seed=3)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.vel, b.pop.vel)
+    assert np.array_equal(a.rep, b.rep)                            # the default path draws no extra RNG
+
+
+def test_panmictic_diverges_from_local():
+    """The panmictic NULL copies a RANDOM global hearth instead of the nearest -> the repertoires it produces
+    diverge from the spatially-local path (the manipulation actually changes transmission)."""
+    loc = GenesisWorld(_kcfg(n0=250), seed=5)
+    pan = GenesisWorld(_kcfg(n0=250, panmictic_culture=True), seed=5)
+    for _ in range(200):
+        loc.step(); pan.step()
+    assert not np.array_equal(loc.rep, pan.rep)                    # different transmission source -> different culture
+
+
+def test_tradition_test_fields_and_off_empty():
+    w = GenesisWorld(_kcfg(n0=250), seed=0)
+    for _ in range(150):
+        w.step()
+    out = w.tradition_test(grid=2)
+    assert {"fst", "n_demes", "n_distinct_traditions"} <= set(out)
+    assert 0.0 <= out["fst"] <= 1.0
+    assert GenesisWorld(_ccfg(), seed=0).tradition_test() == {}    # scalar culture -> empty
+
+
+def test_local_transmission_builds_structured_traditions():
+    """R156 mechanism smoke: local (nearest-hearth) transmission over the open-ended tree partitions the
+    living population into >=2 spatial demes carrying MULTIPLE distinct dominant techniques (structured
+    traditions, F_ST > 0). The directional local>panmictic claim needs scale + multiple seeds and is the
+    REAL-VERIFY headline (scripts/run_genesis_traditions.py) — at this fast unit scale F_ST is noise-bound."""
+    loc = GenesisWorld(_kcfg(n0=300), seed=2)
+    for _ in range(300):
+        loc.step()
+    fl = loc.tradition_test(grid=2)
+    assert fl and fl["n_demes"] >= 2
+    assert 0.0 <= fl["fst"] <= 1.0
+    assert fl["n_distinct_traditions"] >= 2                        # demes carry different dominant techniques
+
+
 # ---------- R151: the integrated capstone — every ladder stage coexisting in ONE world ----------
 def _capcfg(**kw):
     """The capstone regime: predator arms race + caste division of labour + niche-construction hearths +

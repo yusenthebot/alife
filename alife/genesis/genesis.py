@@ -257,6 +257,19 @@ class GenesisConfig:
     n_seed_tech: int = 6               # number of seed primitives (level-0, no-prerequisite techniques).
     innov_steps: int = 1               # discoveries attempted per newborn (from its adjacent possible).
 
+    # --- R156: emergent divergent cultural TRADITIONS over the open-ended tree ---
+    # The combinatorial tree is open-ended, but R150-R155 only ever measured ONE global frontier. A real
+    # civilization is not one monoculture of knowledge — it is MANY divergent cultural traditions. R156 asks
+    # whether the EXISTING substrate already produces them: because oblique transmission copies the NEAREST
+    # strong hearth (a spatial cultural store), a region that happens to climb one BRANCH of the adjacent
+    # possible reinforces it locally (founder effect + path dependence), while another region climbs another
+    # -> divergent traditions, measured as Wright's F_ST over the boolean repertoire (tradition_test).
+    # panmictic_culture is the causal NULL: keep the SAME learners (same nearest-hearth in-range gate) but
+    # copy a UNIFORMLY RANDOM strong hearth instead of the nearest one — destroying the place<->tradition
+    # correlation, so F_ST collapses toward 0. The only manipulated variable is WHICH hearth you copy.
+    # Requires combinatorial=True. panmictic_culture=False is byte-identical to R150 (exact nearest-hearth path).
+    panmictic_culture: bool = False
+
     # --- R153: CULTURE UNLOCKS WORLD-ACTIONS (techniques gate what an agent can physically eat) ---
     # Until R153 the learned `tech` only multiplied a harvest SCALAR (1+tech_gain*tech): cultural depth
     # changed a number, not what an agent DID. R153 makes culture change a physical action: food spawns in
@@ -337,6 +350,8 @@ class GenesisWorld:
             raise ValueError("tech_capabilities (R154 culture-gated physical capabilities) requires combinatorial=True")
         if self.cap_niches and not self.tech_capabilities:
             raise ValueError("cap_niches (R155 capability specialization) requires tech_capabilities=True")
+        if self.cfg.panmictic_culture and not self.combinatorial:
+            raise ValueError("panmictic_culture (R156 traditions null) requires combinatorial=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -897,7 +912,11 @@ class GenesisWorld:
                 in_range = d < cfg.hearth_radius
                 if in_range.any():
                     rows = np.where(in_range)[0]
-                    source[rows] |= self.struct_rep[strong][idx[rows]]   # learn the BEST record in reach
+                    if cfg.panmictic_culture:                # R156 NULL: same learners, but copy a RANDOM global
+                        src = self.rng.integers(0, strong.size, size=rows.size)   # hearth (place<->tradition link cut)
+                        source[rows] |= self.struct_rep[strong][src]
+                    else:
+                        source[rows] |= self.struct_rep[strong][idx[rows]]   # learn the BEST record in reach (nearest)
             child = cb.copy_with_fidelity(source, cfg.culture_fidelity, self.rng)
         else:
             child = np.zeros((slots.size, K), dtype=bool)    # asocial: no copying, reinvent from scratch
@@ -969,6 +988,48 @@ class GenesisWorld:
             "mean_level": float(p.tech[act].mean()),
             "mean_gen": float(p.generation[act].mean()),
             "n": int(act.size),
+        }
+
+    def tradition_test(self, grid: int = 2, min_deme: int = 15) -> dict:
+        """R156 read-out: do distinct spatial groups climb distinct BRANCHES of the open-ended tree ->
+        divergent cultural TRADITIONS? Partitions the living population into a grid^3 spatial lattice of
+        demes and measures Wright's F_ST over the boolean technique repertoire (cultural traits):
+        F_ST = (H_T - H_S)/H_T, where H_T is the pooled and H_S the mean within-deme gene-diversity
+        (2 p (1-p)). F_ST ~ 0 = one global tradition (panmictic mixing); F_ST > 0 = spatially structured
+        traditions. Also reports how many DISTINCT deme-dominant deepest techniques exist (distinct
+        traditions) and each deme's dominant deep technique. In situ; never feeds selection."""
+        if not self.combinatorial:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < min_deme * 2:
+            return {}
+        pos = p.pos[act]
+        rep = self.rep[act]                                       # [n, K] bool repertoires
+        size = self.cfg.world.size
+        cell = np.clip((pos / size * grid).astype(int), 0, grid - 1)   # [n, 3] lattice cell
+        deme_id = (cell[:, 0] * grid + cell[:, 1]) * grid + cell[:, 2]  # 0..grid^3-1
+        freqs, counts = [], []
+        for d in np.unique(deme_id):
+            rows = np.where(deme_id == d)[0]
+            if rows.size < min_deme:
+                continue
+            freqs.append(rep[rows].mean(axis=0))                 # [K] per-technique freq in this deme
+            counts.append(rows.size)
+        if len(freqs) < 2:
+            return {"n_demes": len(freqs), "fst": 0.0, "n_distinct_traditions": len(freqs)}
+        freqs = np.array(freqs)                                   # [D, K]
+        w = np.array(counts, dtype=float)
+        w = w / w.sum()
+        p_bar = (freqs * w[:, None]).sum(axis=0)                 # pooled per-technique freq [K]
+        H_T = float((2.0 * p_bar * (1.0 - p_bar)).mean())
+        H_S = float((w[:, None] * (2.0 * freqs * (1.0 - freqs))).sum(axis=0).mean())
+        fst = float(np.clip((H_T - H_S) / H_T, 0.0, 1.0)) if H_T > 1e-12 else 0.0
+        level = self._tree_level                                  # deepest-technique signature per deme
+        dom = [int(np.where(f >= 0.5, level, -1).argmax()) if (f >= 0.5).any() else -1 for f in freqs]
+        return {
+            "fst": fst, "n_demes": int(len(freqs)), "n_distinct_traditions": int(len(set(dom))),
+            "dom_tech": dom, "H_T": H_T, "H_S": H_S, "n": int(act.size),
         }
 
     def tech_actions_test(self) -> dict:
