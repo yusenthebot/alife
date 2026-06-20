@@ -1082,3 +1082,59 @@ def test_checkpoint_roundtrip_combinatorial(tmp_path):
     assert np.array_equal(w.rep, w2.rep)                       # the per-agent repertoires survive a restart
     assert np.array_equal(w.struct_rep, w2.struct_rep)         # and the hearth records
     assert np.array_equal(w.pop.tech, w2.pop.tech)
+
+
+# ---------- R151: the integrated capstone — every ladder stage coexisting in ONE world ----------
+def _capcfg(**kw):
+    """The capstone regime: predator arms race + caste division of labour + niche-construction hearths +
+    open-ended combinatorial culture, ALL ON in one world. Every prior stage was verified in isolation
+    behind its own flag; this is the first config that runs them together (the integration test). Caste makes
+    processors eat ~0 (they live on wages), so the world is food-limited — the regime is food-rich enough that
+    harvesters thrive, fund the processor caste, and still feed a persistent predator population."""
+    base = _kcfg(specialize=True, n0=kw.pop("n0", 400))
+    overrides = dict(capacity=1500, food_cap=900, food_regrow=45,
+                     n_predators0=30, pred_capacity=70, pred_base_cost=0.6)
+    overrides.update(kw)
+    return replace(base, **overrides)
+
+
+def test_capstone_all_stages_construct_and_run():
+    """The integrated world constructs (brain shape composes every channel), runs without crashing, stays
+    alive, and every stage's read-out reports — i.e. the mechanisms COEXIST rather than crashing/cancelling."""
+    w = GenesisWorld(_capcfg(), seed=0)
+    assert w.has_predators and w.specialize and w.building and w.culture and w.combinatorial
+    for _ in range(200):
+        w.step()
+    snap = w.snapshot()
+    assert snap["population"] > 80                       # the integrated world is not collapsing
+    assert snap["predators"] > 0                         # the arms race partner persists
+    assert w.caste_test()                                # caste read-out populated (Stage 3 present)
+    assert w.combinatorial_test()                        # open-ended culture read-out populated (Stage 5)
+    assert snap["spec_mean"] >= 0.0 and "n_hearths" in snap
+
+
+def test_harvest_gain_composes_spec_and_tech_multiplicatively():
+    """R151 regression: with BOTH specialize and culture on, the harvest payoff must MULTIPLY the caste
+    convexity and the learned-technique multiplier — NOT drop culture's tech_gain (the old if/elif bug
+    that left the cumulative-culture ratchet with no selective gradient under caste)."""
+    w = GenesisWorld(_capcfg(n0=80), seed=0)
+    act = w.pop.active()[:4]
+    w.pop.spec[act] = 0.0                                # pure harvesters -> convex factor == 1
+    w.pop.tech[act] = np.array([0.0, 1.0, 2.0, 4.0])
+    g = w._harvest_gain(act)
+    expect = w.cfg.food_value * (1.0 + w.cfg.tech_gain * w.pop.tech[act])
+    assert np.allclose(g, expect)                        # culture payoff IS applied under caste
+    assert g[3] > g[0]                                   # mastery still pays -> the ratchet keeps a gradient
+    w.pop.spec[act] = 1.0                                # pure processors -> convex factor == 0
+    assert np.allclose(w._harvest_gain(act), 0.0)        # ...and the caste convexity still applies too
+
+
+def test_harvest_gain_single_flag_matches_legacy_formulas():
+    """Byte-identical guard: a single-flag world reproduces the exact R147 / R149 harvest formula, so the
+    R151 multiplicative refactor changes ONLY the never-before-run both-on case."""
+    cul = GenesisWorld(_ccfg(n0=60), seed=0)             # culture only (no specialize)
+    a = cul.pop.active()[:3]; cul.pop.tech[a] = np.array([0.0, 1.5, 3.0])
+    assert np.allclose(cul._harvest_gain(a), cul.cfg.food_value * (1.0 + cul.cfg.tech_gain * cul.pop.tech[a]))
+    cas = GenesisWorld(fast_cfg(n0=60, processing=True, specialize=True), seed=0)   # caste only (no culture)
+    b = cas.pop.active()[:3]; cas.pop.spec[b] = np.array([0.0, 0.5, 1.0])
+    assert np.allclose(cas._harvest_gain(b), cas.cfg.food_value * np.power(1.0 - cas.pop.spec[b], cas.cfg.spec_gamma))

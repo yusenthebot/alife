@@ -505,6 +505,23 @@ class GenesisWorld:
         self.ripe_age = self.ripe_age[keep]
         self.food_proc = self.food_proc[keep]
 
+    def _harvest_gain(self, eaters: np.ndarray) -> np.ndarray:
+        """Per-eater energy gained from harvesting one mote (R151 — the COMPOSED harvest payoff).
+
+        The two harvest modifiers MULTIPLY, so they coexist in the integrated capstone world:
+          - caste convexity (R147): pure harvesters (spec=0) eat at full value, processors (spec=1) at ~0;
+          - learned technique (R149/R150): a deeper repertoire multiplies the intake (mastery pays).
+        Before R151 these were an if/elif, so with BOTH on the culture payoff was silently dropped and the
+        cumulative-culture ratchet lost its selective gradient under caste. Each modifier is gated on its own
+        flag, so a single-flag config is byte-identical to R147/R149/R150 (only the both-on case changes)."""
+        cfg, p = self.cfg, self.pop
+        gain = np.full(eaters.size, cfg.food_value)
+        if self.specialize:                                 # convex harvest skill: pure harvesters eat full
+            gain = gain * np.power(1.0 - p.spec[eaters], cfg.spec_gamma)
+        if self.culture:                                    # learned technique multiplies the harvest
+            gain = gain * (1.0 + cfg.tech_gain * p.tech[eaters])
+        return gain
+
     def _eat(self) -> None:
         cfg, p = self.cfg, self.pop
         act = p.active()
@@ -518,13 +535,9 @@ class GenesisWorld:
             winners, eaten = _resolve(dist, idx, cfg.eat_radius)   # eaten indexes into `edible`
             if winners.size:
                 eaters = act[winners]
-                if self.specialize:                         # convex harvest skill: pure harvesters eat full
-                    p.energy[eaters] += cfg.food_value * np.power(1.0 - p.spec[eaters], cfg.spec_gamma)
-                    self._pay_processors(edible[eaten])     # wage to whoever ripened each eaten mote (trade)
-                elif self.culture:                          # learned technique multiplies the harvest (R149)
-                    p.energy[eaters] += cfg.food_value * (1.0 + cfg.tech_gain * p.tech[eaters])
-                else:
-                    p.energy[eaters] += cfg.food_value
+                p.energy[eaters] += self._harvest_gain(eaters)
+                if self.specialize:                         # wage to whoever ripened each eaten mote (trade)
+                    self._pay_processors(edible[eaten])
                 keep = np.ones(self.food.shape[0], dtype=bool)
                 keep[edible[eaten]] = False
                 self._keep_food(keep)
