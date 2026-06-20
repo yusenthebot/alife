@@ -36,6 +36,25 @@ def food_directedness(pos: np.ndarray, vel: np.ndarray, food: np.ndarray,
     return float(cos[visible].mean())
 
 
+def flee_directedness(prey_pos: np.ndarray, prey_vel: np.ndarray, pred_pos: np.ndarray,
+                      sense_range: float) -> float:
+    """Among prey that can see a predator, mean cosine of velocity AWAY from the nearest predator.
+
+    +1 = fleeing straight away, 0 = random, <0 = toward. The R143 evasion signal: it should RISE as
+    prey evolve to flee and stay near 0 for a frozen-genome prey control. In situ, never feeds selection."""
+    if prey_pos.shape[0] == 0 or pred_pos.shape[0] == 0:
+        return 0.0
+    dist, idx = cKDTree(pred_pos).query(prey_pos, k=1)
+    visible = dist < sense_range
+    if not visible.any():
+        return 0.0
+    to_pred = pred_pos[idx] - prey_pos
+    nf = to_pred / np.maximum(np.linalg.norm(to_pred, axis=1, keepdims=True), 1e-9)
+    sp = np.maximum(np.linalg.norm(prey_vel, axis=1, keepdims=True), 1e-9)
+    flee = -((prey_vel / sp) * nf).sum(1)            # negative dot -> moving away from the predator
+    return float(flee[visible].mean())
+
+
 def effective_lineages(active_lineage: np.ndarray, first_step: dict,
                        current_step: int, persist_steps: int) -> float:
     """Effective number of PERSISTENT founder lineages = exp(Shannon entropy of abundances).

@@ -221,6 +221,46 @@ def test_diet_is_heritable_and_mutates():
     assert 0.0 <= pop.diet[child] < 3.0                   # stays in range
 
 
+# ---------- R143: co-evolutionary predator arms race ----------
+def test_predators_off_is_prey_only():
+    # default (n_predators0=0) is the R141/R142 prey-only world: no predator pop, prey brain n_in=9
+    w = GenesisWorld(fast_cfg(), seed=0)
+    assert w.pred is None and w.has_predators is False
+    assert w.spec.n_in == 9
+    assert w.snapshot()["predators"] == 0.0 and w.snapshot()["flee"] == 0.0
+
+
+def test_predators_on_adds_sense_channel():
+    w = GenesisWorld(replace(fast_cfg(), n_predators0=10), seed=0)
+    assert w.pred is not None and w.has_predators
+    assert w.spec.n_in == 13                              # food4 + neighbour4 + predator4 + energy1
+    assert w.pred.n_alive == 10
+
+
+def test_predator_catch_kills_prey_and_feeds():
+    w = GenesisWorld(replace(fast_cfg(n0=4), n_predators0=2), seed=0)
+    prey0 = w.pop.active()[0]
+    pred0 = w.pred.active()[0]
+    w.pred.pos[pred0] = w.pop.pos[prey0].copy()           # predator sitting on a prey, in catch range
+    w.pred.cooldown[pred0] = 0
+    e_before = w.pred.energy[pred0]
+    n_prey_before = w.pop.n_alive
+    w._pred_catch()
+    assert w.pop.n_alive == n_prey_before - 1             # the prey was caught
+    assert not w.pop.alive[prey0]                          # ...that specific prey
+    assert w.pred.energy[pred0] == e_before + w.cfg.prey_energy_value
+    assert w.pred.cooldown[pred0] == w.cfg.pred_handling   # now digesting
+
+
+def test_predator_prey_coexist():
+    # both species persist over a medium run (no extinction) — a living ecology, not a wipeout
+    w = GenesisWorld(replace(GenesisConfig(), n_predators0=120), seed=0)
+    for _ in range(3000):
+        w.step()
+    assert w.pop.n_alive > 0                               # prey not wiped out
+    assert w.pred.n_alive > 0                              # predators not starved out
+
+
 # ---------- 3D render smoke (headless moderngl) ----------
 def test_render_smoke():
     from alife.world3d import World3D as W3

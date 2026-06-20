@@ -76,6 +76,24 @@ class GenesisConfig:
     # is the exact R141 single-resource world (no diet, no extra RNG draws).
     n_food_types: int = 1
     diet_mut_sigma: float = 0.12
+    # co-evolutionary predator (R143 — arms race): n_predators0>0 adds a SECOND evolved-neural species
+    # that hunts prey. Prey then gain a predator-sense channel (brain n_in 9->13) so they can evolve
+    # EVASION; predators sense nearest prey and pursue. n_predators0=0 is the exact R141/R142 prey-only
+    # world (prey n_in stays 9, no predator code path, byte-identical).
+    n_predators0: int = 0
+    pred_capacity: int = 550           # ~0.2x prey (predprey3d's coexistence ratio): low enough not to
+                                       # overexploit, high enough to persist as prey evolve evasion
+    pred_e_start: float = 140.0
+    pred_e_repro: float = 200.0
+    pred_e_max: float = 250.0
+    pred_base_cost: float = 0.48       # starves without prey, but not faster than it can hunt
+    pred_move_cost: float = 0.05
+    pred_speed: float = 3.35           # faster than prey (3.0) so the chase is real (predprey3d ratio)
+    pred_force: float = 0.34           # ...but less agile -> prey can juke (evasion can pay)
+    pred_max_age: int = 2400
+    catch_radius: float = 3.5
+    prey_energy_value: float = 42.0    # a catch's energy: enough to persist, low conversion = Type-II
+    pred_handling: int = 38            # digestion cooldown (Type-II stabilizer)
     # metric
     persist_steps: int = 200
 
@@ -85,7 +103,9 @@ class GenesisWorld:
         self.cfg = cfg or GenesisConfig()
         self.rng = np.random.default_rng(seed)
         self.evolve = evolve
-        self.spec = BrainSpec(n_in=N_IN, n_hidden=self.cfg.n_hidden, n_out=N_OUT)
+        self.has_predators = self.cfg.n_predators0 > 0
+        prey_in = N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel
+        self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=N_OUT)
         self.pop = Population(PopConfig(self.cfg.capacity, self.spec.n_weights))
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
@@ -97,6 +117,12 @@ class GenesisWorld:
                                                   size=(self.cfg.n_patches, 3))
         self.food = self._spawn_food(self.cfg.food_cap)
         self.food_type = self._food_types(self.cfg.food_cap)
+        # predators (R143) — a second evolved-neural species; absent unless n_predators0>0
+        self.pred_spec = BrainSpec(n_in=5, n_hidden=self.cfg.n_hidden, n_out=N_OUT)  # nearest prey(4)+energy(1)
+        self.pred = None
+        if self.has_predators:
+            self.pred = Population(PopConfig(self.cfg.pred_capacity, self.pred_spec.n_weights))
+            self._seed_predators()
 
     # --- setup ---
     def _seed_population(self) -> None:
@@ -114,6 +140,18 @@ class GenesisWorld:
         if cfg.n_food_types > 1:                          # founders spread across diet niches
             p.diet[slots] = self.rng.uniform(0, cfg.n_food_types, size=n0)
         self.lineage_first_step = {int(i): 0 for i in range(n0)}
+
+    def _seed_predators(self) -> None:
+        cfg, w, pr = self.cfg, self.cfg.world, self.pred
+        n = cfg.n_predators0
+        slots = pr.alloc(n)
+        pr.pos[slots] = self.rng.uniform(0, w.size, size=(n, 3))
+        d = self.rng.normal(size=(n, 3))
+        pr.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.pred_speed
+        pr.energy[slots] = cfg.pred_e_start
+        pr.brains[slots] = brain.random_brains(n, self.pred_spec, self.rng)
+        pr.lineage[slots] = np.arange(n, dtype=np.int32)
+        pr.color[slots] = np.array([0.95, 0.15, 0.15])     # red hunters (render)
 
     def _food_types(self, n: int) -> np.ndarray:
         """Type label per food mote. Single type (R142 off, no RNG draw) keeps R141 determinism."""
@@ -151,6 +189,13 @@ class GenesisWorld:
                 out[am] = _sense_kd(pos[am], r[am], u[am], f[am], food_t, cfg.sense_range)
         return out
 
+    def _sense_predators(self, pos, r, u, f):
+        """Prey body-frame sense of the nearest predator (R143) -> (P,4). Drives evolved evasion."""
+        if self.pred is None:
+            return np.zeros((pos.shape[0], 4))
+        pred_pos = self.pred.pos[self.pred.active()]
+        return _sense_kd(pos, r, u, f, pred_pos, self.cfg.sense_range)
+
     # --- the step ---
     def step(self) -> None:
         cfg, w, p = self.cfg, self.cfg.world, self.pop
@@ -161,7 +206,10 @@ class GenesisWorld:
             fs = self._sense_food(pos, r, u, f, act)
             ns = self._sense_neighbours(pos, r, u, f, cfg.sense_range)
             e = (p.energy[act] / cfg.e_repro).reshape(-1, 1)
-            x = np.concatenate([fs, ns, e], axis=1)
+            if self.has_predators:                          # +predator-sense channel -> n_in 13
+                x = np.concatenate([fs, ns, self._sense_predators(pos, r, u, f), e], axis=1)
+            else:
+                x = np.concatenate([fs, ns, e], axis=1)
             out = brain.forward(p.brains[act], self.spec, x)
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, cfg.speed)
             p.vel[act] = newvel
@@ -170,6 +218,8 @@ class GenesisWorld:
             p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed), cfg.e_max)
             p.age[act] += 1
         self._eat()
+        if self.has_predators:
+            self._step_predators()
         self._die()
         self._reproduce()
         self._regrow()
@@ -213,6 +263,71 @@ class GenesisWorld:
         dead = act[(p.energy[act] <= 0.0) | (p.age[act] >= cfg.max_age)]
         if dead.size:
             p.kill(dead)
+
+    # --- predators (R143) ---
+    def _step_predators(self) -> None:
+        cfg, w, pr = self.cfg, self.cfg.world, self.pred
+        act = pr.active()
+        if act.size:
+            pos, vel = pr.pos[act], pr.vel[act]
+            r, u, f = _body_frame(vel)
+            prey_pos = self.pop.pos[self.pop.active()]
+            qs = _sense_kd(pos, r, u, f, prey_pos, cfg.sense_range)         # nearest prey (4)
+            e = (pr.energy[act] / cfg.pred_e_repro).reshape(-1, 1)
+            out = brain.forward(pr.brains[act], self.pred_spec, np.concatenate([qs, e], axis=1))
+            newvel = _act(out, r, u, f, vel, cfg.pred_force, cfg.min_speed, cfg.pred_speed)
+            pr.vel[act] = newvel
+            pr.pos[act] = w.clamp(pos + newvel)
+            speed = np.linalg.norm(newvel, axis=1)
+            pr.energy[act] = np.minimum(pr.energy[act] - (cfg.pred_base_cost + cfg.pred_move_cost * speed),
+                                        cfg.pred_e_max)
+            pr.age[act] += 1
+            pr.cooldown[act] = np.maximum(pr.cooldown[act] - 1, 0)
+        self._pred_catch()
+        act = pr.active()
+        if act.size:
+            dead = act[(pr.energy[act] <= 0.0) | (pr.age[act] >= cfg.pred_max_age)]
+            if dead.size:
+                pr.kill(dead)
+        self._pred_reproduce()
+
+    def _pred_catch(self) -> None:
+        cfg, pr, prey = self.cfg, self.pred, self.pop
+        pa, qa = pr.active(), prey.active()
+        if pa.size == 0 or qa.size == 0:
+            return
+        dist, idx = cKDTree(prey.pos[qa]).query(pr.pos[pa], k=1)            # nearest prey per predator
+        ready = np.where(pr.cooldown[pa] == 0, dist, np.inf)               # only non-digesting predators
+        hunters, caught = _resolve(ready, idx, cfg.catch_radius)           # one prey per closest hunter
+        if hunters.size:
+            pr.energy[pa[hunters]] += cfg.prey_energy_value
+            pr.cooldown[pa[hunters]] = cfg.pred_handling
+            prey.kill(qa[caught])
+
+    def _pred_reproduce(self) -> None:
+        cfg, w, pr = self.cfg, self.cfg.world, self.pred
+        act = pr.active()
+        if act.size == 0:
+            return
+        parents = act[pr.energy[act] >= cfg.pred_e_repro]
+        if parents.size == 0:
+            return
+        slots = pr.alloc(parents.size)
+        if slots.size == 0:
+            return
+        if slots.size < parents.size:
+            parents = self.rng.choice(parents, size=slots.size, replace=False)
+        pr.energy[parents] *= 0.5
+        pr.energy[slots] = pr.energy[parents]
+        pr.brains[slots] = (brain.mutate_brains(pr.brains[parents], self.rng, cfg.mut_rate, cfg.mut_sigma)
+                            if self.evolve else pr.brains[parents])
+        offset = self.rng.normal(0, cfg.birth_jitter, size=(parents.size, 3))
+        pr.pos[slots] = w.clamp(pr.pos[parents] + offset)
+        d = self.rng.normal(size=(parents.size, 3))
+        pr.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.min_speed
+        pr.lineage[slots] = pr.lineage[parents]
+        pr.generation[slots] = pr.generation[parents] + 1
+        pr.color[slots] = pr.color[parents]
 
     def _reproduce(self) -> None:
         cfg, w, p = self.cfg, self.cfg.world, self.pop
@@ -275,12 +390,22 @@ class GenesisWorld:
             "diversity": metrics.effective_lineages(p.lineage[act], self.lineage_first_step,
                                                     self.step_count, cfg.persist_steps),
             "diet_diversity": metrics.diet_diversity(p.diet[act], cfg.n_food_types),
+            "predators": float(self.pred.n_alive) if self.pred is not None else 0.0,
+            "flee": (metrics.flee_directedness(p.pos[act], p.vel[act],
+                     self.pred.pos[self.pred.active()], cfg.sense_range)
+                     if self.pred is not None else 0.0),
         }
 
     def render_arrays(self):
-        """(pos, vel, color, food) of the living agents — fed straight to render3d.Renderer3D."""
+        """(pos, vel, color, food) of the living agents — prey + predators — for render3d.Renderer3D."""
         p, act = self.pop, self.pop.active()
-        return p.pos[act], p.vel[act], p.color[act], self.food
+        pos, vel, col = p.pos[act], p.vel[act], p.color[act]
+        if self.pred is not None:
+            pa = self.pred.active()
+            pos = np.vstack([pos, self.pred.pos[pa]])
+            vel = np.vstack([vel, self.pred.vel[pa]])
+            col = np.vstack([col, self.pred.color[pa]])
+        return pos, vel, col, self.food
 
     # --- persistence ---
     def save_checkpoint(self, path: str) -> None:

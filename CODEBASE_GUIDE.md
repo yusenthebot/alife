@@ -10,7 +10,7 @@ see [`QUICKSTART.md`](QUICKSTART.md).
 alife/        one Python module per model + the shared substrate (~130 modules)
 alife/genesis/  GENESIS — the persistent 3D living-world package (genesis.py / agents.py / metrics.py);
                 the staged campaign toward a civilization (R141+), built on brain/world3d/render3d/bigworld3d
-tests/        pytest — one tests/test_<topic>.py per model (796 tests)
+tests/        pytest — one tests/test_<topic>.py per model (800 tests)
 scripts/      one scripts/run_<topic>.py per model; writes a figure to runs/ (run_genesis.py drives GENESIS)
 runs/         generated figures/videos: runs/r<N>_<topic>/<topic>.png  (gitignored)
 requirements.txt   numpy, scipy, matplotlib, pillow, imageio(+ffmpeg), moderngl, pytest

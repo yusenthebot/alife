@@ -1,8 +1,26 @@
 # alife — progress
 
-## Current state (Round 142 — 2026-06-20) — GENESIS Stage 1: monoculture BROKEN via resource niches
+## Current state (Round 143 — 2026-06-20) — GENESIS Stage 1 complete: co-evolutionary arms race
 
-**R142 breaks the R141 monoculture** with resource partitioning. R141's foundation evolved foraging skill
+**R143 adds a co-evolutionary PREDATOR** — a second evolved-neural species that hunts the prey. Prey gain
+a predator-sense channel (brain n_in 9→13) and evolve **EVASION**. Additive; `n_predators0=0` is the exact
+R141/R142 prey-only world (byte-identical). REAL-VERIFY (16k-step run, 3D): a living predator-prey ecology
+with **boom-bust cycles** (prey & predators oscillating out of phase), **coexisting 3/3 seeds (no
+extinction)**; prey flee-directedness evolves — windowed **+0.231 evolve vs +0.090 frozen** (every seed
+evolve>frozen, ~2.5×); foraging still evolves under predation. 4 new tests (800 total). Stage 1 of the
+GENESIS ladder (foundation → niches → arms race) is now complete: a persistent 3D world that evolves,
+sustains diverse coexisting strategies, and stays alive/receding under predation.
+
+**HONEST notes:** (1) coexistence is a **knife-edge** — predator cap 1200 → prey go extinct
+(overexploitation crash); cap 350 → predators go extinct (out-evolved by evasive prey); cap **550** (~0.2×
+prey, predprey3d's ratio) coexists. (2) The arms race is **one-sided in practice**: predators pin at their
+cap during prey-rich phases so predator-pursuit selection is weak (the project's known R34 limit) — prey
+evasion clearly evolves, a clean *symmetric* two-sided escalation does not. (3) GIF prey/predator colour
+contrast is subtle (prey lineage colours drift reddish) — a future render tweak.
+
+### R142 niches (previous round)
+
+**R142 broke the R141 monoculture** with resource partitioning. R141's foundation evolved foraging skill
 but swept to a MONOCULTURE (one strategy). R142 adds `n_food_types` food types + a heritable **diet** trait:
 each agent senses/eats only its own type (the trade-off), so distinct food types support distinct specialist
 lineages — coexisting ecological niches (Gause's competitive-exclusion principle). All additive to
@@ -709,6 +727,7 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 | R136 | Grain growth (graingrowth.py) — a polycrystal coarsens by curvature (Q-state Potts, Anderson-Srolovitz-Grest 1984; soap froth / annealed metal). Site = 1 of Q grain orientations; energy = unlike-neighbour bonds (boundary length); low-T vectorised checkerboard Metropolis → curved boundaries migrate to their centre of curvature (von Neumann-Mullins), small grains vanish. Mosaic visibly coarsens (fine→large); boundary length ∝ t^-0.39, grain count ∝ t^-0.76, mean area ×33. TWO independent measures consistent: grain-count exp ≈ 2× boundary exp (area∝R²; ratio 1.93) = built-in non-circular check. CONTROL: greedy (strictly-downhill, no noise) PINS (bond plateaus ~0.49) — thermal annealing needed to beat lattice pinning. Robust seeds 0/1/2. HONEST: lattice Potts → reduced exponents (R∝t^0.39 not ideal 0.5) — no n=1 claim. DISTINCT from cellsort (CPM cell-sorting w/ adhesion+area constraint; here grains VANISH 8587→258, pure boundary min). VISUAL: 3-time coarsening mosaic gallery + boundary power-law-vs-pinned + count/area laws + final polycrystal + 32-frame coarsening GIF |
 | R137 | Invasion fronts (fisherfront.py) — Fisher-KPP pulled waves + the Allee extinction threshold. Logistic RD u_t=D u_xx+r u(1-u) → a PULLED travelling front at c=2√(rD) (speed set by the dilute leading edge). Allee term r u(1-u)(u-a) → a PUSHED front c=√(rD/2)(1-2a) with an EXTINCTION THRESHOLD: a<½ invade, a=½ stall, a>½ RETREAT (founder population dies). Matches CLOSED-FORM theory: Fisher c on the 2√(rD) line across r,D (slightly below = Bramson log correction); Allee velocity on √(rD/2)(1-2a) to <1%, zero-crossing exactly at a=½. 2D: Fisher colony 15→51 (invades) vs Allee a=0.7 colony 28→8 (extinct), same seed. Deterministic/reproducible. DISTINCT from barkley/excitable (excitable PULSE w/ refractory rest, not monostable invasion) + Gray-Scott/Turing (standing patterns). VISUAL: 2D invasion-vs-extinction snapshots + Fisher speed law + Allee velocity-vs-a zero-crossing + shape-invariant profiles + 38-frame side-by-side GIF |
 | R138 | Turing patterns on a sphere (turingsphere.py) — an animal coat on a curved CLOSED surface. Gray-Scott RD on an ICOSPHERE mesh (icosahedron subdivided n times → unit sphere; no lat-lon pole singularity, near-uniform resolution). Diffusion = row-normalized graph Laplacian (Lap u = mean(nbrs)−u, eigvals [−2,0] → standard GS step stable; conserves constants, |L·1|<1e-16). Three eyeball coat regimes by (F,k): isolated SPOTS (~41, leopard ball), LABYRINTH, CORAL. Sphere-specific QUANT: closed geometry quantises the pattern — spot count grows with sphere size (subdiv 3/4/5 → 0/18/41 spots, ∝ area/λ²; mesh refine = larger R/λ since normalized Laplacian sets λ in edge units). HONEST: spot-count only meaningful in the isolated-spots regime (size-law uses that; labyrinth/coral not counted as spots); graph Laplacian ≈ Laplace-Beltrami → qualitative pattern + size-scaling, not precise λ. DISTINCT from coatpattern (flat 2D taper) + reactiondiff (flat GS) — closed curved manifold + topological quantization. VISUAL: 3 coat-regime 3D balls (Poly3DCollection) + spot-count-vs-size + lon-lat unwrap + far side + 30-frame rotating GIF |
+| R143 | **GENESIS Stage-1: co-evolutionary ARMS RACE** — a second evolved-neural PREDATOR species hunts the prey; prey gain a predator-sense channel (brain n_in 9→13) and evolve EVASION. Additive; n_predators0=0 byte-identical to R141/R142. REAL-VERIFY (16k-step 3D run): living predator-prey ecology with **boom-bust cycles**, **coexists 3/3 seeds** (no extinction); prey flee-directedness evolves windowed **+0.231 vs +0.090 frozen** (every seed), foraging still evolves under predation. 4 tests (800 total). HONEST: coexistence is a knife-edge (cap 1200→prey extinct, 350→pred extinct, 550 coexists); arms race one-sided (predators pin at cap in prey-rich phases — R34 limit), prey evasion evolves but not a clean symmetric escalation. Stage 1 (foundation→niches→arms race) complete. |
 | R142 | **GENESIS Stage-1: monoculture BROKEN via resource niches** — `n_food_types` food types + heritable `diet` trait (each agent senses/eats only its own type = the trade-off) -> distinct specialist niches coexist (Gause competitive exclusion). Additive; n_food_types=1 byte-identical to R141. REAL-VERIFY: 16k-step K=3 run, **3D GIF eye-verified (red+green+blue diet specialists coexist)**, diet diversity locks at **3.00**, directedness still evolves to **+0.106**, lineage diversity ~1.9 (≈2× monoculture). RED-TEAM 3 seeds: K=1 diet-div 1.00/1.00/1.00 vs K=3 3.00/3.00/3.00. 4 tests (796 total). Seeds Stage-3 division of labour. HONEST negative: spatial food patchiness (food_mode="patches") tried FIRST and did NOT break monoculture (identical patches + migration → still swept) + broke the directedness readout; resource partitioning is what worked. |
 | R141 | **GENESIS Stage-1 foundation** (`alife/genesis/`) — a persistent, real 3D living world with embodied agents driven ENTIRELY by evolved `brain.py` genomes (no GA, no fitness function, no scripted movement); in-situ selection via food scarcity, kin-adjacent reproduction, fixed body, checkpoint/resumable. Built ON brain/world3d/render3d/bigworld3d(KD-tree)/coevo3d/evolve3d. REAL-VERIFY: 16k-step run, **3D GIF eye-verified** (lineage-coloured agents, diverse→monoculture colour-convergence), foraging directedness evolves 0→**+0.166**, food-limited pop ~2400 (<6000 cap), **65 generations** deep. RED-TEAM 3 seeds: evolve +0.170/+0.153/+0.211 vs frozen +0.063/+0.104/+0.078 (every seed positive, mean delta +0.096) — heritable, not a metric artifact. 11 tests (792 total). HONEST: evolution sweeps to MONOCULTURE (lineage diversity →1.0 vs frozen 2.8) — diversity/niches is R142's target. First rung of the staged ladder to civilization. |
 | R140 | **REVIEW round** (milestone, 130 modules / 781 tests). (1) Full suite ALONE: 781 passed in 14m57s, 0 fail. (2) Adversarial fresh-seed re-verify of R131-R139 headlines on UNSEEN seeds (primes ≥41, tests use {0-4,7,11}): 17/17 survived — BZ spiral+rings, wolf-sheep coexist+boom-bust (lag-sign honestly excluded — not seed-robust, test rewritten to assert the robust CV signature instead), termite stigmergy-vs-random, murmuration 273-vs-2 catches (137× protection), Faraday k*=resonance + subharmonic Ω/2, grain power-law + greedy-pin control, Fisher c≈2√(rD) + symmetric Allee sign-change ±0.282, Turing-sphere 18→41 spots size-law, dendrite arm=j + 4× anisotropy growth. (3) Milestone gallery (run_gallery_r140.py) rendered + eye-verified — all 9 signatures correct. (4) De-slop: deleted 5 stale per-round gallery stubs + review_r2.workflow.js, fixed 5 dead `if False` branches, refreshed R1-frozen __init__ docstring. (5) Docs: README/CODEBASE_GUIDE/QUICKSTART counts → 130/781, README trimmed to CEO-R91 (no per-round catalog). (6) Architecture audit: HEALTHY (acyclic DAG, no god-objects, largest 237L); one deferred dedup (5-pt Laplacian copy-pasted ×12 → a future alife/stencil.py). (7) Ambition-critic verdict drove the next direction (below). |
@@ -748,17 +767,23 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress:** Stage-1 FOUNDATION shipped at R141; MONOCULTURE BROKEN at R142 via resource partitioning
-(3 food types + heritable diet → 3 coexisting niches, diet-div locks at 3.00, red-teamed, 3D-eye-verified).
-Lesson: spatial patchiness alone fails (identical niches → still sweeps); DIFFERENT resources + a trade-off
-is what creates coexistence (Gause). Next: **R143 = co-evolutionary ARMS RACE** — add a predator species
-(evolved-neural hunters) so prey evolve evasion and the environment stays alive/receding (prevents plateau);
-reuse the predprey3d/coevo3d KD-tree predator lifecycle. Then Stage-2 = emergent signalling/language (the
-kin-adjacency + neighbour-sense + reserved utterance hooks are already in place).
+**Progress: GENESIS Stage 1 COMPLETE.** R141 foundation (3D evolved-neural world, behaviour evolves) →
+R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
+(co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
+now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
+patchiness alone fails (need DIFFERENT resources + a trade-off, Gause); predator coexistence is a knife-edge
+(cap ~0.2× prey); a clean two-sided arms race is hard (R34 limit).
+**Next: Stage 2 = EMERGENT SIGNALLING → language from scratch.** Add a cheap broadcast utterance (an evolved
+output neuron emitted, neighbours' utterance sensed — a new sense channel) over the EXISTING kin-adjacency
+(installed R141) which supplies the shared interest for honest signalling (Floreano/Mitri). First scenario:
+food-location or predator-alarm signalling. ACCEPTANCE (hard — signalling is easy to fake): mutual
+information I(signal;world) > scrambled-channel baseline AND a causal listening test (message intervention
+changes receiver behaviour) AND a no-scripting audit (no `if food: emit`). Red-team mandatory. Then Stage 3
+division of labour (the R142 diet specialists already seed it), Stage 4 niche construction, Stage 5 culture.
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
-  1. **Foundation + niches** [R141 foundation DONE · R142 resource-partitioning niches DONE] — a persistent 3D world with embodied agents driven by **evolved neural brains**;
+  1. **Foundation + niches** [R141 foundation · R142 niches · R143 arms race DONE] — a persistent 3D world with embodied agents driven by **evolved neural brains**;
      sensing, movement, metabolism/energy, reproduction, death; behaviour genuinely EVOLVES as it runs.
   2. **Emergent signalling → language** — agents evolve a shared communication code from scratch
      (Lewis/Skyrms signalling, naming-game / iterated learning); measure mutual-information / compositionality rising.
