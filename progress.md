@@ -1,6 +1,50 @@
 # alife — progress
 
-## Current state (Round 146 — 2026-06-20) — GENESIS Stage 3: division of labour, attempt 1 (public-goods processing) — HONEST NEGATIVE
+## Current state (Round 147 — 2026-06-20) — GENESIS Stage 3: DIVISION OF LABOUR ACHIEVED (convex specialization trade-off → caste)
+
+**R147 fixed R146's honest negative and Stage 3 is now POSITIVE: a heritable processor/harvester CASTE
+emerges, the two roles are played by genetically distinct castes, and the specialised economy out-produces a
+forced-generalist one.** R146 diagnosed exactly why DoL failed — processing was cheap and non-exclusive, so a
+generalist doing both was optimal (no specialization trade-off). R147 supplies the missing ingredient: a
+heritable caste trait `spec ∈ [0,1]` (0=harvester, 1=processor) with **CONVEX (accelerating) returns to
+specialization**, all additive to `alife/genesis/` (`specialize=False` → R146 byte-identical, 50 genesis tests
+green incl. determinism + the byte-identical guard):
+- **harvest gain = `food_value * (1-spec)^spec_gamma`** (only pure harvesters eat at full value);
+- **process reach = `process_radius * spec`** → ripened volume ~`spec³`, strongly convex output;
+- a processor earns a **WAGE** (`process_payment`) when a HARVESTER eats a mote IT ripened (per-mote
+  attribution via `food_proc`) — so **processors live on wages, harvesters on food = genuine producer/consumer
+  interdependence (trade)**, not a free public good;
+- crucially **`spec` is NOT a brain input** — the brain's process-gate decision can't read its own caste, so
+  any role↔caste alignment must be **built by selection** (genetic linkage), which is the emergence signal.
+
+**The caste regime (found empirically): `spec_gamma=4, process_payment=18, process_cost=1.0`.** At the
+shallower `gamma=2` generalists still win (the population collapses to one intermediate `spec≈0.42`, bimodality
+DROPS below the founding uniform, processors≈harvesters) — convexity must be **steep** so an intermediate is bad
+at BOTH tasks and disruptive selection splits the population. (`spec_gamma`/`process_payment` are the new
+`GenesisConfig` defaults for the specialize path; R146/earlier untouched; the runner passes `process_cost=1.0`.)
+
+**REAL-VERIFY (`scripts/run_genesis_caste.py`; 5000-step spec-coloured 3D GIF + 5-seed evolve/frozen/
+force-generalist controls; `runs/r147_caste/panel.png` + `caste.gif` eye-verified):**
+- **DIFFERENTIATION** — `spec` settles into a clean **BIMODAL** distribution (two modes at 0 and 1, near-empty
+  middle; Sarle BC **0.90**), and the **caste-GAP `proc_spec − harv_spec` RISES 0 → +0.32 over the run**
+  (evolution aligns the heritable caste with the behavioural role) vs **~0 for a frozen genome** (frozen is also
+  bimodal — gamma=4 disruptive selection on standing variation — but its castes do NOT preferentially process/
+  harvest: gap mean ~0, scattering +0.25/−0.05/−0.08/+0.25/−0.28 across seeds).
+- **PRODUCTIVITY** — **evolve pop 2451 > frozen > force-generalist 1753** (≈1.4×). Evolve beating *frozen*
+  (both specialised/bimodal) shows the evolved **alignment** itself adds productivity, not just specialization
+  — this defuses the "convexity makes the productivity comparison circular" objection.
+
+**RED-TEAM (mandatory; 禁止造假 — all passed):** (1) **5/5 seeds** positive caste-gap (+0.27,+0.47,+0.23,+0.43,
++0.28) with evolve>frozen>forcegen population each seed — not a single-seed fluke (unlike R146's killed clonal-
+deme 8×). (2) **Castes are SPATIALLY INTERMIXED** — nearest-neighbour same-caste 0.54 ≈ random-mix expectation
+0.51, so processors and harvesters live side by side and interact (real division of labour), NOT segregated into
+separate regions (which would make it R142-style niche partitioning, not DoL). (3) **Interdependence confirmed**
+— a flowing public good (~61 ripe / ~60 raw at any instant) with harvesters within sense range of processor-
+ripened food. The GIF visually confirms orange (processor) and teal (harvester) agents thoroughly mixed through
+the 3D volume. **This is a genuine emergent division of labour, not theatre.** Substrate committed + reusable
+(caste trait, wage attribution, convex efficiency, bimodality/caste_test read-outs).
+
+### R146 (previous round) — GENESIS Stage 3: division of labour, attempt 1 (public-goods processing) — HONEST NEGATIVE
 
 **R146 pivoted to Stage 3 (cooperation / division of labour) and built a two-stage food ECONOMY on the
 genesis substrate — a working new layer, but the division-of-labour claim it was meant to produce did NOT
@@ -676,13 +720,11 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
-- **(R146) GENESIS Stage 3 division of labour — attempt 1 NEGATIVE; attempt 2 (convex specialization
-  trade-off) queued, not a CEO gate.** Public-goods processing built a working two-stage economy but no role
-  allocation/differentiation emerged (generalists optimal — no specialization trade-off). NOT thrash: this is
-  the FIRST Stage-3 mechanism, with a clean diagnosis. R147 = attempt 2: a HERITABLE processing↔harvesting
-  efficiency trait with CONVEX returns (caste DoL). Rule: if R147 also returns a clean negative, that is the
-  2nd principled Stage-3 attempt → PARK Stage 3 like Stage 2 and pivot to Stage 4 (niche construction /
-  building / agents reshaping the 3D world), which may be an easier emergence to demonstrate. No CEO action.
+- **(R147) GENESIS Stage 3 division of labour — RESOLVED, POSITIVE.** Attempt 2 (convex specialization
+  trade-off → heritable caste) worked: a bimodal processor/harvester caste emerges, role↔caste alignment is
+  built by selection (caste-gap 0→+0.32, ~0 frozen), and the specialised economy out-produces force-generalist
+  (5/5 seeds, red-teamed, castes spatially intermixed). Stage 3 is DONE. Next ladder rung = Stage 4 (niche
+  construction / building / economy — agents reshape the 3D world). No CEO action.
 - **(R145) GENESIS Stage 2 signalling — PARKED for a substrate redesign, not a CEO gate.** Two honest
   negatives (R144 no-kin, R145 clonal demes at r=0.90) show the signalling-bootstrap deadlock is not broken
   by relatedness or parameter sweeps. Revisiting needs a substrate change (synchronous discrete-predation
@@ -870,7 +912,7 @@ locally or in the cloud — freely develops toward a CIVILIZATION, populated by 
 creatures (evolved minds, not scripts).** This is now the STANDING direction; the single-phenomenon
 demo arc is retired.
 
-**Progress: GENESIS Stage 1 COMPLETE.** R141 foundation (3D evolved-neural world, behaviour evolves) →
+**Progress: GENESIS Stages 1 & 3 COMPLETE (Stage 2 parked).** R141 foundation (3D evolved-neural world, behaviour evolves) →
 R142 niches (resource partitioning → 3 coexisting diet specialists, monoculture broken) → R143 arms race
 (co-evolving predator, boom-bust coexistence 3/3 seeds, prey evolve evasion +0.231 vs +0.090). The world
 now evolves, sustains diverse strategies, and stays alive under predation. Lessons banked: spatial
@@ -889,20 +931,23 @@ lethal and a heeded one reliably saves — the Floreano/Mitri foraging-arena des
 coupling. This is deferred as a future Stage-2 redesign. When Stage 2 is revisited, believe emergence ONLY if
 it beats frozen AND deaf AND causal, ≥3 seeds, red-team.
 
-**Stage 3 = COOPERATION / DIVISION OF LABOUR. [R146 attempt 1: two-stage food economy built and works; DoL
-did NOT emerge — honest negative. Attempt 2 queued.]** R146 made food spawn RAW and added an evolved PROCESS
-output that ripens raw→edible food as a local public good (kin-stabilisable, decaying flow). The economy is
-robust (~2300 pop all seeds) but generalists dominate: corr(process, ripe-prox) ~+0.2 for evolve & frozen (no
-need-based allocation), evolve ≈ frozen ≈ scramble (no DoL productivity gain). **Diagnosis: no specialization
-trade-off → being a generalist is optimal.** Genuine DoL needs CONVEX (accelerating) returns to specialization
-so a mix of dedicated processors + harvesters beats all-generalists — the R147 mechanism (a heritable
-processing↔harvesting efficiency trait, caste DoL). The current ceiling = a working but undifferentiated
-labour economy. **Escalation ladder if R147 also fails (= 2 principled Stage-3 negatives): PARK Stage 3, climb
-to Stage 4 — NICHE CONSTRUCTION / BUILDING (agents reshape the 3D world: deposit/dig/build structures that
-persist and feed back on selection).** Niche construction may be an *easier* emergence to demonstrate than DoL
-(a structure is directly visible + measurable), and it is the substrate for Stage 5 cumulative culture.
-Believe any Stage-3 positive ONLY if differentiation is bimodal/persistent AND mixed > monomorphic
-productivity, ≥3 seeds, red-teamed (the R146 8× fluke is the cautionary tale).
+**Stage 3 = COOPERATION / DIVISION OF LABOUR. [R146 attempt 1 NEGATIVE → R147 attempt 2 POSITIVE — STAGE 3
+DONE.]** R146's two-stage economy worked but generalists dominated (no specialization trade-off). R147 added a
+heritable caste trait `spec` with **CONVEX returns** (harvest `(1-spec)^4`, process-reach `∝spec` so volume
+`∝spec³`, plus a wage `process_payment` paid to whoever ripened a harvested mote) and the population split into
+a genuine **bimodal processor/harvester caste** (BC 0.90), with the role↔caste alignment **built by selection**
+(caste-gap 0→+0.32 over the run, ~0 frozen; `spec` is not even a brain input) and the specialised economy
+out-producing force-generalist (evolve 2451 > frozen > forcegen 1753). Red-teamed: 5/5 seeds, castes spatially
+INTERMIXED (NN same-caste ≈ random = real DoL not segregation), interdependence confirmed. **Key lesson:
+specialization only pays under STEEP convexity (gamma=4) — at gamma=2 generalists still win (the population
+collapses to one intermediate spec); shallow increasing-returns is not enough to split a caste.** Current
+ceiling = a two-caste trading economy. **Next rung = Stage 4 — NICHE CONSTRUCTION / BUILDING (agents reshape
+the 3D world: deposit/dig/build persistent structures that feed back on selection).** Niche construction is the
+natural Stage-4 step on this substrate (let the processor caste deposit a persistent built ripening-site/cache
+that modifies the local environment and is reused across generations = an economy of made structures), it is
+*directly visible + measurable*, and it is the substrate for Stage 5 cumulative culture. Believe any stage
+positive ONLY if the signature is robust ≥3 seeds AND beats the right control (frozen/monomorphic), red-teamed
+(the R146 8× clonal fluke is the cautionary tale).
 
 Locked decisions (CEO, R140):
 - **Civilization bar = BOTH, staged** (the full living world, longest road, richest result). Ambition ladder:
@@ -912,8 +957,9 @@ Locked decisions (CEO, R140):
      achieved across TWO honest negatives (no-kin + high-kin r=0.90) — rung PARKED for a substrate redesign] —
      agents evolve a shared communication code from scratch (Lewis/Skyrms signalling, naming-game / iterated
      learning); measure mutual-information / compositionality rising above frozen+deaf+causal controls.
-  3. **Cooperation + division of labour** [R146 = NEXT, pivot target] — roles, group selection, specialisation emerge.
-  4. **Building / niche construction / economy** — agents reshape the 3D world (gather, store, build,
+  3. **Cooperation + division of labour** [R146 attempt 1 negative → R147 attempt 2 POSITIVE, DONE — convex
+     specialization trade-off → bimodal processor/harvester caste, selection-built role alignment, mix > monomorphic] — roles + specialisation emerged.
+  4. **Building / niche construction / economy** [R148 = NEXT] — agents reshape the 3D world (gather, store, build,
      territory, trade); settlements appear (intentional niche construction, beyond R133 termite stigmergy).
   5. **Cumulative culture** — learned knowledge passes across generations (a cultural ratchet) →
      proto-civilization. Headline = an **open-ended complexity/novelty metric that keeps climbing** (never converges).

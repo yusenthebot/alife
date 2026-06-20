@@ -153,9 +153,13 @@ class GenesisConfig:
     #     population into a bimodal processor/harvester CASTE. specialize=False is the exact R146 world
     #     (uniform efficiency, no spec, no caste), byte-identical. Requires processing=True.
     specialize: bool = False
-    spec_gamma: float = 2.0            # convexity of the specialization returns (>1 = increasing returns)
+    # the caste regime (found empirically R147): STEEP convexity (gamma=4) makes an intermediate generalist
+    # bad at BOTH tasks, so disruptive selection splits the population into two specialist castes; a good wage
+    # makes the processor caste viable on trade alone. At the shallower gamma=2 generalists still win (the
+    # population collapses to one intermediate spec — no caste), so convexity must be strong enough.
+    spec_gamma: float = 4.0            # convexity of the specialization returns (>1 = increasing returns)
     spec_mut_sigma: float = 0.1        # gaussian mutation of the heritable caste trait on reproduction
-    process_payment: float = 11.0      # energy a processor earns per mote of ITS ripening that gets harvested
+    process_payment: float = 18.0      # energy a processor earns per mote of ITS ripening that gets harvested
     force_generalist: bool = False     # productivity control: freeze every agent's spec at 0.5 (a forced
                                        # monomorphic generalist economy) -> isolates whether the EVOLVED
                                        # bimodal caste out-produces a non-specialized population.
