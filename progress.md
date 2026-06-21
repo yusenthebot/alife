@@ -1,5 +1,64 @@
 # alife — progress
 
+## Current state (Round 163 — 2026-06-20) — GENESIS TEMPORAL phylogeny: combinatorial culture RECOVERS the time-ladder of cumulative descent; the additive null scrambles it; asocial never climbs (robust POSITIVE, red-teamed)
+
+**R163 took the descent-recovery work from SPACE to TIME. R160-R162 reconstructed a SPATIAL phylogeny (demes as
+taxa; the cladogram of traditions, ground-truth-validated: VERTICAL transmission recovers the birth genealogy,
+HORIZONTAL does not). R163 reconstructs the TEMPORAL phylogeny — the time-ladder of cumulative descent: log when
+each technique FIRST appears in the population over a long run, and ask whether that history recovers the
+generative tech tree. The answer is a clean POSITIVE, red-teamed CONFIRMED. 禁止造假.**
+
+**The contribution (a passive instrument + a pure metric; NO new sim mechanism → byte-identical when off).**
+- **`track_tech_history` (default False)** — a passive observer that stamps the world step at which each technique
+  first appears in any living agent's repertoire (`_update_tech_history`: reads `self.rep` only, consumes NO RNG,
+  mutates NO sim state → byte-identical to off, verified by `array_equal` on pos AND rep). One int array of length
+  `max_techniques` (analysis-only, bounded runs — like the R161 genealogy log).
+- **`phylogeny.temporal_ladder_signal`** (pure, unit-tested) — given the first-appearance times + the tree
+  (prereqs `pa`/`pb`, `level`), computes two tree-signal statistics vs a label-permutation null over the techniques
+  that appeared: **precedence_frac** (fraction of appeared non-seed techniques that appear at/after BOTH their
+  prereqs — the combinatorial mechanism forces this to 1.0, the additive null breaks it) and **level_time_corr**
+  (Spearman of tree depth vs first-appearance time — deep techniques appear late; high = the history recovers the
+  depth ladder). `_spearman` uses average-rank `rankdata` (matches scipy `spearmanr` to 1e-9 under heavy ties).
+- **`World.temporal_phylogeny_test`** wraps the signal + the open-ended complexity snapshot (`max_level`,
+  `pop_distinct`). Requires `track_tech_history`. 6 new tests (174 genesis green): perfect-ladder → corr 1.0/prec
+  1.0/sig; scrambled → no signal; requires-combinatorial; byte-identical-off + logs appearances; the headline
+  combinatorial-recovers-not-additive smoke; off-empty.
+
+**HEADLINE (POSITIVE, robust). On the combinatorial tech-tree substrate, the population's first-appearance history
+RECOVERS the generative tree's time-ladder of cumulative descent: precedence_frac = 1.000 (a technique never
+appears before BOTH its prerequisites) and level<->time Spearman corr 0.94 (p~0 vs a label-permutation null ~0),
+2/2 seeds. The ADDITIVE null (same tree, same machinery, prereq gate OFF) reaches the techniques in SCRAMBLED order
+(precedence 0.35 ≈ the 1/3 chance level, corr ~0). The ASOCIAL null (no transmission) never climbs (max_level 0,
+only the 8 seed primitives). The frontier depth climbs 0→9 and breadth 8→~312 under combinatorial social culture
+vs a flat asocial floor.** The temporal analogue of R160-R162's spatial phylogeny, and a genuine cumulative-descent
+(open-endedness) measurement: the population's HISTORY, not just its current state, carries a reconstructable
+phylogenetic signal.
+
+**THE SHARPEST POINT (honest, and the reason the instrument matters). The additive null does NOT stay shallow — it
+reaches the WHOLE pool (max_level 20 / distinct 1500, the cap) FASTER than combinatorial, because with no prereq
+gate it samples the entire tech space uniformly. So depth/breadth MAGNITUDE alone CANNOT distinguish genuine
+cumulative descent from unstructured accumulation — only the temporal ORDER (precedence + depth-time correlation)
+can. Cumulative culture is defined by the STRUCTURE of its history, not by how deep or broad the repertoire gets.**
+
+**REAL-VERIFY (`scripts/run_genesis_temporal.py 500`; `runs/r163_temporal/panel.png` EYE-VERIFIED in 33s — a gold
+staircase climb of frontier depth vs a flat gray asocial floor; a repertoire-breadth climb to ~312 vs asocial 8; a
+combinatorial ladder scatter (first-appearance step rising with tree depth, corr 0.94); a scrambled additive-null
+scatter (corr 0.01); tall gold recovery bars 2/2 with near-zero additive + null bars; a depth-coloured live 3D
+world at n=3733), 3 arms × 2 seeds, 500 steps.**
+
+**RED-TEAM (mandatory; independent refutation-first agent; verdict CONFIRMED 6/6).** (1) **precedence is
+discriminating, not vacuous** — mechanistically forced to 1.0 under combinatorial, but the additive null gives 0.35
+and a hand-injected single violation drops it to 0.9912, so the metric CAN fail. (2) **corr is dynamics, not a
+level-definition artifact** — the additive arm uses the IDENTICAL tree (same `build_tech_tree`/`level`) yet gives
+corr ~0; same definition, opposite result. (3) **permutation null correct** — permutes appearance times among
+APPEARED techniques only, recomputes Spearman, p = mean(|null|≥|obs|); non-appeared kept at -1 and excluded. (4)
+**byte-identical** — `_update_tech_history` reads `rep`, writes only `_tech_first_step`, no RNG/state mutation;
+test asserts `array_equal` on pos AND rep over 80 steps. (5) **re-run 4 seeds (0,1,7,13)** all robust (combo corr
+0.92-0.94/prec 1.0; additive corr ~0/prec ~0.35; asocial max_level 0). (6) **`_spearman` ties** match scipy 1e-9.
+The decisive control is the additive null — identical tree + metric machinery, prereq gate the ONLY difference. The
+descent-STRUCTURE rung (spatial R160-R162 + temporal R163) is now CLOSED with clean positives. Next (genuinely
+unbounded generative tech space) in `## Frontier / next`.
+
 ## Current state (Round 162 — 2026-06-20) — GENESIS CLEAN ground-truthed phylogeny: VERTICAL transmission RECOVERS the true descent, HORIZONTAL does not (robust POSITIVE; closes the descent-recovery rung)
 
 **R162 resolved R161's frontier option (1). R161 returned an honest NEGATIVE (the R160 cladogram does NOT recover
@@ -1307,6 +1366,15 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R163) TEMPORAL phylogeny / open-ended cumulative descent — RESOLVED, POSITIVE (robust), no CEO action.**
+  Frontier option (1) landed: the combinatorial culture's first-appearance HISTORY recovers the generative tree's
+  time-ladder (precedence 1.0, level<->time corr 0.94, sig 2/2 vs label-null ~0); the additive null scrambles it
+  (prec 0.35, corr 0); asocial never climbs (max_level 0). Red-teamed CONFIRMED 6/6 over 4 seeds; the additive null
+  is the decisive control (identical tree+machinery, prereq gate the only difference). Honest sharpest point:
+  depth/breadth MAGNITUDE cannot distinguish cumulative descent from unstructured accumulation — only the temporal
+  ORDER does. The descent-STRUCTURE rung (spatial R160-R162 + temporal R163) is CLOSED. Per anti-thrash, R164
+  PIVOTS to frontier option (2): GENUINELY UNBOUNDED generative tech space. The `track_tech_history` +
+  `temporal_ladder_signal` instruments are committed + reusable. No CEO action.
 - **(R162) CLEAN ground-truthed phylogeny — RESOLVED, POSITIVE (robust), no CEO action.** R161's frontier option
   (1) landed: in a NEUTRAL-drift substrate (`spatial_tiers=False` + `tier0_frac=0.80` lifeline) cultural cladistics
   RECOVERS the true genealogy under VERTICAL transmission (Mantel mean 0.366, sig 3/4) and provably does NOT under
@@ -1528,6 +1596,25 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R163): the descent-STRUCTURE rung is CLOSED in BOTH space and time. R160-R162 closed the
+SPATIAL phylogeny (cultural cladistics ground-truthed: vertical transmission recovers the birth genealogy,
+horizontal does not). R163 closed the TEMPORAL phylogeny: the combinatorial culture's first-appearance HISTORY
+recovers the generative tree's time-ladder of cumulative descent (precedence 1.0 + level<->time corr 0.94, 2/2
+seeds, red-teamed CONFIRMED 6/6) while the additive null scrambles it and asocial never climbs. The sharpest lesson:
+cumulative culture is defined by the STRUCTURE of its history (temporal order), not by depth/breadth magnitude (the
+additive null reaches the whole pool faster, but in scrambled order). The durable INSTRUMENTS (`track_tech_history`,
+`phylogeny.temporal_ladder_signal`, `temporal_phylogeny_test`) validate any future cumulative-descent claim.**
+Candidate R164 frontiers, ranked ambition × feasibility:
+(1) **GENUINELY UNBOUNDED / generative tech space (TOP PICK — true open-endedness).** Lift the `max_techniques` cap:
+a new technique IS the hashed pair of its parents (combinations of combinations), with bounded memory via a hashed
+id pool, so the frontier DEPTH can climb without an artificial ceiling. Pair it with the R163 temporal-ladder + a
+max-depth complexity metric that PROVABLY keeps climbing (vs the additive/asocial nulls) and does NOT saturate at a
+cap. This is the genuine open-endedness rung and directly reuses the R163 instrument. (2) **Phylorate / innovation
+dynamics** — measure the ACCELERATION of the frontier (discovery rate ∝ adjacent-possible size) and whether it is
+super-linear (Kauffman/Arthur expanding adjacent possible) vs the additive null's deceleration; a temporal
+read-out on top of R163. (3) **Sharpen the spatial descent recovery to HIGH magnitude** (lower-priority, rung
+closed). Lean (1).
 
 **Current ceiling (post-R162): the descent-recovery rung is CLOSED with a clean POSITIVE. R160 showed the cultural
 divergence is tree-SHAPED; R161 ground-truthed it (honest negative — the tree-shaped cladogram does NOT recover the
