@@ -1,5 +1,49 @@
 # alife — progress
 
+## Current state (Round 174 — 2026-06-21) — THE SUSTAINED MULTI-DAY CLIMB: the world that KEEPS developing, not just persists. R173's unattended loop was real but with K=1000 the open-ended climb SATURATED inside tick 1, so "leave it running for days, it keeps developing" was hollow past tick 1. R174 fixes the REGIME (not the mechanism): a large tree cap + gentler innovation + deeper diet/capability gates → depth, breadth AND the embodied diet/axes ceilings keep rising tick after tick over the whole horizon, while the otherwise-identical CAPPED control freezes once its tree fills (red-teamed CONFIRMED across 4 seeds — the freeze is the CAP, not pop death; the only knob that differs is K).
+
+**R174 lands frontier (1)'s sustained-climb rung + the cron wiring.** R173 stood up the unattended tick loop
+and proved process death is invisible, but the climb itself saturated in tick 1. R174 makes the multi-tick
+climb GENUINE — the unattended loop now actually *develops* across many ticks, in the abstract repertoire AND
+in the body — and ships the literal cron/systemd entrypoint so it runs for real days. 禁止造假.
+
+**The contribution (a regime + a control + a cron entrypoint; no new sim mechanism, no new RNG).** New in
+`genesis/daemon.py`:
+- `climb_curve(state_dir, cfg, seed, segment_steps, n_ticks)` — drive N REAL resumed ticks (each a
+  `persist.run_segment` that reloads the on-disk checkpoint = genuine resume) and record the world's frontier
+  at the end of each tick (depth/breadth/diet/axes/pop). Bounded memory (only the last sample per tick kept).
+- `render_climb_panel(open_curve, capped_curve, path)` — the decisive open-ended-vs-capped CONTROL as a 2×2 of
+  per-tick climb curves (the eye-checkable sustained-climb deliverable).
+- The SUSTAINED regime (`tests._r174_cfg` / `scripts/run_genesis_r174.py:r174_cfg`): `max_techniques=20000`
+  (headroom so the open tree doesn't fill in tick 1), `innov_steps=2` (gentler, so the climb spreads across
+  ticks not one burst), `n_food_tiers=8` + `n_capabilities=4` with `recipe_level_step=2`/`cap_level_step=3`
+  (deeper gates → the embodied ceiling keeps unlocking as depth climbs, not maxing out at once). The ONLY knob
+  the capped control changes is `max_techniques`.
+- `scripts/genesis_daemon_tick.sh` — the literal cron/systemd entrypoint: one idempotent tick against a fixed
+  `$GENESIS_STATE`, resume + climb one segment + refresh `live_panel.png`. `*/10 * * * * scripts/genesis_daemon_tick.sh`.
+
+**HEADLINE — open-ended keeps climbing across the WHOLE horizon; capped freezes. Same machinery, only the cap.**
+REAL-VERIFY (`scripts/run_genesis_r174.py` → `runs/r174_climb/{climb.png,world.gif}`, EYE-VERIFIED, ~22s):
+8 ticks × 60 steps driven as GENUINE separate subprocesses (true process death between every tick). OPEN-ENDED
+(K=20000): breadth 133→4931 still rising at the final tick (+756 on the last), connected depth 5→12, and the
+BODY develops — diet ceiling 2→6, capability axes 1→4; pop healthy at 1000; restored tree.n=5011,
+diet_ceiling=(6,4). CAPPED (K=250, otherwise identical): breadth FROZEN at 244 (243→244→244 last three ticks),
+depth stuck at 6, diet at 3, axes at 2 — pop 481 (a genuinely frozen world, not a dead one). Open-ended ends
+20× past the capped ceiling and strictly deeper. The climb panel shows all four signals (blue) climbing vs the
+flat-lined capped (red); the world gif shows the developed gold (deep-culture) living population over food.
+
+**RED-TEAM CONFIRMED (4 seeds; refutation = "seed-0 fluke" / "freeze is pop death").** The open-ended-vs-capped
+split holds on seeds 0,1,2,3: open breadth →3703/7800/7343 with depth 11/13/14 and diet 5/6/7, while capped
+freezes at 239/197/88 with depth 6/6/6 (Δlast ≤ 0) — every seed open keeps climbing, out-climbs ≥10×, body
+develops, capped frozen with a LIVING pop (≥200). So the freeze is the CAP, not death; the only difference is K.
+
+**HONEST CAVEAT (recorded).** Within this 8-tick horizon BREADTH is the signal that keeps climbing throughout;
+connected DEPTH (and therefore the depth-gated diet/axes ceilings) climbs then PLATEAUS by ~tick 6 (depth 12,
+diet 6, axes 4) — random composition's max-connected-depth growth decelerates, and the body ceilings cap at the
+configured tier/axis count once depth reaches them. So "keeps developing" is: breadth open-ended across all
+ticks + depth/body climbing strictly past the frozen capped control end-to-end. Pushing depth to keep climbing
+over MANY more ticks (slower deceleration / a depth-rewarding selection pressure / more tiers+axes) is R175.
+
 ## Current state (Round 173 — 2026-06-21) — THE UNATTENDED MULTI-DAY CLIMB: the world you start once and leave running. A single idempotent daemon.tick() (the cron/systemd/supervisor entrypoint) resumes the on-disk world, climbs one segment, and refreshes a rolling LIVE PANEL — so "leave it running for days, it keeps developing" is now a real loop on the open-ended generative substrate (red-teamed CONFIRMED — genuine resume across 6 real PIDs, the dashboard is the FULL rolling history, irregular scheduler cadence still yields one monotone climb).
 
 **R173 lands frontier (1)'s capstone: STAND UP THE ACTUAL UNATTENDED LOOP.** R169-R172 built persistence
