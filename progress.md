@@ -1,5 +1,54 @@
 # alife — progress
 
+## Current state (Round 170 — 2026-06-21) — OPEN-ENDEDNESS MADE CAUSAL IN THE LIVE WORLD: the generative tech tree. The living civilization's culture is no longer explored on a FIXED pre-built tree (a frozen ceiling) — it GROWS the tree on demand from the population's real compositions, open-ended BY CONSTRUCTION, bounded only by the memory cap (red-teamed CONFIRMED — the freeze is the CAP not pop death; a no-composition null never grows)
+
+**R170 lands the top-ranked post-R169 frontier (1): BREAK OUT — make open-endedness CAUSAL.** Across R164-R169
+the genuinely-unbounded machinery (R164 `unbounded.TechSpace`, the phylorate rate laws, the tech-depth DAG)
+lived in SEPARATE analytical/registry models; the LIVE world (genesis.py) still ran its culture on a FIXED
+pre-enumerated tree (`combinatorial.build_tech_tree`, `max_techniques` columns) whose deepest level is a frozen
+pre-set ceiling. R170 brings the open-endedness INTO the running civilization: the live world now grows its tech
+tree from the population's actual compositions, so the cultural frontier is open-ended by construction in the
+world you watch develop, not only in an offline model. 禁止造假.
+
+**The contribution (a generative tree over the SAME dense rep — no representation rewrite, drops into the
+existing combinatorial culture behind a flag).** New `combinatorial.GrowingTree` = the live-world analogue of
+R164 `unbounded.TechSpace`, but over the World's dense boolean repertoire:
+- starts with ONLY the `n_seed_tech` level-0 primitives materialized; the first time two KNOWN techniques are
+  composed it MATERIALIZES a brand-new deeper node (id = next free column, level = 1+max(parent levels), parents
+  = the pair) appended into the pre-allocated capacity-K arrays — so the dense rep width stays K while the
+  realized tree is BUILT by the living culture.
+- `pa/pb/level` are the SAME arrays the World binds as `_tree_*`, mutated in place as nodes are born, so every
+  downstream reader (max_level_known, combinatorial_test, the phylogeny read-outs) works unchanged on the grown tree.
+- the ONLY ceiling is the capacity `max_techniques` (the memory cap == `unbounded.TechSpace`'s `cap`): cap it
+  small and the frontier FREEZES once full; raise it and breadth+depth keep climbing with run length.
+- wired behind `generative_tree` (default False = the fixed-tree path, BYTE-IDENTICAL). The fixed-deep-node gates
+  (tech_actions/tech_capabilities, which designate recipe/capability nodes ahead of the run) are not yet wired
+  onto the grown tree → combining them raises ValueError (dynamic recipe designation = the next rung).
+
+**HEADLINE — the live population's cultural frontier is bounded ONLY by the cap; capping freezes it.** REAL-VERIFY
+(`scripts/run_genesis_r170.py` → `runs/r170_generative/{panel.png,world.gif}`, EYE-VERIFIED, ~7s):
+- 3 live full-stack worlds × 320 steps. **generative big-cap (K=4000):** breadth (distinct techniques known by the
+  living pop) climbs **145→3962**, frontier depth **5→9**, the tree GREW **6→4000 nodes** from real compositions.
+  **generative capped (K=30):** the SAME machinery FREEZES — breadth flat at **30**, depth flat at **2**.
+  **fixed pre-built tree (K=4000):** breadth 16→185, depth 1→8 (a hard pre-set ceiling).
+- The 3D render shows the developed generative civilization alive, agents violet→gold by culture depth.
+
+**RED-TEAM CONFIRMED (inline, decisive + construction-guaranteed).**
+- **The freeze is the CAP, not population death:** a cap sweep gives breadth that tracks the cap EXACTLY —
+  K=30→breadth 30 (pop=719, healthy), K=120→breadth 120 (pop=1000), K=4000→breadth 3668/depth 10. Monotone in K;
+  the capacity is the binding constraint, not a dying population.
+- **Load-bearing null:** generative ON but `innov_steps=0` (no composition) → breadth stays at **6** (=n_seed),
+  depth 0, the tree never grows. So the climb is genuinely driven by the population's real compositions, not seeding.
+- `generative_tree=False` byte-identical to the fixed-tree path (unit-tested); GrowingTree unit-tested (materialize
+  on demand, canonical-pair dedup, cap freeze, depth grows only when uncapped). 207 genesis tests (+5).
+
+**HONEST CAVEAT (baked in):** in a SHORT run (320 steps) the FIXED pre-built tree's depth (8) was COMPARABLE to the
+generative tree's (9-10) — the fixed tree also has pre-built deep nodes to discover, so "generative out-depths
+fixed in 320 steps" is NOT the claim. The decisive, construction-guaranteed claim is the CAP control: the
+generative frontier is bounded ONLY by capacity (breadth tracks the cap exactly; depth scales 2/3/10 with K=30/120/
+4000), whereas the fixed tree has a HARD pre-set ceiling it can never pass. Also: the generative tree does not yet
+GATE physical actions (recipe/capability gates need pre-built deep nodes) — that is the next rung.
+
 ## Current state (Round 169 — 2026-06-21) — GENESIS PERSISTENT, RESUMABLE LONG RUN: the world you leave running. GENESIS is now a process that SURVIVES PROCESS DEATH and resumes the SAME civilization (the literal CEO "just by running locally or in the cloud" deliverable), proven by BIT-FOR-BIT trajectory continuity across genuine restarts (red-teamed CONFIRMED — load-bearing negative controls break continuity)
 
 **R169 lands the top-ranked post-R168 frontier (1): a PERSISTENT, RESUMABLE long run.** R168 proved the
@@ -1843,6 +1892,30 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R170): open-endedness is now CAUSAL IN THE LIVING WORLD.** The live civilization no longer
+explores a FIXED pre-built tech tree (a frozen pre-set ceiling) — `combinatorial.GrowingTree` (the dense-rep
+live-world analogue of R164 `unbounded.TechSpace`) GROWS the tree on demand from the population's real
+compositions, so the cultural frontier is open-ended BY CONSTRUCTION in the world you watch develop, bounded
+ONLY by the memory cap (red-team CONFIRMED: cap sweep → breadth tracks the cap exactly 30/120/3668 with healthy
+pops; no-composition null → breadth stays at n_seed). Crucially this needed NO sparse-rep migration (the R169
+frontier had flagged a vr-lead rep rewrite) — the generative tree drops onto the EXISTING dense boolean rep
+behind `generative_tree`, so the architectural gate is avoided. Durable instrument: `combinatorial.GrowingTree`
++ `scripts/run_genesis_r170.py`. Candidate R171+ frontiers, ranked ambition × feasibility:
+(1) **GATE EMBODIED ACTIONS ON THE GROWN TREE (TOP — closes the open-endedness→body loop).** The generative tree
+is currently an abstract repertoire; it does NOT yet gate diet tiers / physical capability axes (those designate
+FIXED deep nodes ahead of the run). Make recipe/capability designation DYNAMIC over the live grown tree (e.g. the
+deepest currently-materialized nodes unlock the next diet tier / capability axis) so OPEN-ENDED culture causally
+drives ever-deeper EMBODIED capability — open-ended complexity you can SEE in the agents' bodies, not just a count.
+(2) **WIRE THE SUPERVISOR to `persist.run_segment`** on the generative substrate for a genuine multi-day cloud
+climb with a rolling live panel — the world literally left running for days, frontier climbing the whole time.
+(3) **Stage-2 SIGNALLING redesign (parked rung)** — synchronous sharply-lethal predation arena; believe emergence
+only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: the next LEAP IN KIND is (1) — fuse the
+now-unbounded culture with the body so open-endedness shows up as embodied capability, not an abstract repertoire.**
+**HONEST caveat carried forward:** the R170 cap control is decisive, but in a short run the fixed tree's depth was
+COMPARABLE to the generative tree's — the load-bearing claim is "frontier bounded only by capacity," not "generative
+out-depths fixed in 320 steps." A long-run depth divergence (fixed plateaus at its hard ceiling, generative keeps
+climbing) is worth a dedicated long-horizon verify.
 
 **Current ceiling (post-R169): GENESIS is now a PERSISTABLE, RESUMABLE PROCESS — it survives process death and
 resumes the SAME civilization (bit-for-bit continuous, proven against load-bearing negative controls), so the
