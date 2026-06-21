@@ -1,32 +1,28 @@
 # STATUS — main
-updated: 2026-06-21T10:05 · loop 177
+updated: 2026-06-21T12:05 · loop 178
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent real 3D world that, just by running, freely develops
           toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied
           agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture.
           Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R177 lands frontier (1)'s next rung: fix R176 caveat 2 (the body's DRIVER, personal mastery,
-          SATURATES) by driving embodiment off the ACCESSIBLE BANKED cultural record (a lossless external memory)
-          instead — the body deepens with the SOCIETY's cumulative culture, not lossy individual mastery.
-doing:    R177 DONE. pheno_cumulative: body driver = max(personal pop.tech, deepest struct_tech BANKED in nearest
-          strong hearth within hearth_radius). struct_tech is a running MAX over builders (never decays) → exceeds
-          the lossy living-pop mean. _pheno_driver feeds _cap_speed/_cap_reach/embodied_scale. Default-off byte-identical.
+phase:    review — R178 attacked Stage (2) emergent signalling via DIRECT common interest (Skyrms/Lewis referential
+          game), the hypothesis that R144/R145 failed only because alarm-call payoff is INDIRECT. HONEST NEGATIVE.
+doing:    R178 DONE (honest negative). signal_game (default-off byte-identical, requires signalling=True): each step
+          an agent observes a private referent BIT (new input), emits its utterance; nearest neighbour DECODES via a
+          guess output (new output); correct decode pays BOTH +signal_reward. signal_game_mi() diagnostic added.
 owns:     all of ~/alife (single session)
-verify:   scripts/run_genesis_r177.py → runs/r177_body/{body.png,world.gif} EYE-VERIFIED (~33s). 8 ticks×50 steps as
-          GENUINE separate subprocesses, K=20000, seed 0. CUM (pheno_cumulative): body DRIVER 5.9→56.3 vs personal
-          mastery 3.9→42.8 in the SAME run — gap GROWS 2.0→13.5 (cumulative culture increasingly outpaces the
-          individual = Tomasello ratchet). CUM embodied_scale ends 2.13 > PER (R176 personal) 2.00 DESPITE a
-          SHALLOWER tree (cum conn_depth 63 < per 69). pop 1000 both. world.gif = dense gold (deep) living 3D pop.
-redteam:  CONFIRMED (skeptic, read code). byte-identical OFF (no path/RNG); driver genuinely LOCAL (nearest hearth
-          within hearth_radius); struct_tech lossless max, untouched by culture_decay. THREE honest caveats below.
+verify:   scripts/run_genesis_r178.py → runs/r178_signal_game/signal_game.png EYE-VERIFIED (~2s) + fast probes
+          (strong-reward / small-dense / 1200-step). decode_acc PINNED AT CHANCE in BOTH arms (PAID max 0.537 vs
+          FREE control reward=0 max 0.562 — indistinguishable); MI-vs-null = noise spiking >3 EQUALLY in both. The
+          FREE control + scrambled null FALSIFY reward-driven emergence (no PAID>FREE asymmetry).
+redteam:  the verify IS adversarial by construction — the FREE (reward=0) arm + scrambled-channel null are two
+          independent controls and both refute the positive claim; the negative is robust, not a tuning artifact.
 blocked:  none
-caveat:   (1) driver≥personal is TRUE BY CONSTRUCTION (max(a,b)≥a); the load-bearing finding is the gap's MAGNITUDE
-          + GROWTH (2.0→13.5), not its sign. (2) struct_tech is a lossless running-max per hearth LIFETIME, but a
-          slot resets to founder tech on death+refound → not a globally death-proof monotone ratchet. (3) cross-arm
-          "outclimbs" is divergent-RNG (cum body faster→diff pop→shallower tree); fair one-knob-at-construction, and
-          cum body ends deeper DESPITE the shallower tree, which strengthens it. Single seed; KDTree rebuilt per-call (perf wart).
+rootcause: pure GENETIC evolution + SHIFTING partners can't break the encoder/decoder chicken-and-egg (random
+          decoder scores 50% regardless of encoding → no selection gradient). 3rd Stage-2 negative (R144/R145/R178)
+          → same gap: NO within-lifetime learning. Skyrms' fix = within-life reinforcement w/ stable roles.
 docrule:  README=description+deploy+block diagram ONLY (CEO R91); per-round catalog→progress.md; layout→CODEBASE_GUIDE.md;
-          runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy). MEMORY: ONE sim at a time; full-stack world <200 MB; GL released.
-next:     R178 LEAP (frontier 1/2): R177's banked driver STILL decelerates (its source, the frontier+builder mastery,
-          asymptotes). Push for a driver that does NOT asymptote: (a) scale the body with an OPEN-ENDED COUNT (#
-          distinct traditions / tree SIZE), which grows unbounded by construction, not the saturating depth; OR
-          (b) pivot to Stage (3) cooperation/division-of-labour, seeded by R142 diet specialists + R177 banked culture. 禁止造假.
+          runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy). MEMORY: ONE sim at a time; featherweight numpy; GL released.
+next:     R179 LEAP (frontier A): ONE bounded attempt at WITHIN-LIFETIME signalling reinforcement (mutable per-agent
+          signalling policy / Hebbian-Roth-Erev update on utterance+guess weights from the decode reward, repeated
+          partner interaction) — the diagnosed fix for Lewis emergence. If it ALSO fails the FREE control, PIVOT
+          cleanly to frontier B = Stage (3) division-of-labour (R142 specialists + R177 banked culture). 禁止造假.

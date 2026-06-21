@@ -1,5 +1,7 @@
 # alife — progress
 
+## Current state (Round 178 — 2026-06-21) — STAGE-2 SIGNALLING, HONEST NEGATIVE: the common-interest referential (Lewis/Skyrms) game does NOT emerge. HYPOTHESIS tested: R144 (no relatedness) and R145 (kin selection) were honest negatives because predator-alarm pays the caller only INDIRECTLY (inclusive fitness through saved kin) — weak, noisy, slow. Skyrms (2010): a Lewis signalling system emerges readily under DIRECT common interest. So `signal_game` (default-off, byte-identical; requires signalling=True) embeds exactly that: each step every agent observes a private random referent BIT (new input), emits its utterance; the nearest neighbour HEARS it and DECODES via a guess output (new output); a correct decode pays BOTH speaker and listener +`signal_reward` NOW. The claim: the missing piece was the PAYOFF STRUCTURE, not the channel → a convention should bootstrap (decode_acc>0.5, MI(utterance;referent)≫scrambled null) in the PAID arm but NOT in the otherwise-identical reward=0 FREE control. **REAL-VERIFY REFUTES IT (scripts/run_genesis_r178.py, runs/r178_signal_game/signal_game.png eye-verified, 2s; + fast probes across strong-reward / small-dense / 1200-step regimes):** decode_acc stays pinned at chance (PAID max 0.537 vs FREE max 0.562 — indistinguishable), and MI z-vs-null is uncorrelated NOISE that transiently spikes >3 in BOTH arms equally (FREE actually spikes first). The built-in FREE control + scrambled-channel null are the adversarial check, and they FALSIFY reward-driven emergence (no PAID>FREE asymmetry). ROOT CAUSE (diagnosed): pure GENETIC evolution with SHIFTING partners can't break the encoder/decoder chicken-and-egg — a random decoder scores 50% regardless of whether speakers encode, so there is NO selection gradient until encoder+decoder align SIMULTANEOUSLY across the whole population, which drift never delivers. So "payoff structure was the only missing piece" is REFUTED: direct payoff is necessary but NOT sufficient — Skyrms' actual mechanism is WITHIN-LIFETIME reinforcement (urn/Roth-Erev) with stable speaker/listener roles, which these FROZEN NN genomes lack. The `signal_game` machinery + `signal_game_mi()` diagnostic are kept (real, unit-tested, default-off) as the SUBSTRATE for that next attempt. 禁止造假 — the figure shows the truth, including that the headline did not hold. Three negatives now on Stage-2 emergence (R144/R145/R178) all point to the same gap: no within-lifetime learning. See `## Decisions pending` + `## Frontier / next`.
+
 ## Current state (Round 177 — 2026-06-21) — CUMULATIVE-CULTURE BODY: drive embodiment off the ACCESSIBLE BANKED cultural record (a lossless external memory), not personal mastery (which saturates). R176 made the body CONTINUOUS but its DRIVER — the agent's PERSONAL realized depth `pop.tech` — SATURATES at the innovation/transmission-loss equilibrium (R176 caveat 2: copy parent+hearth at fidelity<1, add only innov_steps → the living-pop MEAN depth asymptotes). R177 adds `pheno_cumulative`: the body's driver becomes `max(personal pop.tech, the deepest record BANKED in the nearest STRONG hearth within hearth_radius)`. The banked hearth record `struct_tech` is written by a running MAX over every builder ever (`np.maximum.at`, untouched by culture_decay) — a lossless EXTERNAL social memory (Boyd/Richerson: societies store culture better than any individual remembers) — so it exceeds the lossy living-pop mean. `_pheno_driver(act)` feeds `_cap_speed`/`_cap_reach`/`embodied_scale`; default-off is byte-identical (driver stays `pop.tech`, no KD-query, no extra RNG). Requires depth_phenotype=True + building=True. REAL-VERIFY (scripts/run_genesis_r177.py, 8 GENUINE separate-subprocess ticks, K=20000, seed 0; runs/r177_body/{body.png,world.gif} eye-verified, 33s) + red-team CONFIRMED (skeptic read the code): in the SAME cumulative run the body DRIVER (banked) climbs 5.9→56.3 while personal mastery climbs 3.9→42.8 — the GAP GROWS 2.0→13.5, i.e. cumulative culture increasingly outpaces the individual (the Tomasello ratchet). The cumulative body's embodied_scale ends 2.13 > the R176 personal-mastery body's 2.00 DESPITE a SHALLOWER underlying tree (cum conn_depth 63 < per 69), which strengthens it (banked access more than compensates). pop 1000 both arms; world.gif = dense gold (deep-culture) living 3D population.
 
 **THREE HONEST CAVEATS (red-team):** (1) `driver ≥ personal` is TRUE BY CONSTRUCTION (`max(a,b)≥a`); the sign is never evidence — the load-bearing finding is the gap's MAGNITUDE and its GROWTH (2.0→13.5), and that the banked driver climbs faster than personal mastery. (2) `struct_tech` is a lossless running-max only per hearth LIFETIME — a slot resets to the founder's tech when a dead hearth's slot is re-founded, so the headline `culture_tech` (max over currently-strong hearths) is NOT a globally death-proof monotone ratchet (it can drop if the deepest hearth dies). (3) the cross-arm "outclimbs" is on a divergent-RNG basis (the cumulative body moves faster → different population → a shallower tree); it is a fair ONE-KNOB-AT-CONSTRUCTION comparison (only pheno_cumulative differs; OFF is byte-identical, test-verified) and the cumulative body ends deeper despite the shallower tree. Single seed; `cKDTree(struct_pos[strong])` is rebuilt ~3×/tick (perf wart, not a correctness bug). The real win: the body's driver is now the SOCIETY's accumulated external culture, not lossy individual mastery — but it STILL decelerates because its source (the frontier + builder mastery) asymptotes, so making the driver non-asymptotic (an open-ended COUNT, not depth) is R178. 4 new tests (228 total).
@@ -1876,6 +1878,19 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R178) STAGE-2 SIGNALLING via DIRECT common interest — RESOLVED as an HONEST NEGATIVE (robust), no CEO action.**
+  The common-interest referential (Lewis/Skyrms) game `signal_game` is built, unit-tested (5 tests), committed
+  default-off (byte-identical). Finding: it does NOT bootstrap a signalling convention — decode_acc pinned at chance
+  in BOTH the PAID and the otherwise-identical reward=0 FREE control across every regime tried (strong reward,
+  small dense population, 1200 steps); MI-vs-null is noise that spikes equally in both arms. ROOT CAUSE: pure
+  genetic evolution with shifting partners cannot break the encoder/decoder chicken-and-egg (a random decoder
+  scores 50% regardless of encoding → no selection gradient). This is the THIRD Stage-2 negative (R144 no
+  relatedness, R145 kin selection, R178 direct payoff), all pointing to the SAME missing piece: WITHIN-LIFETIME
+  reinforcement learning of the signalling policy (Skyrms' urn/Roth-Erev) with stable roles — which the frozen NN
+  genomes lack. Per the anti-thrash rule the loop does NOT re-run this verify round after round; R179 either makes
+  ONE bounded principled attempt at within-lifetime signalling reinforcement (the diagnosed fix) OR PIVOTS to
+  Stage (3) division-of-labour (seeded by R142 diet specialists + R177 banked culture). The `signal_game` machinery
+  + `signal_game_mi()` diagnostic + `scripts/run_genesis_r178.py` are reusable substrate. No CEO action.
 - **(R163) TEMPORAL phylogeny / open-ended cumulative descent — RESOLVED, POSITIVE (robust), no CEO action.**
   Frontier option (1) landed: the combinatorial culture's first-appearance HISTORY recovers the generative tree's
   time-ladder (precedence 1.0, level<->time corr 0.94, sig 2/2 vs label-null ~0); the additive null scrambles it
@@ -2106,6 +2121,27 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R178): Stage-2 emergent signalling is BLOCKED by a diagnosed mechanism gap, NOT a payoff
+gap.** Three honest negatives (R144 no-relatedness, R145 kin-selection, R178 direct common-interest payoff) now
+converge on one root cause: pure GENETIC evolution with shifting partners cannot break the encoder/decoder
+chicken-and-egg, because a random decoder scores 50% regardless of whether speakers encode → no selection gradient
+until both align simultaneously across the whole population. Skyrms' actual mechanism — the one that DOES make
+Lewis games converge — is WITHIN-LIFETIME reinforcement (urn/Roth-Erev) with stable speaker/listener roles, which
+these FROZEN NN genomes lack. The `signal_game` machinery + `signal_game_mi()` diagnostic are real, unit-tested,
+default-off substrate for that fix. **Two live directions, ranked by ambition×feasibility:**
+(A) **WITHIN-LIFETIME SIGNALLING REINFORCEMENT (the diagnosed fix; highest ambition).** Give agents a small
+mutable per-agent signalling policy (or a fast Hebbian/Roth-Erev update on the utterance/guess weights) that adapts
+DURING life from the decode reward, with REPEATED interaction with the same partner(s). This is the literature's
+proven route to Lewis-system emergence and would unlock Stage-2 language genuinely. Bounded ONE attempt — if it
+also fails to clear the FREE control, that is a deep negative about this substrate and we pivot. Risk: introduces
+within-life plasticity (a real new mechanism), needs care to keep default-off byte-identical.
+(B) **PIVOT to STAGE (3) DIVISION OF LABOUR (lower risk, still a leap in kind).** Cooperation/division-of-labour
+seeded by the R142 diet specialists + R177 banked culture + the existing `processing`/`specialize` mechanisms —
+a different ladder rung that does NOT depend on solved signalling. Per the staged ambition ladder this is the
+sanctioned next rung after Stage 2.
+**Bias: try (A) ONCE as the next round (it directly attacks the diagnosed root cause and is the true leap); if it
+does not clear the control, PIVOT cleanly to (B) per anti-thrash. Do NOT re-run the R178 verify as-is again.**
 
 **Current ceiling (post-R177): the body's DRIVER is now the SOCIETY's ACCUMULATED EXTERNAL culture (the banked
 hearth record, a lossless running-max), not the lossy individual's personal mastery — so the body deepens with
