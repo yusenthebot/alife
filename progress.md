@@ -1,5 +1,50 @@
 # alife — progress
 
+## Current state (Round 159 — 2026-06-20) — GENESIS PRODUCTIVE goods trade: unlocks wasted food, yet STILL causally inert (a DEEPER honest negative than R158)
+
+**R159 answered R158's honest negative head-on. R158 showed REDISTRIBUTING harvested energy is inert because it
+does not relax the binding constraint; R159 replaced redistribution with PRODUCTION — trade in GOODS that unlock
+otherwise-WASTED locked food — and red-teaming reveals an even STRONGER negative: the population is not
+food-limited AT ALL, so neither redistribution nor production can move it. 禁止造假.**
+
+**The mechanism (additive, unit-tested, byte-identical when off — `trade_goods=False` + `seed_specialists=False`
+= exact R157).** Two new flags in `genesis.py`: (1) `seed_specialists` (frac `seed_specialist_frac`) starts an
+ALREADY-specialized population — a minority of founders each born holding ONE random recipe, the rest naive —
+isolating the *economic* question from R157's cultural-emergence bootstrap (which R155–R157 already solved).
+(2) `trade_goods` (requires `tech_actions`, mutually exclusive with R158 `trade`): after a tier-t≥1 specialist
+eats its own mote it acts as a HARVESTER-FOR-OTHERS — `_do_goods_trade` claims up to `goods_max` of the still-
+uneaten ripe tier-t motes within `trade_radius`, REMOVES each (frees a food slot for regrowth) and ships its
+full tier value as an edible GOOD to the nearest HUNGRY COMPLEMENTARY partner (lacks tier t's recipe). Energy is
+CONSERVED (good = mote value, no free injection) — unlike R158's "otherwise-spoiled surplus", this consumes real
+standing food. `goods_test` read-out (count, motes-freed, volume, mean partner dist); `trade_scramble` reused as
+the null (random hungry recipient). 4 new tests (155 genesis green): byte-identical-off, requires-tech_actions +
+excludes-trade, goods-fires-and-is-local (vs scramble dist), and the headline regression
+**`test_goods_trade_is_causally_inert_on_carrying_capacity`**.
+
+**REAL-VERIFY (`scripts/run_genesis_goods.py 300`; `runs/r159_goods/panel.png` EYE-VERIFIED — pop ON/OFF curves
+OVERLAP at 900; a food-supply-invariance panel showing pop FLAT as supply varies; real goods volume; a
+branch-coloured 3D living world), seed-specialist regime, 2 seeds, 300 steps:**
+- **PRODUCTION (positive, real):** the productive economy FIRES — **~2450** wasted tier-t motes/run consumed-for-
+  trade and shipped LOCALLY (mean partner dist **7.9** ≪ radius 12) to complementary partners; the matched-
+  energy SCRAMBLE is dispersed (dist **69.2**). The mechanism does exactly what it claims.
+- **CAUSAL INERTNESS (the finding, DEEPER than R158):** pop ON == pop OFF = **900** on both seeds
+  (|goods−off| = **0**; + 2/2 in tests). Unlocking otherwise-wasted food does NOT raise the carrying capacity.
+
+**RED-TEAM (mandatory; refutation-first; verdict: ROBUST NEGATIVE — and it strengthened the claim).** The obvious
+alternative explanation is "pop is just food-cap-limited at 900". REFUTED decisively: with trade OFF, sweeping
+**food_regrow 12→80 (≈7× supply rate)** AND **food_cap 300→2500 (≈8× food stock)** leaves pop pinned at **900 in
+every single case** — at food_cap=300 the population is **3.2× the standing food count** (900 agents on ~278
+motes). The carrying capacity is INTRINSIC (foraging/lifespan/world-size/energy economy), set independent of food
+supply in both senses. So unlocking food cannot lift a ceiling food never set. **Two independent economy attempts
+now agree (R158 redistribution, R159 production): an economy bolted onto this substrate does not change the
+population outcome — because the binding constraint is not food.** This is a real, valuable scientific result.
+
+**DECISION (anti-thrash): PIVOT.** Two principled economy mechanisms have both returned clean inertness on the
+same population invariant; a third would be thrash. Per the loop's anti-thrash rule R160 pivots — see
+`## Frontier` and `## Decisions pending`. The economy mechanism is kept (real, tested, default-off) as substrate.
+
+---
+
 ## Current state (Round 158 — 2026-06-20) — GENESIS inter-agent TRADE economy: a real local exchange network, but CAUSALLY INERT (honest negative)
 
 **R158 attacked the Stage-4 "civilization leap": turn R157's ecologically-segregated region-specialists into an
@@ -1118,6 +1163,14 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R159) GENESIS Stage-4 ECONOMY (both redistribution R158 + production R159) — HONEST NEGATIVE, PARKED; loop
+  PIVOTS to cultural phylogeny (R160).** Two principled economy mechanisms both proved causally inert on the
+  population because the carrying capacity is INTRINSIC (foraging/lifespan), not food-limited — red-teamed
+  decisively (pop=900 flat across food_regrow 7× AND food_cap 8×; 3.2× the food count at fc=300). The mechanisms
+  (`trade` R158, `trade_goods`+`seed_specialists` R159, + scramble nulls) are committed default-off substrate,
+  reusable IF a future substrate change makes food the binding constraint (Frontier option 2, would be a
+  `vr-lead`-gated substrate redesign). NOT a CEO gate; logged so the economy rung is revisited deliberately
+  rather than thrashed. R160 proceeds with cultural phylogeny/cladistics (Frontier option 1). No CEO action.
 - **(R152) Stages 3+4 COMPLEMENT (a division of labour re-emerging around niche construction) — HONEST
   NEGATIVE, PARKED.** Coupling building to the caste (convex build skill + maintenance wage) did NOT flip
   R151's substitution across 3 distinct regimes — at most a ~3% maintainer minority, not a balanced caste,
@@ -1311,17 +1364,24 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R158): R157 ecologically-selected (modest) traditions + a real but CAUSALLY INERT
-inter-agent trade economy. The R158 lesson is the next rung's design constraint: an economy only MATTERS when
-trade is coupled to a RELAXABLE limiting constraint.** Candidate R159 frontiers, ranked ambition × feasibility:
-(1) **TRADE IN GOODS THAT UNLOCK WASTED FOOD** (top pick) — a specialist harvests its region's tier and GIFTS
-the edible PRODUCT to a complementary partner who could never access it, so the population eats food the world
-otherwise denies it (`locked_food_frac` falls, true carrying capacity rises). This makes trade relax the binding
-constraint → an economy that changes outcomes, with the same scramble null. (2) **STORAGE / markets** — surplus
-banked across time smooths scarcity (a relaxable temporal constraint). (3) **Cultural phylogeny / cladistics
-across generations** — the R157-next option, independent of trade (reconstruct the tradition tree, measure
-cumulative open-ended cultural complexity climbing). The R158 trade mechanism + scramble null are committed
-substrate to build (1) on.
+**Current ceiling (post-R159): R157 ecologically-selected traditions + a real but TWICE-CONFIRMED-INERT economy
+(R158 redistribution, R159 production). The decisive lesson is now a hard substrate FACT, not a design hint:
+on this substrate the population carrying capacity is INTRINSIC (foraging/lifespan/world-size), invariant to
+food supply across food_regrow 7× and food_cap 8× (pop=900 even at 3.2× the food count). No economy — whether it
+redistributes energy or unlocks wasted food — can move a ceiling that food never set.** This kills the "couple
+trade to a relaxable constraint" plan as long as that constraint is FOOD: it isn't binding. Candidate R160
+frontiers, ranked ambition × feasibility:
+(1) **CULTURAL PHYLOGENY / cladistics across generations** (TOP PICK) — independent of the inert economy, this is
+the genuine next civilization rung: reconstruct the lineage tree of recipe/technique branches over a long run,
+and measure an OPEN-ENDED cumulative-cultural-complexity metric that keeps CLIMBING (vs an asocial / no-
+transmission null). Advances the ladder (Stage 5 cumulative culture) without fighting the population invariant.
+(2) **MAKE THE POPULATION FOOD-LIMITED BY CONSTRUCTION** (substrate change, gated on a real `vr-lead` argument)
+— raise the intrinsic forage ceiling far above food supply (bigger world / cheaper metabolism / relax `max_age`)
+so that THEN food becomes the binding constraint and the *already-built* R159 goods economy can finally bind and
+raise carrying capacity. Spike-then-migrate; only if the phylogeny rung stalls. (3) **STORAGE / markets across
+TIME** — smooth scarcity; but same risk of inertness if the temporal constraint also isn't binding. The R158
+trade + R159 goods mechanisms + scramble nulls are committed default-off substrate, reusable once a binding
+constraint exists. Lean (1).
 
 ### CEO DIRECTION SHIFT (2026-06-20, R140) — GENESIS: a living 3D world that grows a civilization
 Yusen steered the loop to a new major frontier: **build a real, alive 3D world that — just by running
