@@ -33,7 +33,8 @@ from alife.genesis.genesis import GenesisConfig, GenesisWorld
 
 # the civilization-development signals logged per trajectory sample (same family as civdev).
 _KEYS = ("step", "population", "conn_depth", "closure", "breadth",
-         "realized_axes", "edible_tiers", "embodied_scale", "diversity", "max_gen")
+         "realized_axes", "edible_tiers", "embodied_scale", "body_driver_depth",
+         "personal_depth", "diversity", "max_gen")
 
 
 def _observe(world: GenesisWorld) -> dict:
@@ -52,6 +53,8 @@ def _observe(world: GenesisWorld) -> dict:
         "realized_axes": float(snp.get("realized_axes", np.nan)),
         "edible_tiers": float(snp.get("mean_edible_tiers", np.nan)),
         "embodied_scale": float(snp.get("embodied_scale", np.nan)),    # R176 continuous depth-scaled body
+        "body_driver_depth": float(snp.get("body_driver_depth", np.nan)),  # R177 actual body driver (banked when cumulative)
+        "personal_depth": float(snp.get("personal_depth", np.nan)),    # R177 personal mastery (R176 saturating baseline)
         "diversity": float(snp["diversity"]),
         "max_gen": float(snp["max_gen"]),
     }
@@ -127,7 +130,10 @@ def load_trajectory(state_dir: str) -> dict:
     if not os.path.exists(traj_path):
         return {k: np.zeros(0) for k in _KEYS}
     d = np.load(traj_path, allow_pickle=False)
-    return {k: d[k] for k in _KEYS}
+    n = d["step"].shape[0] if "step" in d else 0
+    # tolerate trajectories written before a key existed (R177 added body_driver_depth/personal_depth):
+    # backfill the missing column with NaN so a fresh run can extend an older on-disk log without KeyError.
+    return {k: (d[k] if k in d else np.full(n, np.nan)) for k in _KEYS}
 
 
 def run_segment(state_dir: str, cfg: GenesisConfig, seed: int, segment_steps: int,

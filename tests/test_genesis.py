@@ -3171,3 +3171,76 @@ def test_depth_phenotype_body_keeps_deepening_while_categorical_saturates(tmp_pa
     assert pheno["conn_depth"][-1] > pheno["conn_depth"][0] + 10                    # depth climbs WITH it too
     assert np.allclose(ctrl["embodied_scale"], 1.0)                                 # zero-gain body never deepens
     assert pheno["population"][-1] >= 500 and ctrl["population"][-1] >= 500         # both healthy living worlds
+
+
+# ---- R177: CUMULATIVE-CULTURE BODY — drive embodiment off ACCESSIBLE BANKED culture, not personal mastery ----
+# R176's body is continuous but its DRIVER (personal pop.tech) saturates at the transmission-loss equilibrium, so
+# the body's climb decelerates to an asymptote. pheno_cumulative drives the body off max(personal, nearest banked
+# hearth record): the banked record (struct_tech) is a running MAX over every builder (lossless external memory),
+# so it RATCHETS and never saturates — the body keeps deepening with the SOCIETY's cumulative culture.
+def _r177_cfg(pheno_cumulative, gain, K=20000):
+    """R176's SUSTAINED-DEPTH regime + the R177 cumulative-culture body. The cumulative-vs-personal control
+    changes pheno_cumulative ALONE (both depth_phenotype=True, same gain) — same depth-climbing world underneath."""
+    return replace(_r176_cfg(True, gain, K), pheno_cumulative=pheno_cumulative)
+
+
+def test_pheno_cumulative_requires_depth_phenotype_and_building():
+    """pheno_cumulative reads the banked hearth record, so it needs both the continuous body (depth_phenotype)
+    and the built world that accumulates culture (building)."""
+    from alife.genesis.civdev import civ_config
+    with pytest.raises(ValueError):                                       # depth_phenotype off
+        GenesisWorld(replace(_r176_cfg(False, 0.0), pheno_cumulative=True), seed=0)
+    with pytest.raises(ValueError):                                       # building off
+        GenesisWorld(replace(_r177_cfg(True, 0.02), building=False), seed=0)
+
+
+def test_pheno_cumulative_off_is_byte_identical():
+    """pheno_cumulative=False adds NO code path and consumes NO extra RNG -> bit-identical to the R176 world;
+    ON genuinely DIFFERS (the banked-culture driver moves bodies differently than personal mastery)."""
+    off = GenesisWorld(_r177_cfg(False, 0.05), seed=1)
+    on = GenesisWorld(_r177_cfg(True, 0.05), seed=1)
+    r176 = GenesisWorld(_r176_cfg(True, 0.05), seed=1)                    # the R176 reference (cumulative absent)
+    for _ in range(40):
+        off.step(); on.step(); r176.step()
+    assert np.array_equal(off.pop.pos, r176.pop.pos)                      # OFF == plain R176, bit-for-bit
+    assert np.array_equal(off.pop.vel, r176.pop.vel)
+    assert not np.array_equal(off.pop.pos, on.pop.pos)                    # the banked-culture body actually differs
+
+
+def test_pheno_driver_returns_personal_when_no_hearth_else_banked_max():
+    """_pheno_driver is exactly max(personal, accessible banked record): with no strong hearth it is the personal
+    depth verbatim; once a hearth banks a deeper record an in-range agent's driver picks it up (>= personal)."""
+    w = GenesisWorld(_r177_cfg(True, 0.02), seed=3)
+    act = w.pop.active()
+    assert np.array_equal(w._pheno_driver(act), w.pop.tech[act])          # no hearths yet -> personal verbatim
+    # plant a strong hearth at agent 0 with a record far deeper than any living agent's personal mastery
+    a0 = int(act[0])
+    deep = float(w.pop.tech[act].max()) + 50.0
+    w.struct_alive[0] = True
+    w.struct_strength[0] = w.cfg.hearth_min_strength + 1.0
+    w.struct_pos[0] = w.pop.pos[a0]
+    w.struct_tech[0] = deep
+    drv = np.asarray(w._pheno_driver(act))
+    assert drv[0] == pytest.approx(deep)                                  # in-range agent inherits the banked depth
+    assert np.all(drv >= w.pop.tech[act] - 1e-9)                          # driver is never below personal mastery
+    es = w.embodied_scale()
+    assert es["mean_depth"] >= es["mean_personal_depth"] - 1e-9           # banked driver >= personal baseline
+
+
+def test_pheno_cumulative_body_outclimbs_personal_mastery(tmp_path):
+    """R177 HEADLINE (falsifiable): in the SAME depth-climbing regime, the CUMULATIVE-CULTURE body (driver = the
+    banked hearth record, a ratchet) ends DEEPER than the R176 PERSONAL-mastery body (driver = the saturating
+    living-pop mean) — the only knob that differs is pheno_cumulative. And within the cumulative run the body's
+    driver depth rises ABOVE the personal-mastery baseline it would otherwise be stuck at."""
+    from alife.genesis import daemon
+    n_ticks, seg = 6, 50
+    cum = daemon.climb_curve(str(tmp_path / "cum"), _r177_cfg(True, 0.02), seed=0, segment_steps=seg, n_ticks=n_ticks)
+    per = daemon.climb_curve(str(tmp_path / "per"), _r177_cfg(False, 0.02), seed=0, segment_steps=seg, n_ticks=n_ticks)
+
+    # within the cumulative run the body's actual driver outruns personal mastery (the banked ratchet pays off)
+    assert cum["body_driver_depth"][-1] > cum["personal_depth"][-1] + 1.0
+    # the cumulative body ends deeper than the personal-mastery (R176) body in the same regime
+    assert cum["embodied_scale"][-1] > per["embodied_scale"][-1]
+    # both are genuine living worlds with depth still climbing (not a collapse artifact)
+    assert cum["conn_depth"][-1] > cum["conn_depth"][0] + 10
+    assert cum["population"][-1] >= 400 and per["population"][-1] >= 400
