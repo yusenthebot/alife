@@ -2997,3 +2997,95 @@ def test_render_climb_panel_writes_open_vs_capped_png(tmp_path):
     p = str(tmp_path / "climb.png")
     n = daemon.render_climb_panel(op, cap, p, title="t")
     assert n == 5 and os.path.getsize(p) > 1000
+
+
+# ---------------------------------------------------------------------------------------------------------
+# R175 — DEPTH-REWARDING SELECTION PRESSURE: keep connected DEPTH climbing across many ticks, not just breadth.
+# R174's honest caveat was that under the UNIFORM composition draw breadth climbs the whole horizon while
+# connected DEPTH plateaus by ~tick 6 (the current-deepest node is re-picked only ~2/|known| of the time, a
+# probability that vanishes as breadth grows). depth_bias>0 makes the per-composition draw a softmax over tree
+# LEVEL, so the deepest frontier is preferentially re-composed and DEPTH keeps extending tick after tick.
+# ---------------------------------------------------------------------------------------------------------
+
+def test_depth_bias_zero_is_byte_identical_to_uniform_draw():
+    """depth_bias=0.0 (level_bias<=0) is the EXACT uniform rng.choice path — no extra RNG, default-off safe.
+    Same seed + same level_bias=0 must materialize a bit-identical tree to the no-arg call (R170-R174 path)."""
+    from alife.genesis import combinatorial as cb
+
+    def grow(level_bias_arg):
+        tree = cb.GrowingTree(capacity=400, n_seed=6)
+        rep = np.zeros((40, 400), dtype=bool)
+        rep[:, :6] = True
+        rng = np.random.default_rng(7)
+        if level_bias_arg is None:
+            tree.discover_inplace(rep, rng, steps=12)            # the pre-R175 call signature (no bias arg)
+        else:
+            tree.discover_inplace(rep, rng, steps=12, level_bias=level_bias_arg)
+        return tree.n, tree.pa.copy(), tree.pb.copy(), tree.level.copy(), rep.copy()
+
+    n0, pa0, pb0, lv0, rep0 = grow(None)
+    n1, pa1, pb1, lv1, rep1 = grow(0.0)
+    assert n0 == n1
+    assert np.array_equal(pa0, pa1) and np.array_equal(pb0, pb1) and np.array_equal(lv0, lv1)
+    assert np.array_equal(rep0, rep1)
+
+
+def test_depth_bias_grows_a_strictly_deeper_tree_than_uniform():
+    """On the SAME fresh tree + SAME seed, a positive depth_bias re-composes the frontier preferentially, so the
+    deepest realized level is strictly greater than the uniform draw's — the mechanism, isolated from the world."""
+    from alife.genesis import combinatorial as cb
+
+    def deepest(level_bias_arg):
+        tree = cb.GrowingTree(capacity=2000, n_seed=6)
+        rep = np.zeros((30, 2000), dtype=bool)
+        rep[:, :6] = True
+        rng = np.random.default_rng(3)
+        tree.discover_inplace(rep, rng, steps=40, level_bias=level_bias_arg)
+        return int(tree.level[:tree.n].max())
+
+    d_uniform = deepest(0.0)
+    d_biased = deepest(1.0)
+    assert d_biased > d_uniform                     # depth-biased reuse drives a strictly deeper frontier
+    assert d_biased >= 2 * d_uniform                # and substantially so (decisive, not marginal)
+
+
+def _r175_cfg(depth_bias, K=20000):
+    """The R175 regime == the R174 SUSTAINED-climb regime (large cap, gentle innovation, deep gates) with the
+    ONE added knob `depth_bias`. The biased-vs-unbiased control changes depth_bias ALONE — everything else,
+    including the cap K, is identical — so a sustained-depth-vs-plateau split is the depth-pressure signature."""
+    from alife.genesis.civdev import civ_config
+    return civ_config(
+        tech_actions=False, tech_capabilities=False, generative_tree=True, depth_gates=True,
+        max_techniques=K, innov_steps=2, n_food_tiers=8, recipe_level_step=2,
+        n_capabilities=4, cap_level_step=3, tier0_frac=0.4,
+        n0=300, capacity=1000, food_cap=600, food_regrow=40, depth_bias=depth_bias)
+
+
+def test_depth_bias_sustains_depth_climb_while_unbiased_plateaus(tmp_path):
+    """R175 HEADLINE (falsifiable): driven as REAL resumed ticks at a LARGE cap (so breadth is never the limiter),
+    the depth-BIASED world keeps connected DEPTH climbing across the WHOLE horizon — still deepening on the very
+    last tick — while the UNBIASED world (identical regime, same cap, only depth_bias=0) PLATEAUS its depth by
+    mid-horizon. The only difference is the depth-reward, so sustained-depth-vs-plateau is its signature, not a
+    cap or run-length artifact (both run the same K and the same number of ticks)."""
+    from alife.genesis import daemon
+    n_ticks, seg = 10, 60
+    half = n_ticks // 2
+    bias = daemon.climb_curve(str(tmp_path / "bias"), _r175_cfg(1.0), seed=0, segment_steps=seg, n_ticks=n_ticks)
+    unb = daemon.climb_curve(str(tmp_path / "unb"), _r175_cfg(0.0), seed=0, segment_steps=seg, n_ticks=n_ticks)
+
+    # both are one monotone on-disk history of the SAME length (genuine resumed ticks, no resets/dups)
+    assert np.all(np.diff(bias["step"]) > 0) and bias["step"][-1] == n_ticks * seg
+    assert np.all(np.diff(unb["step"]) > 0) and unb["step"][-1] == n_ticks * seg
+
+    # BIASED: connected DEPTH keeps climbing late (not plateaued) and is STILL deepening on the final tick
+    assert bias["conn_depth"][-1] > bias["conn_depth"][half] + 5    # decisive late-horizon depth climb
+    assert bias["conn_depth"][-1] - bias["conn_depth"][-2] >= 1     # still deepening on the VERY last tick
+
+    # UNBIASED (R174 regime, only depth_bias differs): DEPTH plateaus — late ticks add ~nothing
+    assert unb["conn_depth"][-1] - unb["conn_depth"][half] <= 2     # depth flat across the late half
+    assert unb["conn_depth"][-1] - unb["conn_depth"][-2] <= 1       # and flat on the final tick
+
+    # the split: biased ends MULTIPLES deeper, body's diet ceiling no lower, both a healthy living population
+    assert bias["conn_depth"][-1] > 3 * unb["conn_depth"][-1]
+    assert bias["edible_tiers"][-1] >= unb["edible_tiers"][-1]
+    assert bias["population"][-1] >= 500 and unb["population"][-1] >= 500

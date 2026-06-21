@@ -291,6 +291,20 @@ class GenesisConfig:
     # fixed-node gates (it IS their generative replacement).
     depth_gates: bool = False
 
+    # --- R175: DEPTH-REWARDING SELECTION PRESSURE — keep connected DEPTH climbing, not just breadth ---
+    # R174 showed the open-ended world keeps developing across many ticks, but with an honest caveat: under
+    # the UNIFORM composition draw, BREADTH climbs the whole horizon while connected DEPTH plateaus by ~tick 6.
+    # The cause is structural: max connected depth advances only when the current-deepest technique is one of
+    # the two re-composed, and a uniform draw picks it only ~2/|known| of the time — a probability that VANISHES
+    # as breadth grows, so depth growth decelerates. depth_bias>0 makes the per-composition draw a softmax over
+    # tree LEVEL (exp(depth_bias*level)), so the DEEPEST techniques are preferentially re-composed and the frontier
+    # keeps extending tick after tick — a genuine cultural-evolution force (deep/high-value techniques get reused
+    # more: preferential reuse / "the rich get richer" on the frontier), NOT a representation change. The decisive
+    # control is depth_bias itself: ON -> connected depth keeps climbing into the late ticks; OFF (== R174, the
+    # only knob that differs) -> depth plateaus mid-horizon. depth_bias=0.0 is byte-identical to R170-R174 (the
+    # exact uniform rng.choice draw, no extra RNG). Only acts on the generative tree.
+    depth_bias: float = 0.0
+
     # --- R156: emergent divergent cultural TRADITIONS over the open-ended tree ---
     # The combinatorial tree is open-ended, but R150-R155 only ever measured ONE global frontier. A real
     # civilization is not one monoculture of knowledge — it is MANY divergent cultural traditions. R156 asks
@@ -559,7 +573,7 @@ class GenesisWorld:
             seed_rep = np.zeros((act.size, K), dtype=bool)                # repertoire, a few discoveries each
             if self.generative_tree:
                 seed_rep[:, :ns] = True                       # everyone knows the level-0 primitives -> can compose
-                self._tree.discover_inplace(seed_rep, self.rng, self.cfg.innov_steps)
+                self._tree.discover_inplace(seed_rep, self.rng, self.cfg.innov_steps, self.cfg.depth_bias)
             else:
                 cb.discover_inplace(seed_rep, self._tree_pa, self._tree_pb, ns,
                                     self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
@@ -1320,7 +1334,7 @@ class GenesisWorld:
             child = np.zeros((slots.size, K), dtype=bool)    # asocial: no copying, reinvent from scratch
         if self.generative_tree:                             # R170: grow the open-ended tree from real compositions
             child[:, :cfg.n_seed_tech] = True                # the level-0 primitives are universal -> can compose
-            self._tree.discover_inplace(child, self.rng, cfg.innov_steps)
+            self._tree.discover_inplace(child, self.rng, cfg.innov_steps, cfg.depth_bias)
         else:
             cb.discover_inplace(child, self._tree_pa, self._tree_pb, cfg.n_seed_tech,
                                 cfg.combo_prereqs, self.rng, cfg.innov_steps)

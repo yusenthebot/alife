@@ -230,12 +230,25 @@ class GrowingTree:
             a, b = int(self.pa[nid]), int(self.pb[nid])
             self.registry[(a, b) if a < b else (b, a)] = nid
 
-    def discover_inplace(self, rep: np.ndarray, rng: np.random.Generator, steps: int) -> None:
+    def discover_inplace(self, rep: np.ndarray, rng: np.random.Generator, steps: int,
+                         level_bias: float = 0.0) -> None:
         """Each agent (row of `rep`) attempts `steps` compositions, each picking two DISTINCT KNOWN
-        techniques at random and adding their product (a possibly brand-new node) to its repertoire. Mutates
+        techniques and adding their product (a possibly brand-new node) to its repertoire. Mutates
         `rep` AND the shared tree in place. An agent that knows < 2 techniques composes nothing — so callers
         must guarantee the seeds are known (set rep[:, :n_seed] = True) before the first discovery, exactly
-        as unbounded.run_population starts every agent knowing the primitives."""
+        as unbounded.run_population starts every agent knowing the primitives.
+
+        `level_bias` (R175 — the depth-rewarding selection pressure) shapes WHICH two techniques are drawn:
+          - level_bias <= 0 : UNIFORM over the agent's known techniques (the R170-R174 path, byte-identical).
+          - level_bias  > 0 : each known technique is drawn with probability proportional to
+                              exp(level_bias * tree_level) — a softmax over DEPTH, so the DEEPEST techniques
+                              are preferentially re-composed. This is the mechanism that keeps connected DEPTH
+                              climbing instead of plateauing: under the uniform draw the current-deepest node is
+                              re-picked only ~2/|known| of the time (vanishing as breadth grows, so max-depth
+                              growth decelerates — the R174 caveat); a depth-biased draw keeps the frontier in
+                              play, so the deepest chain extends tick after tick. A genuine cultural-evolution
+                              force (high-value/deep techniques get reused more — preferential reuse), not a
+                              representation change: same tree, same compose rule, only the SELECTION differs."""
         n = rep.shape[0]
         if n == 0:
             return
@@ -244,7 +257,12 @@ class GrowingTree:
                 known = np.flatnonzero(rep[i])
                 if known.size < 2:
                     continue
-                a, b = rng.choice(known, size=2, replace=False)
+                if level_bias > 0.0:
+                    lv = self.level[known].astype(np.float64)
+                    w = np.exp(level_bias * (lv - lv.max()))    # stable softmax over DEPTH (rich-get-richer)
+                    a, b = rng.choice(known, size=2, replace=False, p=w / w.sum())
+                else:
+                    a, b = rng.choice(known, size=2, replace=False)
                 pid = self.combine(int(a), int(b))
                 if pid >= 0:
                     rep[i, pid] = True
