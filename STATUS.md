@@ -1,33 +1,30 @@
 # STATUS — main
-updated: 2026-06-20T35:00 · loop 159
+updated: 2026-06-20T36:30 · loop 160
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R159 verified: PRODUCTIVE goods trade unlocks wasted food, but STILL causally inert (deeper negative).
-doing:    R159 DONE (Stage-4 economy, attempt 2). Answered R158's inert-REDISTRIBUTION negative with PRODUCTION: a
-          tier-t specialist harvests up to goods_max EXTRA wasted ripe locked motes within trade_radius and ships
-          each as an edible GOOD to a nearby HUNGRY COMPLEMENTARY partner (energy-conserving: good=mote value,
-          mote removed -> frees a food slot). seed_specialists isolates the economy from the R157 emergence
-          bootstrap. POSITIVE (structure): the productive economy FIRES — ~2450 wasted motes/run consumed-for-
-          trade, shipped LOCALLY (partner dist 7.9 << radius 12) to complementary partners, vs scramble null
-          (dist 69). HONEST NEGATIVE (DEEPER than R158): pop ON == pop OFF (|goods-off|=0, 2/2 seeds + 2/2 tests).
-          Unlocking wasted food does NOT raise carrying capacity because the pop is NOT food-limited at all —
-          RED-TEAMED: pop=900 flat across food_regrow 12->80 (7x supply) AND food_cap 300->2500 (8x stock; at
-          fc=300 pop is 3.2x the food count). The binding constraint is foraging/lifespan, not food. So PRODUCTION,
-          like redistribution, leaves it untouched. 禁止造假.
+phase:    review — R160 verified: cultural divergence is hierarchically TREE-structured (phylogenetic signal), robust.
+doing:    R160 DONE (PIVOT off the twice-inert economy to cultural cladistics). New alife/genesis/phylogeny.py
+          (Holland delta-Q treelikeness, UPGMA cophenetic corr, column-shuffle null) + World.phylogeny_test:
+          reconstruct a CLADOGRAM of spatial-deme traditions on the R157 substrate, measure whether the
+          divergence is hierarchically TREE-like (descent-with-modification) vs flat. Read-only; never feeds
+          selection. POSITIVE+ROBUST (3/3 seeds + subsample-stable): local treelike 0.63-0.68 > column-shuffle
+          0.51 (3/3); coph 0.68-0.79 > 0.60-0.63 (3/3). The shuffle preserves marginal freqs + prereq-DAG
+          structure but breaks clade covariance -> the signal is genuinely PHYLOGENETIC, not flat/artifact.
+          HONEST caveats: (1) magnitude MODEST (~0.65, substantial homoplasy; not a clean tree); (2) the
+          PANMICTIC secondary is NULL (local 0.675 vs panmictic 0.709, 1/2) -> tree structure is descent
+          BROADLY (spatial lineage + heritable repertoire), NOT specifically the nearest-hearth cultural
+          channel; (3) asocial can't form a floor (pop collapses to 74 w/o culture on this substrate). 禁止造假.
 owns:     all of ~/alife (single session)
-verify:   scripts/run_genesis_goods.py 300 (runs/r159_goods/panel.png EYE-VERIFIED: pop ON/OFF curves OVERLAP at
-          900; pop FLAT as food supply varies 6x; goods volume real; branch-coloured 3D living world). 155 genesis
-          tests (+4). trade_goods=False + seed_specialists=False byte-identical to R157.
-redteam:  ROBUST negative. Refuted the "food_cap-limited" alternative: varied food_cap 300->2500 and food_regrow
-          12->80, pop pinned at 900 in EVERY case (pop even exceeds the standing food count 3.2x at fc=300). The
-          carrying capacity is intrinsic (foraging/lifespan/world-size), not set by food supply -> unlocking food
-          cannot lift it. Two independent economy attempts (R158 redistribution, R159 production) now agree: an
-          economy bolted onto this substrate does not change the population outcome.
+verify:   scripts/run_genesis_phylogeny.py 450 (runs/r160_phylogeny/panel.png EYE-VERIFIED: nested cladogram of
+          27 demes; treelike green>grey 2/2; coph green>grey 2/2; deme-coloured 3D world; frontier depth climbs).
+          159 genesis tests (+4). phylogeny_test read-only — no flag, byte-identical to R159 sim path.
+redteam:  ROBUST. 3/3 seeds (incl. headline render seed); subsample (random half/deme) keeps treelike 0.654 vs
+          shuffle 0.506 = NOT sampling noise; metric unit-tested (perfect tree->1.0, star->nan, shuffle drops it).
+          Honest: panmictic contrast null (signal not from local cultural transmission specifically); modest mag.
 blocked:  none
 docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool + bool repertoire (bounded, <100MB); close GL ctx (r.ctx.release()).
-next:     R160 (PIVOT per anti-thrash — economy is twice-shown inert on THIS pop ceiling). Two genuine options:
-          (a) CULTURAL PHYLOGENY/cladistics across generations — reconstruct the lineage tree of recipe branches,
-          measure cumulative cultural complexity climbing over a long run (the R157-next rung, independent of the
-          inert economy); (b) make the population FOOD-limited by construction (raise the intrinsic forage ceiling
-          well above food supply, e.g. larger world / cheaper metabolism / no max_age cap) so that THEN trade's
-          food-unlocking can finally bind — a substrate change, gated on a real argument. Lean (a): it advances
-          the civilization ladder without fighting the population invariant. See progress.md ## Frontier.
+next:     R161 frontier options (see progress.md ## Frontier): (a) SHARPEN the phylogeny — drive treelikeness
+          toward a clean tree (lower homoplasy) by gating horizontal transmission / stronger lineage isolation,
+          and recover the TRUE descent tree (cophenetic vs a tracked genealogy) for a ground-truthed cladistics
+          claim; (b) TEMPORAL phylogeny — snapshot the population over time, reconstruct the ladder of cumulative
+          descent + an open-ended complexity metric that keeps climbing; (c) cultural rate/innovation bursts
+          (punctuated equilibria) across the tree. Lean (a): ground-truth the descent claim. 禁止造假.

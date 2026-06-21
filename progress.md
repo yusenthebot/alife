@@ -1,5 +1,53 @@
 # alife — progress
 
+## Current state (Round 160 — 2026-06-20) — GENESIS cultural PHYLOGENETICS: the cultural divergence is hierarchically TREE-structured (a reconstructable cladogram of traditions), robust 3/3
+
+**R160 PIVOTED off the twice-inert Stage-4 economy (R158/R159) to the genuine next civilization rung: cultural
+CLADISTICS. R156/R157 showed local transmission grows spatially DIVERGENT traditions (F_ST>0; region↔branch
+alignment) — but those are FLAT statistics ("demes differ"). R160 asks the descent-with-modification question:
+is that divergence HIERARCHICALLY structured — a reconstructable phylogenetic TREE of traditions, with nested
+shared-derived techniques (synapomorphies) bundling whole tech-tree branches into clades — or is it flat? The
+answer is a robust POSITIVE with honest caveats. 禁止造假.**
+
+**The contribution (read-only analysis; NO new sim mechanism, NO flag → byte-identical to the R159 sim path).**
+New module `alife/genesis/phylogeny.py` (pure numpy): (1) `treelikeness` = 1 − mean Holland (2002) delta-Q over
+deme quartets (1 = perfectly tree-additive; an additive quartet has its two larger pairing-sums equal → delta 0);
+(2) `cophenetic_corr` = correlation of the UPGMA tree's cophenetic distances with the observed inter-deme
+distances; (3) `column_shuffle_null` = the load-bearing null: permute each technique independently across demes,
+preserving every technique's marginal frequency AND the prereq-DAG-induced structure, but destroying the
+cross-technique COVARIANCE that bundles a branch into a clade. `World.phylogeny_test(grid,min_deme,n_shuffle)`
+partitions the living population into a grid³ lattice of demes (taxa), builds the deme×technique character matrix,
+and returns treelikeness + coph_corr + the column-shuffle means + the inter-deme distance matrix + per-deme
+dominant technique (for the cladogram render). 4 new tests (159 genesis green): metric integrity (a hand-built
+nested ((d0,d1),(d2,d3)) matrix → treelike 1.0, coph 1.0; a star → nan), column-shuffle destroys the signal,
+phylogeny_test fields + off-empty (non-combinatorial → {}), and the headline real>shuffle smoke.
+
+**REAL-VERIFY (`scripts/run_genesis_phylogeny.py 450`; `runs/r160_phylogeny/panel.png` EYE-VERIFIED — a nested
+27-deme CLADOGRAM with multi-level branches (not a degenerate ladder); treelikeness bars green(local)>grey(shuffle);
+cophenetic bars green>grey; a deme-coloured live 3D world; the frontier-depth climb rising ~6→14), R157
+ecological-selection substrate (spatial_tiers + recipe_budget), 2 seeds + render seed, 450 steps:**
+- **PRIMARY (the phylogenetic signal, load-bearing):** local treelikeness **0.682 / 0.667** > column-shuffle
+  **0.510 / 0.508** on **2/2**; cophenetic corr **0.793 / 0.736** > shuffle **0.62-0.63** on **2/2**. The shuffle
+  preserves marginal frequencies + the prereq-DAG structure but breaks clade covariance, so real>shuffle proves
+  the divergence is genuinely TREE-structured (descent-with-modification), not flat and not a DAG/sampling artifact.
+- **SECONDARY (causal probe, honest NULL):** local vs PANMICTIC transmission — local **0.675** vs panmictic
+  **0.709** (local>panmictic only **1/2**). Nearest-hearth (local) cultural copying does NOT add detectable
+  tree-likeness over random-hearth (panmictic) copying → the tree structure is descent BROADLY (spatial lineage +
+  heritable repertoire), NOT specifically caused by the oblique cultural channel.
+
+**RED-TEAM (mandatory; inline, refutation-first; verdict ROBUST POSITIVE).** (1) **3rd seed** — seed 2 treelike
+**0.632 > shuffle 0.506**, coph **0.680 > 0.604** → the column-shuffle contrast is **3/3 seeds**. (2) **sampling-
+noise REFUTED** — recompute on a RANDOM HALF of each deme's agents: treelike **0.654** holds (vs shuffle 0.506); a
+sampling artifact would collapse toward the shuffle, it doesn't. (3) **metric integrity** — unit-tested: a perfect
+nested tree → 1.0, a star → nan, the shuffle drops it. **HONEST caveats (kept, not hidden):** (a) magnitude is
+**MODEST** (treelike ~0.65, well above the ~0.51 shuffle floor but far from a clean 1.0 tree — substantial
+homoplasy: parallel discovery + the prereq DAG allow convergent acquisition); (b) the panmictic secondary is
+NULL — the signal is NOT specifically the local cultural channel; (c) the asocial control (learn=False) collapses
+the population (n=74, 0 demes) because this substrate REQUIRES culture to survive, so a clean spatial-only floor
+can't be measured. **A genuine result: culture on this world carries a real, robust, reconstructable phylogenetic
+signal (a cladogram of traditions) — the first time GENESIS measures the STRUCTURE of cultural descent, not just
+its presence. Next rungs (ground-truth the descent tree; temporal phylogeny) in ## Frontier.**
+
 ## Current state (Round 159 — 2026-06-20) — GENESIS PRODUCTIVE goods trade: unlocks wasted food, yet STILL causally inert (a DEEPER honest negative than R158)
 
 **R159 answered R158's honest negative head-on. R158 showed REDISTRIBUTING harvested energy is inert because it
@@ -1163,6 +1211,11 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R160) GENESIS cultural CLADISTICS — RESOLVED, POSITIVE (robust 3/3).** The pivot off the inert economy
+  landed: the cultural divergence is hierarchically TREE-structured (treelike > column-shuffle 3/3, subsample-
+  stable, red-teamed). Honest caveats kept (modest magnitude; panmictic-secondary null; asocial can't floor).
+  Loop continues to R161 = ground-truth the descent tree (track a real genealogy, recover the phylogeny). The
+  phylogeny module/metrics are committed + reusable. No CEO action.
 - **(R159) GENESIS Stage-4 ECONOMY (both redistribution R158 + production R159) — HONEST NEGATIVE, PARKED; loop
   PIVOTS to cultural phylogeny (R160).** Two principled economy mechanisms both proved causally inert on the
   population because the carrying capacity is INTRINSIC (foraging/lifespan), not food-limited — red-teamed
@@ -1364,8 +1417,26 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R159): R157 ecologically-selected traditions + a real but TWICE-CONFIRMED-INERT economy
-(R158 redistribution, R159 production). The decisive lesson is now a hard substrate FACT, not a design hint:
+**Current ceiling (post-R160): cultural CLADISTICS works — the divergence R156/R157 grew is hierarchically
+TREE-structured (a reconstructable cladogram of traditions; treelike 0.63-0.68 > column-shuffle 0.51, 3/3 seeds,
+subsample-stable, red-teamed). This is the first measurement of the STRUCTURE of cultural descent, not just its
+presence. HONEST: the tree is MODEST (substantial homoplasy, ~0.65 not 1.0), and the signal is descent BROADLY
+(spatial lineage + heritable repertoire), NOT specifically the nearest-hearth cultural channel (panmictic null).**
+Candidate R161 frontiers, ranked ambition × feasibility:
+(1) **GROUND-TRUTH the descent tree** (TOP PICK) — track an actual cultural GENEALOGY (parent→child lineage labels
+propagated through `_acquire_repertoire`) and test whether the trait-reconstructed cladogram RECOVERS the true
+descent tree (cophenetic correlation / Robinson-Foulds vs the tracked genealogy). This upgrades "the data is
+tree-like" to "we recover the REAL phylogeny" — the gold-standard cladistics claim — and lets us SHARPEN the tree
+(lower homoplasy) by gating horizontal transmission / isolating lineages, driving treelikeness toward a clean 1.0.
+(2) **TEMPORAL phylogeny / open-ended complexity** — snapshot the population's repertoire over a LONG run,
+reconstruct the time-ladder of cumulative descent, and define an open-ended complexity metric that keeps CLIMBING
+(vs an asocial/no-transmission null) — the Stage-5 open-endedness rung, independent of the spatial demes.
+(3) **Punctuated equilibria / innovation bursts** — measure the RATE of cultural change along the tree (bursts vs
+stasis) — a dynamics claim on top of the static cladogram. Lean (1): ground-truth makes the phylogeny claim
+unassailable and opens the homoplasy-reduction lever. The R160 phylogeny module + metrics are committed and reusable.
+
+### PARKED (post-R159): the Stage-4 ECONOMY is twice-confirmed CAUSALLY INERT on this substrate's population.
+**The decisive lesson is a hard substrate FACT, not a design hint:
 on this substrate the population carrying capacity is INTRINSIC (foraging/lifespan/world-size), invariant to
 food supply across food_regrow 7× and food_cap 8× (pop=900 even at 3.2× the food count). No economy — whether it
 redistributes energy or unlocks wasted food — can move a ceiling that food never set.** This kills the "couple
