@@ -1,5 +1,43 @@
 # alife — progress
 
+## Current state (Round 164 — 2026-06-20) — GENESIS GENUINELY UNBOUNDED generative tech space: frontier complexity climbs with NO ceiling (open-ended by construction), vs the identical-dynamics fixed-cap tree which plateaus (robust POSITIVE, red-teamed CONFIRMED a/b/c)
+
+**R164 lifts R150's fixed `max_techniques` ceiling — the genuine open-endedness rung (frontier option 1).
+R150's combinatorial culture explored a tree PRE-BUILT to a fixed size, so frontier depth ceilinged at the
+cap. R164 removes the cap: a technique IS the lazily-materialized COMPOSITION of two known parents (registry
+`{pair -> id}`, nothing pre-allocated), so the reachable space is the infinite closure of the seeds under
+pairing. New `alife/genesis/unbounded.py` — `TechSpace` (combine materializes a fresh id with level
+1+max(parents); `cap` recovers the R150 regime by refusing new ids once full) + `run_population` (agents
+compose two random knowns each step, then transmit a neighbour's repertoire with fidelity) + `chain_len`
+(longest ancestral chain, proves the cumulative-descent invariant) + `ladder_arrays`. 8 new tests (182
+genesis green). Pure numpy/registry — no sim/GL, <100 MB. 禁止造假.**
+
+**HEADLINE (POSITIVE, red-teamed CONFIRMED a/b/c to 4000 steps over 2 seeds).**
+- **(a) No ceiling.** Frontier depth keeps climbing with NO asymptote (final-third gain stays strictly
+  positive at every horizon: depth 17→23→26→27→30 at steps 200/500/1000/2000/4000); BREADTH grows exactly
+  linearly (~n_agents=40 distinct/step, 159,858 techniques at 4000 steps). At 600 steps: depth 20-21,
+  breadth ~24k.
+- **(b) Decisive control (cap=None vs cap=K, identical dynamics/seed).** Capped(K=100) FREEZES at breadth
+  100 / depth 4-5 the moment its registry fills (the R150 ceiling); uncapped climbs to breadth ~24k /
+  depth ~21 on the same seed. Not a tautology: the load-bearing empirical content is that lifting the cap
+  keeps producing genuinely DEEPER compositions (depth, not just breadth, rises), not re-derivation of a
+  shallow set.
+- **(c) Depth is LITERAL cumulative-descent depth.** The invariant `chain_len(k)==level(k)` holds for every
+  materialized technique — a level-L technique descends through L genuine compositions to the seeds.
+  `chain_len` reads only `parents` (never `levels`), so it's an independent recomputation; corrupting a
+  stored level makes them diverge → the invariant is discriminating, not vacuous. Ties R164's open-ended
+  climb back to the R160-R163 descent-structure rung.
+
+**THE SHARPEST HONEST CAVEAT (red-team).** Realized depth is genuinely unbounded (no asymptote through
+4000 steps) but climbs ~LOGARITHMICALLY — empirically depth ≈ 2.5·ln(breadth) ≈ 2.5·ln(t), far below the
+theoretical linear REACHABLE envelope (deepest reachable level = t after t rounds), because random
+repertoire-pairing rarely chains deepest-with-deepest. So BREADTH is the clean linear unbounded metric;
+depth is unbounded-but-strongly-DECELERATING. "Without bound" yes; "un-slowing rate" no. Baked into the
+`unbounded.py` docstring. VERIFY: `scripts/run.sh scripts/run_genesis_unbounded.py 600` →
+`runs/r164_unbounded/panel.png` (EYE-VERIFIED: crimson unbounded depth staircase to ~21 vs gray capped
+frozen at ~4; breadth linear to ~24k vs capped flatline at 100; temporal ladder deeper=later Spearman
+0.70; final-third depth gain positive both seeds vs capped zero).
+
 ## Current state (Round 163 — 2026-06-20) — GENESIS TEMPORAL phylogeny: combinatorial culture RECOVERS the time-ladder of cumulative descent; the additive null scrambles it; asocial never climbs (robust POSITIVE, red-teamed)
 
 **R163 took the descent-recovery work from SPACE to TIME. R160-R162 reconstructed a SPATIAL phylogeny (demes as
@@ -1596,6 +1634,27 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R164): the OPEN-ENDEDNESS rung is OPENED — the tech space is now genuinely unbounded
+(technique = lazily-materialized composition of two parents; reachable space = infinite closure of seeds under
+pairing). Frontier complexity climbs with NO ceiling: breadth grows linearly (~n_agents/step, provably
+unbounded), depth climbs with no asymptote (logarithmically; the clean decisive control cap=None vs cap=K shows
+the capped run freezes while the uncapped climbs far past it). The cumulative-descent invariant chain_len==level
+ties depth to literal composition depth, linking open-endedness back to the R160-R163 descent rung. Durable
+instrument: `alife/genesis/unbounded.py` (TechSpace/run_population/chain_len/ladder_arrays).** Candidate R165
+frontiers, ranked ambition × feasibility:
+(1) **PHYLORATE / accelerating innovation dynamics (TOP PICK — the natural next read-out on the unbounded space).**
+Measure the discovery RATE and whether the adjacent-possible / innovation rate is SUPER-linear (Kauffman/Arthur:
+each new technique opens new combinable pairs, so the rate should accelerate) vs the additive null's deceleration.
+The unbounded space (R164) is exactly the substrate where this can run forever without a cap artifact; pairs with
+the R163 temporal ladder. (2) **EMBED the unbounded tech space into the LIVE world** — wire `unbounded.TechSpace`
+into `GenesisWorld` so the unbounded repertoire actually GATES physical actions (diet/capability/building) and is
+SELECTED for, not just an analytical population model. This makes open-endedness causal in the embodied sim (a
+bigger lift: the World currently uses fixed-width boolean `rep` matrices, which the unbounded sparse repertoire
+breaks — spike-then-migrate, gated on a real `vr-lead` argument). (3) **MULTI-METRIC open-ended complexity** —
+beyond depth/breadth, track total information / structural diversity of the repertoire and show a composite
+complexity metric that provably climbs vs nulls. Lean (1) (cheap, reuses R164+R163), with (2) as the ambitious
+embodied-integration leap if (1) confirms the dynamics are worth embedding.
 
 **Current ceiling (post-R163): the descent-STRUCTURE rung is CLOSED in BOTH space and time. R160-R162 closed the
 SPATIAL phylogeny (cultural cladistics ground-truthed: vertical transmission recovers the birth genealogy,
