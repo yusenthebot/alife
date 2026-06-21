@@ -1,5 +1,9 @@
 # alife — progress
 
+## Current state (Round 177 — 2026-06-21) — CUMULATIVE-CULTURE BODY: drive embodiment off the ACCESSIBLE BANKED cultural record (a lossless external memory), not personal mastery (which saturates). R176 made the body CONTINUOUS but its DRIVER — the agent's PERSONAL realized depth `pop.tech` — SATURATES at the innovation/transmission-loss equilibrium (R176 caveat 2: copy parent+hearth at fidelity<1, add only innov_steps → the living-pop MEAN depth asymptotes). R177 adds `pheno_cumulative`: the body's driver becomes `max(personal pop.tech, the deepest record BANKED in the nearest STRONG hearth within hearth_radius)`. The banked hearth record `struct_tech` is written by a running MAX over every builder ever (`np.maximum.at`, untouched by culture_decay) — a lossless EXTERNAL social memory (Boyd/Richerson: societies store culture better than any individual remembers) — so it exceeds the lossy living-pop mean. `_pheno_driver(act)` feeds `_cap_speed`/`_cap_reach`/`embodied_scale`; default-off is byte-identical (driver stays `pop.tech`, no KD-query, no extra RNG). Requires depth_phenotype=True + building=True. REAL-VERIFY (scripts/run_genesis_r177.py, 8 GENUINE separate-subprocess ticks, K=20000, seed 0; runs/r177_body/{body.png,world.gif} eye-verified, 33s) + red-team CONFIRMED (skeptic read the code): in the SAME cumulative run the body DRIVER (banked) climbs 5.9→56.3 while personal mastery climbs 3.9→42.8 — the GAP GROWS 2.0→13.5, i.e. cumulative culture increasingly outpaces the individual (the Tomasello ratchet). The cumulative body's embodied_scale ends 2.13 > the R176 personal-mastery body's 2.00 DESPITE a SHALLOWER underlying tree (cum conn_depth 63 < per 69), which strengthens it (banked access more than compensates). pop 1000 both arms; world.gif = dense gold (deep-culture) living 3D population.
+
+**THREE HONEST CAVEATS (red-team):** (1) `driver ≥ personal` is TRUE BY CONSTRUCTION (`max(a,b)≥a`); the sign is never evidence — the load-bearing finding is the gap's MAGNITUDE and its GROWTH (2.0→13.5), and that the banked driver climbs faster than personal mastery. (2) `struct_tech` is a lossless running-max only per hearth LIFETIME — a slot resets to the founder's tech when a dead hearth's slot is re-founded, so the headline `culture_tech` (max over currently-strong hearths) is NOT a globally death-proof monotone ratchet (it can drop if the deepest hearth dies). (3) the cross-arm "outclimbs" is on a divergent-RNG basis (the cumulative body moves faster → different population → a shallower tree); it is a fair ONE-KNOB-AT-CONSTRUCTION comparison (only pheno_cumulative differs; OFF is byte-identical, test-verified) and the cumulative body ends deeper despite the shallower tree. Single seed; `cKDTree(struct_pos[strong])` is rebuilt ~3×/tick (perf wart, not a correctness bug). The real win: the body's driver is now the SOCIETY's accumulated external culture, not lossy individual mastery — but it STILL decelerates because its source (the frontier + builder mastery) asymptotes, so making the driver non-asymptotic (an open-ended COUNT, not depth) is R178. 4 new tests (228 total).
+
 ## Current state (Round 176 — 2026-06-21) — OPEN-ENDED EMBODIMENT: the BODY keeps deepening WITH the tech, not ceilinged. R171's depth_gates made the body causal on culture but CATEGORICALLY (diet=floor(depth/step) clipped to n_food_tiers-1, axes=count(depth>=step*(i+1)) clipped to n_capabilities), so a finite tier/axis list is a ceiling by construction — the embodied body SATURATES the instant depth crosses the last fixed threshold (R175 caveat: diet 7 / axes 4 frozen by ~tick 1 while connected DEPTH climbs 32→76). R176 adds `depth_phenotype`: max speed + harvest reach scale CONTINUOUSLY with realized cultural depth (speed=cfg.speed*(1+pheno_speed_gain*depth), reach=cfg.eat_radius*(1+pheno_reach_gain*depth)) in `_cap_speed`/`_cap_reach`, so the body has NO categorical ceiling. Headline metric `embodied_scale()` = living-pop mean speed multiplier. REAL-VERIFY (8 real subprocess ticks, runs/r176_body/{body.png,world.gif} eye-verified) + red-team CONFIRMED: PHENO (gain=0.02) embodied_scale 1.09→2.00 monotone, still rising on the last tick, while realized_axes FROZEN at 4 from tick 1 in the SAME run; CTRL (gain=0) embodied_scale FROZEN at 1.000 though conn_depth still climbs 8→74. depth_phenotype=False is byte-identical (same RNG state). Requires depth_gates=True. TWO HONEST CAVEATS: (1) the gain=0 control is NOT a byte-identical one-knob isolation — gain changes physics→energy→birth/death→divergent RNG, so depth trajectories differ; it STILL isolates the MAPPING (depth climbs to ~70 in BOTH while body_scale stays 1.0 at gain=0, refuting relabel/run-length). (2) embodied_scale is AFFINE in mean living depth, which empirically SATURATES (decelerating diffs, mean-tech asymptote ~50) — "unbounded" is true of the FUNCTIONAL FORM (no categorical clip, unlike axes), NOT the observed curve. The real win: the categorical body-ceiling is removed; making the DRIVER itself non-asymptotic is R177.
 
 ## Current state (Round 175 — 2026-06-21) — SUSTAINED connected DEPTH, not just breadth: a depth-rewarding SELECTION PRESSURE pushes the open-ended world past R174's plateau. R174 proved the unattended world keeps developing across many ticks, but with an honest caveat — under the UNIFORM composition draw society BREADTH climbs the whole horizon while connected tech DEPTH PLATEAUS by ~tick 6 (max connected depth advances only when the current-deepest technique is re-composed, a ~2/|known| event that VANISHES as breadth grows). R175 adds the missing cultural-evolution force: `depth_bias` makes the per-composition draw a SOFTMAX over tree LEVEL, so the DEEPEST techniques are preferentially re-composed ("rich get richer" / preferential reuse on the frontier). REAL-VERIFY + red-team CONFIRMED: the biased world keeps DEPTH climbing the whole horizon (32→76, still deepening on the final tick) while the unbiased control (R174 regime, identical cap + tick count, only depth_bias=0) plateaus at depth 12 from tick 6.
@@ -2103,26 +2107,28 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R176): the BODY now has NO categorical ceiling — speed+reach scale continuously with
-realized cultural depth, so embodiment keeps deepening alongside the tech (R175's body-saturation caveat closed
-at the mechanism level).** R175 made connected DEPTH climb the whole horizon, but the CATEGORICAL body (diet 7 /
-axes 4) saturated by ~tick 1 (a finite tier/axis list is a ceiling by construction). R176 adds `depth_phenotype`
-— `_cap_speed`/`_cap_reach` become continuous: speed=cfg.speed*(1+pheno_speed_gain*depth), reach=cfg.eat_radius*
-(1+pheno_reach_gain*depth). REAL-VERIFY + red-team CONFIRMED: PHENO (gain=0.02) embodied_scale (living-pop mean
-speed mult) 1.09→2.00 monotone, still rising on the last tick, while realized_axes FROZEN at 4 in the SAME run;
-gain=0 control body FROZEN at 1.0 though depth climbs 8→74; off byte-identical (same RNG). Durable instrument:
-`GenesisConfig.depth_phenotype/pheno_speed_gain/pheno_reach_gain` + `GenesisWorld.embodied_scale()` +
-`scripts/run_genesis_r176.py`. **Honest caveats driving the next rung (red-team-found, recorded honestly): (a) the
-gain=0 control is NOT byte-identical isolation — gain perturbs physics→energy→RNG so depth trajectories differ; it
-STILL isolates the MAPPING (depth climbs in both while body_scale stays 1.0 at gain=0). (b) embodied_scale is AFFINE
-in mean living depth, which empirically SATURATES (decelerating diffs, mean-tech asymptote ~50) — "unbounded" is
-true of the FORM (no categorical clip), NOT the observed curve. The categorical ceiling is removed; the DRIVER (mean
-depth) is the new ceiling.** Candidate R177+ frontiers, ranked ambition × feasibility:
-(1) **MAKE THE DRIVER NON-ASYMPTOTIC (TOP).** The body is now continuous but its driver (mean living depth)
-saturates, so embodied_scale asymptotes too. Either (a) heal the R175 breadth/depth tradeoff so the DEPTH driver
-itself keeps climbing unbounded (JOINT breadth×depth climb), or (b) scale embodiment off an OPEN-ENDED quantity
-that does NOT asymptote (tree size / # distinct cultural traditions / generational accumulation) instead of the
-saturating mean depth — so the body genuinely keeps deepening, not just by functional form.
+**Current ceiling (post-R177): the body's DRIVER is now the SOCIETY's ACCUMULATED EXTERNAL culture (the banked
+hearth record, a lossless running-max), not the lossy individual's personal mastery — so the body deepens with
+CUMULATIVE culture and the cumulative-vs-individual gap GROWS over a run (the Tomasello ratchet).** R176 removed
+the categorical body-ceiling but its driver (personal `pop.tech`) saturated at the transmission-loss equilibrium.
+R177 adds `pheno_cumulative`: `_pheno_driver(act) = max(personal pop.tech, deepest struct_tech banked in the
+nearest strong hearth within hearth_radius)`, feeding `_cap_speed`/`_cap_reach`/`embodied_scale`. REAL-VERIFY +
+red-team CONFIRMED: in the SAME run banked driver 5.9→56.3 vs personal 3.9→42.8, gap 2.0→13.5 (grows); cumulative
+embodied_scale ends 2.13 > R176 personal 2.00 despite a SHALLOWER tree; off byte-identical. Durable instrument:
+`GenesisConfig.pheno_cumulative` + `GenesisWorld._pheno_driver` + `embodied_scale()` (now exposes `mean_depth`
+driver vs `mean_personal_depth` baseline) + `scripts/run_genesis_r177.py`. **Honest caveats driving the next rung
+(red-team-found): (a) `driver≥personal` is TRUE BY CONSTRUCTION — the finding is the gap's MAGNITUDE+GROWTH, not
+its sign. (b) `struct_tech` is a lossless max only per hearth LIFETIME (slot resets to founder tech on death+refound)
+→ not a globally death-proof ratchet. (c) the banked driver STILL decelerates because its source (frontier +
+builder mastery) asymptotes — R177 raised the driver and made it social/cumulative, but did NOT make it
+non-asymptotic. The new ceiling: the DRIVER's source (depth) still saturates.** Candidate R178+ frontiers, ranked:
+(1) **MAKE THE DRIVER NON-ASYMPTOTIC via an OPEN-ENDED COUNT (TOP).** Depth saturates; a COUNT does not. Scale
+embodiment off the # of DISTINCT cultural traditions an agent's lineage carries, or the generative tree SIZE
+(combinations of combinations, unbounded by construction), instead of (saturating) depth — so the body's driver
+grows without an asymptote. This is the cleanest way to finally make embodiment genuinely open-ended, not just
+non-categorical. Build on R156 traditions / R150 combinatorial tree / R177 banked record.
+(2) **BREADTH×DEPTH JOINT CLIMB (heal the tradeoff).** depth_bias buys depth at breadth's expense; a regime that
+keeps BOTH climbing (mild bias + niche/diet pressure rewarding breadth) — feeds (1).
 (2) **BREADTH×DEPTH JOINT CLIMB (heal the tradeoff).** depth_bias buys depth at breadth's expense; a regime that
 keeps BOTH climbing (e.g. a mild bias + niche/diet pressure rewarding breadth, or two sub-populations) — a
 genuinely open-ended civilization grows on both axes, not one at a time. (Also feeds (1a).)
