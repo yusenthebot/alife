@@ -41,6 +41,17 @@ flat (fixed), rising (autocatalytic+open), rising-then-collapsing (autocatalytic
 plane is the clean, horizon-independent discriminator (the rate law is intrinsic to the mechanism, not
 an artefact of how many steps you ran).
 
+HONEST SCOPE (red-teamed to 4 seeds, independent recomputation from the raw registry, all CONFIRMED):
+the acceleration is, by construction, hard-wired by positing E(N) ∝ N — "technology begets technology"
+is an ASSUMED effort law, not something the model derives. The genuinely DISCOVERED (non-tautological)
+content is the NARROWER claim that the open combinatorial space does not self-throttle that posited
+effort: the collision fraction -> ~1e-4 (independently recomputed: 0.40 -> 0.0001), because the distinct
+pair-space grows as N^2 while discoveries grow as N. The CAPPED control proves it is the open space and
+not the multiplier — identical alpha*N effort (effort pinned at alpha*K), yet `new` collapses to exactly
+0 and collisions -> 1.0. The growth is EXPONENTIAL, not a fixed power law: the per-step multiplier is
+N[t]/N[t-1] = 1.4996 ≈ 1+alpha to 4 dp, and `growth_exponent` rises with the fit window (it is an
+exponential read through a power-law lens, NOT a real exponent ~6.7 — read it only as ">1 = super-linear").
+
 Memory stays bounded: autocatalytic N grows exponentially so `steps` is kept small (~20-25) — the final
 registry holds only the techniques actually discovered (a {pair->id} dict of ints), never the infinite
 space. Pure numpy + Python ints, well under the loop's <1 GB budget.

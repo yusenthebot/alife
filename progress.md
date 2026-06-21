@@ -1,6 +1,31 @@
 # alife — progress
 
-## Current state (Round 164 — 2026-06-20) — GENESIS GENUINELY UNBOUNDED generative tech space: frontier complexity climbs with NO ceiling (open-ended by construction), vs the identical-dynamics fixed-cap tree which plateaus (robust POSITIVE, red-teamed CONFIRMED a/b/c)
+## Current state (Round 165 — 2026-06-20) — GENESIS PHYLORATE: the RATE law of cumulative innovation. Autocatalytic recombination on the OPEN combinatorial space gives SUPER-LINEAR (exponential) innovation; the decisive cap-control proves it is the OPEN adjacent possible, not the effort multiplier (robust POSITIVE, red-teamed CONFIRMED a/b/c/d over 4 seeds)
+
+**R165 measures the RATE of innovation on R164's unbounded space (frontier option 1: phylorate / accelerating
+dynamics).** R164 showed BREADTH grows linearly under a fixed-effort regime; R165 asks the Arthur/Kauffman
+question — when each new technique becomes a building block AND effort tracks the accumulated repertoire, does
+innovation ACCELERATE? New `alife/genesis/phylorate.py` runs four regimes on `unbounded.TechSpace`, each with a
+distinct rate signature in the dN/dt-vs-N plane:
+- **additive null** (independent invention from a FIXED pool) → SATURATES, dN/dt falls to 0 (DECELERATING; accel
+  −0.12). The structureless null.
+- **fixed-effort combinatorial** (R164 regime, constant E=base) → LINEAR, dN/dt ~ const (accel ~0.001).
+- **autocatalytic + OPEN** (E(N)=max(base, alpha·N)) → SUPER-LINEAR / EXPONENTIAL: dN/dt ∝ N rises with N (accel
+  +465; per-step multiplier N[t]/N[t−1]=1.4996 ≈ 1+alpha, R²=1.0; reaches N~55k in 22 steps).
+- **autocatalytic + CAPPED** (DECISIVE CONTROL) — IDENTICAL alpha·N effort but capped at K: once full, collision
+  fraction → 1.0, `new` → 0, rate COLLAPSES despite effort pinned at alpha·K. So sustained super-linearity is the
+  OPEN adjacent possible, NOT the effort multiplier alone (the R164 cap=None-vs-cap=K control, now on the RATE).
+- **Non-tautological discovered content:** on the open space the collision fraction → ~1e-4 as N grows (recomputed
+  from the raw registry: 0.40 → 0.0001), because the distinct pair-space grows as N² while discoveries grow as N —
+  the adjacent possible stays FED faster than it is consumed, so autocatalysis is sustained, not self-throttling.
+- REAL-VERIFY: `scripts/run_genesis_phylorate.py` → runs/r165_phylorate/panel.png EYE-VERIFIED (crimson autocat+OPEN
+  rockets up the log-y; rate-vs-N rises steeply; collision orange spikes to 1 while open stays ~0; accel bars crimson
+  huge-positive vs orange negative). Red-team CONFIRMED a/b/c/d (independent agent, 4 seeds, raw-registry recompute,
+  max diff 0.0). **HONEST CAVEAT (baked into docstring):** E(N)∝N is a MODELLING ASSUMPTION, not emergent — the
+  genuinely discovered part is the narrower "open space doesn't self-throttle". It is EXPONENTIAL, not a fixed power
+  law (`growth_exponent` rises with the fit window; read only as ">1 = super-linear"). 189 genesis tests (+7).
+
+## Previous state (Round 164 — 2026-06-20) — GENESIS GENUINELY UNBOUNDED generative tech space: frontier complexity climbs with NO ceiling (open-ended by construction), vs the identical-dynamics fixed-cap tree which plateaus (robust POSITIVE, red-teamed CONFIRMED a/b/c)
 
 **R164 lifts R150's fixed `max_techniques` ceiling — the genuine open-endedness rung (frontier option 1).
 R150's combinatorial culture explored a tree PRE-BUILT to a fixed size, so frontier depth ceilinged at the
@@ -1635,26 +1660,27 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R164): the OPEN-ENDEDNESS rung is OPENED — the tech space is now genuinely unbounded
-(technique = lazily-materialized composition of two parents; reachable space = infinite closure of seeds under
-pairing). Frontier complexity climbs with NO ceiling: breadth grows linearly (~n_agents/step, provably
-unbounded), depth climbs with no asymptote (logarithmically; the clean decisive control cap=None vs cap=K shows
-the capped run freezes while the uncapped climbs far past it). The cumulative-descent invariant chain_len==level
-ties depth to literal composition depth, linking open-endedness back to the R160-R163 descent rung. Durable
-instrument: `alife/genesis/unbounded.py` (TechSpace/run_population/chain_len/ladder_arrays).** Candidate R165
-frontiers, ranked ambition × feasibility:
-(1) **PHYLORATE / accelerating innovation dynamics (TOP PICK — the natural next read-out on the unbounded space).**
-Measure the discovery RATE and whether the adjacent-possible / innovation rate is SUPER-linear (Kauffman/Arthur:
-each new technique opens new combinable pairs, so the rate should accelerate) vs the additive null's deceleration.
-The unbounded space (R164) is exactly the substrate where this can run forever without a cap artifact; pairs with
-the R163 temporal ladder. (2) **EMBED the unbounded tech space into the LIVE world** — wire `unbounded.TechSpace`
-into `GenesisWorld` so the unbounded repertoire actually GATES physical actions (diet/capability/building) and is
-SELECTED for, not just an analytical population model. This makes open-endedness causal in the embodied sim (a
-bigger lift: the World currently uses fixed-width boolean `rep` matrices, which the unbounded sparse repertoire
-breaks — spike-then-migrate, gated on a real `vr-lead` argument). (3) **MULTI-METRIC open-ended complexity** —
-beyond depth/breadth, track total information / structural diversity of the repertoire and show a composite
-complexity metric that provably climbs vs nulls. Lean (1) (cheap, reuses R164+R163), with (2) as the ambitious
-embodied-integration leap if (1) confirms the dynamics are worth embedding.
+**Current ceiling (post-R165): open-endedness is OPENED (R164: unbounded tech space) AND its RATE law is
+characterised (R165: phylorate). Innovation on the open combinatorial space can be SUPER-LINEAR (exponential)
+when recombination effort tracks the accumulated repertoire (autocatalytic E(N)∝N), and the decisive cap-control
+proves this is the OPEN adjacent possible (collision_frac→1e-4, pair-space~N² > discoveries~N) and not the
+effort multiplier (capped → collision→1, rate→0). Durable instruments: `alife/genesis/unbounded.py` (TechSpace)
+and `alife/genesis/phylorate.py` (run_additive/run_fixed/run_autocatalytic/acceleration/growth_exponent/
+rate_vs_size). KNOWN-HONEST GAP carried forward: the autocatalytic effort law E(N)∝N is POSITED, not emergent —
+the model shows the open space sustains it, but does not derive WHY a bigger culture innovates faster.** Candidate
+R166 frontiers, ranked ambition × feasibility:
+(1) **EMBED the unbounded tech space into the LIVE world (TOP AMBITION).** Wire `unbounded.TechSpace` into
+`GenesisWorld` so the unbounded repertoire actually GATES physical actions (diet/capability/building) and is
+SELECTED for in the embodied sim, not just an analytical population model. Bigger lift: the World uses fixed-width
+boolean `rep` matrices, which the sparse unbounded repertoire breaks — spike-then-migrate, gated on a real
+`vr-lead` architectural argument. This makes open-endedness CAUSAL in the living world (the integration the CEO
+direction is ultimately about). (2) **ENDOGENOUS phylorate — close the R165 caveat.** Make the alpha·N effort
+EMERGE: accumulated tech → more food/energy → more agents or more recombination attempts per capita, so the
+super-linear rate is a CONSEQUENCE of the economy rather than an assumed effort law. Reuses phylorate.py +
+the R153 tech_actions economy. (3) **Stage-2 SIGNALLING redesign (the one parked rung)** — synchronous, sharply
+lethal predation rounds (Floreano/Mitri arena) where a missed warning reliably kills; only revisit with that
+substrate change, believe emergence only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. Lean (1) as
+the embodied-integration leap (gate the rep-matrix redesign on vr-lead first); (2) is the cheap caveat-closer.
 
 **Current ceiling (post-R163): the descent-STRUCTURE rung is CLOSED in BOTH space and time. R160-R162 closed the
 SPATIAL phylogeny (cultural cladistics ground-truthed: vertical transmission recovers the birth genealogy,
