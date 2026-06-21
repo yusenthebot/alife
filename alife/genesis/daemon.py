@@ -85,6 +85,78 @@ def render_live_panel(traj: dict, panel_path: str, title: str = "GENESIS — una
     return n
 
 
+# ----------------------------------------------------------------------------------------------------
+# R174: the SUSTAINED multi-day climb. R173 stood up the unattended tick loop, but with a small tree cap
+# the climb SATURATED inside tick 1 — so "leave it running for days and it keeps developing" was hollow
+# past the first tick. The fix is not a new mechanism but a regime: a large memory cap + a gentler
+# innovation rate so the open-ended tree has headroom to keep climbing tick after tick, AND deeper
+# diet/capability gates so the EMBODIED ceiling (what the BODY can eat / do) keeps rising with the depth
+# rather than maxing out immediately. `climb_curve` drives that as REAL resumed ticks and records the
+# per-tick frontier; the decisive falsifiable claim is the open-ended-vs-capped CONTROL — same machinery,
+# only the cap differs: the uncapped world keeps climbing across the whole horizon while the capped world
+# freezes once its tree is full. `render_climb_panel` draws both so the sustained climb is eye-checkable.
+
+_CLIMB_KEYS = ("tick", "step", "conn_depth", "breadth", "edible_tiers", "realized_axes", "population")
+
+
+def climb_curve(state_dir: str, cfg: GenesisConfig, seed: int, segment_steps: int, n_ticks: int,
+                log_every: int = 20) -> dict:
+    """Drive `n_ticks` REAL persistent ticks against `state_dir` and record the world's frontier at the
+    end of each tick. Each tick is a `persist.run_segment` that resumes the latest on-disk checkpoint, so
+    this is the genuine multi-tick climb a scheduler produces — not one in-memory run sliced for display.
+    Returns per-tick arrays keyed by `_CLIMB_KEYS` (length `n_ticks`). Memory stays bounded by the world's
+    fixed pools; only the last sample of each segment is kept."""
+    os.makedirs(state_dir, exist_ok=True)
+    rows = []
+    for i in range(n_ticks):
+        r = persist.run_segment(state_dir, cfg, seed=seed, segment_steps=segment_steps, log_every=log_every)
+        tr = r["trajectory"]
+        rows.append({
+            "tick": float(i + 1), "step": float(tr["step"][-1]),
+            "conn_depth": float(tr["conn_depth"][-1]), "breadth": float(tr["breadth"][-1]),
+            "edible_tiers": float(tr["edible_tiers"][-1]), "realized_axes": float(tr["realized_axes"][-1]),
+            "population": float(tr["population"][-1]),
+        })
+    return {k: np.asarray([row[k] for row in rows]) for k in _CLIMB_KEYS}
+
+
+# the four climb signals shown side by side (the repertoire frontier AND its embodied consequence).
+_CLIMB_PANELS = (
+    ("conn_depth", "connected tech DEPTH"),
+    ("breadth", "society repertoire BREADTH"),
+    ("edible_tiers", "embodied DIET ceiling (body)"),
+    ("realized_axes", "embodied capability AXES (body)"),
+)
+
+
+def render_climb_panel(open_curve: dict, capped_curve: dict, panel_path: str,
+                       title: str = "GENESIS — sustained multi-tick climb: open-ended vs capped") -> int:
+    """Render the decisive open-ended-vs-capped CONTROL as a 2x2 of per-tick climb curves. The uncapped
+    (open-ended) world's depth/breadth/diet/axes keep rising across ticks; the capped world freezes once
+    its tree is full. A PURE function of the two climb-curve dicts. Returns the number of ticks drawn."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ot = np.asarray(open_curve.get("tick", np.zeros(0)))
+    ct = np.asarray(capped_curve.get("tick", np.zeros(0)))
+    fig, ax = plt.subplots(2, 2, figsize=(13, 8))
+    fig.suptitle(title, fontsize=13)
+    for a, (key, sub) in zip(ax.flat, _CLIMB_PANELS):
+        a.plot(ot, np.asarray(open_curve.get(key, np.zeros(0))), color="#1f77b4", lw=2.2,
+               marker="o", ms=4, label="open-ended (large cap)")
+        a.plot(ct, np.asarray(capped_curve.get(key, np.zeros(0))), color="#d62728", lw=2.2,
+               marker="s", ms=4, ls="--", label="capped (small cap) — freezes")
+        a.set_title(sub, fontsize=10)
+        a.set_xlabel("unattended tick")
+        a.grid(alpha=0.25)
+        a.legend(fontsize=8, loc="best")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(panel_path, dpi=110)
+    plt.close(fig)
+    return int(ot.size)
+
+
 def _daemon_meta_path(state_dir: str) -> str:
     return os.path.join(state_dir, "daemon.json")
 

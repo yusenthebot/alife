@@ -2941,3 +2941,59 @@ def test_daemon_live_panel_renders_from_full_trajectory(tmp_path):
     p = str(tmp_path / "panel.png")
     n = daemon.render_live_panel(traj, p, title="t")
     assert n == traj["step"].size >= 3 and os.path.getsize(p) > 1000
+
+
+# ---------- R174: the SUSTAINED multi-tick climb — open-ended keeps developing, capped freezes ----------
+def _r174_cfg(K, n_food_tiers=8, n_caps=4):
+    """The SUSTAINED-climb regime: a LARGE tree cap + gentler innovation (so the open-ended tree has
+    headroom to keep climbing tick after tick instead of saturating in tick 1) and DEEPER diet/capability
+    gates (so the embodied ceiling keeps rising with the depth, not maxing out at once). The ONLY knob the
+    capped control changes is `max_techniques` (K) — everything else is identical."""
+    from alife.genesis.civdev import civ_config
+    return civ_config(
+        tech_actions=False, tech_capabilities=False, generative_tree=True, depth_gates=True,
+        max_techniques=K, innov_steps=2, n_food_tiers=n_food_tiers, recipe_level_step=2,
+        n_capabilities=n_caps, cap_level_step=3, tier0_frac=0.4,
+        n0=300, capacity=1000, food_cap=600, food_regrow=40)
+
+
+def test_sustained_climb_open_ended_keeps_rising_while_capped_freezes(tmp_path):
+    """R174 HEADLINE (falsifiable): driven as REAL resumed ticks, the OPEN-ENDED world (large cap) keeps
+    climbing across the WHOLE horizon — breadth strictly rises even in the LATE ticks, and the depth AND
+    the EMBODIED diet ceiling end strictly higher than they began (the body keeps developing). The CAPPED
+    world (small cap, otherwise identical) FREEZES: its tree fills, so its late ticks add nothing. The only
+    difference is the cap, so a sustained-vs-frozen split is the open-ended signature, not just 'ran longer'."""
+    from alife.genesis import daemon
+    n_ticks, seg = 8, 60
+    op = daemon.climb_curve(str(tmp_path / "open"), _r174_cfg(K=20000), seed=0, segment_steps=seg, n_ticks=n_ticks)
+    cap = daemon.climb_curve(str(tmp_path / "capped"), _r174_cfg(K=250), seed=0, segment_steps=seg, n_ticks=n_ticks)
+
+    # continuity: both are one monotone on-disk history (real resumed ticks, no resets/dups)
+    assert np.all(np.diff(op["step"]) > 0) and op["step"][-1] == n_ticks * seg
+
+    # OPEN-ENDED: breadth STILL rising in the LATE ticks (not saturated), depth + body climbed end-to-end
+    half = n_ticks // 2
+    assert op["breadth"][-1] > op["breadth"][half]                 # late-tick breadth still climbing
+    assert op["breadth"][-1] - op["breadth"][-2] >= 50             # and the VERY last tick still adds a lot
+    assert op["breadth"][-1] < 20000                               # genuinely below the cap (headroom remains)
+    assert op["conn_depth"][-1] > op["conn_depth"][0]              # connected DEPTH climbed across the horizon
+    assert op["edible_tiers"][-1] > op["edible_tiers"][0]          # the BODY's diet ceiling climbed (embodied)
+    assert op["realized_axes"][-1] > op["realized_axes"][0]        # the BODY's capability axes climbed
+    assert op["population"][-1] >= 500                             # and it stayed a healthy living population
+
+    # CAPPED: tree fills, so the LATE ticks add ~no new breadth — the climb is FROZEN (only the cap differs)
+    assert cap["breadth"][-1] - cap["breadth"][-2] <= 3            # capped breadth flat at the cap (frozen)
+    assert cap["population"][-1] >= 200                            # a genuinely FROZEN world, not a dead one
+    assert op["breadth"][-1] > 10 * cap["breadth"][-1]            # open-ended ends an order past the capped ceiling
+    assert op["conn_depth"][-1] > cap["conn_depth"][-1]           # and climbs strictly deeper than the capped world
+
+
+def test_render_climb_panel_writes_open_vs_capped_png(tmp_path):
+    """R174: render_climb_panel is a PURE function of the two climb-curve dicts — it draws the open-ended
+    and capped curves side by side and writes a valid PNG (the eye-checkable sustained-climb deliverable)."""
+    from alife.genesis import daemon
+    op = {k: np.arange(1.0, 6.0) for k in daemon._CLIMB_KEYS}
+    cap = {k: np.ones(5) for k in daemon._CLIMB_KEYS}
+    p = str(tmp_path / "climb.png")
+    n = daemon.render_climb_panel(op, cap, p, title="t")
+    assert n == 5 and os.path.getsize(p) > 1000
