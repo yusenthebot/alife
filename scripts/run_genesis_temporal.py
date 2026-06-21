@@ -132,16 +132,21 @@ def main():
           f"ADD mean {np.nanmean(a_corr):.3f}  [COMBO>ADD {combo_gt_add}/{len(seeds)}]  "
           f"COMBO prec {np.nanmean(c_pre):.3f} vs ADD prec {np.nanmean(a_pre):.3f}  ({time.time()-t0:.0f}s)",
           flush=True)
-    print(f"  OPEN-ENDEDNESS: max_level COMBO {np.nanmean(c_ml):.1f} | ADD {np.nanmean(a_ml):.1f} | "
-          f"ASO {np.nanmean(s_ml):.1f}   distinct COMBO {np.nanmean(c_pd):.0f} | ADD {np.nanmean(a_pd):.0f} | "
-          f"ASO {np.nanmean(s_pd):.0f}", flush=True)
+    print(f"  CLIMB vs FLAT: max_level COMBO {np.nanmean(c_ml):.1f} | ASO {np.nanmean(s_ml):.1f}   "
+          f"distinct COMBO {np.nanmean(c_pd):.0f} | ASO {np.nanmean(s_pd):.0f}", flush=True)
+    print(f"  HONEST: the additive null reaches max_level {np.nanmean(a_ml):.0f} / distinct "
+          f"{np.nanmean(a_pd):.0f} (the WHOLE pool) but in SCRAMBLED order — depth/breadth magnitude does NOT "
+          f"distinguish cumulative descent from unstructured accumulation; only the temporal ORDER does.",
+          flush=True)
 
     # ---- panel ----
     fig, ax = plt.subplots(2, 3, figsize=(15, 9))
 
     def plot_traj(axx, key, ylab):
-        for arm, col, lab in ((combo, "goldenrod", "combinatorial"), (addn, "steelblue", "additive null"),
-                              (aso, "dimgray", "asocial")):
+        # CLIMB vs FLAT: combinatorial social culture vs the asocial (no-transmission) null. The additive null
+        # is omitted here on purpose — it saturates the whole pool instantly (structureless), so it belongs to
+        # the temporal-ORDER panels below, not the magnitude climb.
+        for arm, col, lab in ((combo, "goldenrod", "combinatorial (social)"), (aso, "dimgray", "asocial null")):
             for j, a in enumerate(arm):
                 tr = a[0]
                 axx.plot(tr["t"], tr[key], color=col, alpha=0.85, lw=1.8,
@@ -149,9 +154,9 @@ def main():
         axx.set_xlabel("step"); axx.set_ylabel(ylab); axx.legend(fontsize=8)
 
     plot_traj(ax[0, 0], "max_level", "frontier depth (max tree level)")
-    ax[0, 0].set_title("OPEN-ENDEDNESS: frontier depth keeps climbing (combinatorial)")
+    ax[0, 0].set_title("CUMULATIVE CLIMB: frontier depth (combinatorial) vs flat (asocial)")
     plot_traj(ax[0, 1], "pop_distinct", "distinct techniques in population")
-    ax[0, 1].set_title("OPEN-ENDEDNESS: cumulative repertoire breadth")
+    ax[0, 1].set_title("CUMULATIVE CLIMB: repertoire breadth vs asocial floor")
 
     cl, ct_ = scatter_data(combo[0][3])
     al, at_ = scatter_data(addn[0][3])
