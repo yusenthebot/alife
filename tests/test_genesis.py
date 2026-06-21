@@ -5,6 +5,7 @@ proven by the long REAL-VERIFY run (scripts/run_genesis.py) + the frozen-genome 
 unit test; test_evolution_beats_frozen_control is the fast smoke version.
 """
 
+import os
 import re
 from dataclasses import replace
 from pathlib import Path
@@ -2881,3 +2882,62 @@ def test_persist_generative_tree_restore_is_load_bearing(tmp_path):
         w.step()
     sabotaged = persist._stack(samples)
     assert persist.continuity_max_abs_diff(cont, sabotaged) > 0.0
+
+
+# ---------- R173: UNATTENDED MULTI-DAY CLIMB — tick driver + rolling live dashboard ----------
+def _r173_cfg(K=1000):
+    """The open-ended generative + depth-gated world (== R172 gen_cfg) the unattended daemon ticks."""
+    from alife.genesis.civdev import civ_config
+    return civ_config(
+        tech_actions=False, tech_capabilities=False, generative_tree=True, depth_gates=True,
+        max_techniques=K, innov_steps=3, n_food_tiers=5, recipe_level_step=2,
+        n_capabilities=2, cap_level_step=2, tier0_frac=0.4,
+        n0=300, capacity=1000, food_cap=600, food_regrow=40)
+
+
+def test_daemon_tick_extends_world_and_writes_live_panel(tmp_path):
+    """R173: one tick = run one more segment + regenerate the rolling live dashboard. Across ticks the
+    world extends on disk (bootstrap then resume, global step advances, tick_index increments) and the
+    live panel is a real PNG REGENERATED each tick over a GROWING accumulated trajectory."""
+    from alife.genesis import daemon, persist
+    cfg = _r173_cfg()
+    sd = str(tmp_path / "world")
+    r1 = daemon.tick(sd, cfg, seed=2, segment_steps=40, log_every=20)
+    assert r1["bootstrap"] and r1["tick_index"] == 1 and r1["start_step"] == 0 and r1["end_step"] == 40
+    panel = os.path.join(sd, "live_panel.png")
+    assert r1["panel_path"] == panel and os.path.getsize(panel) > 1000      # a real rendered PNG
+    n1 = r1["panel_n_samples"]
+    r2 = daemon.tick(sd, cfg, seed=2, segment_steps=40, log_every=20)
+    assert (not r2["bootstrap"]) and r2["tick_index"] == 2
+    assert r2["start_step"] == 40 and r2["end_step"] == 80
+    assert r2["panel_n_samples"] > n1                  # panel now drawn over MORE history (regenerated)
+    traj = persist.load_trajectory(sd)
+    assert traj["step"][0] == 0.0 and traj["step"][-1] == 80.0 and np.all(np.diff(traj["step"]) > 0)
+
+
+def test_daemon_irregular_tick_cadence_one_continuous_history(tmp_path):
+    """R173: a real scheduler does NOT fire on an exact cadence. Ticks with DIFFERENT segment_steps still
+    accumulate into ONE strictly-increasing on-disk history whose final step is the EXACT sum — the world
+    doesn't care how it was sliced, only that it keeps being ticked."""
+    from alife.genesis import daemon, persist
+    cfg = _r173_cfg()
+    sd = str(tmp_path / "world")
+    seps = [40, 60, 20, 50]
+    for s in seps:
+        daemon.tick(sd, cfg, seed=5, segment_steps=s, log_every=20)
+    traj = persist.load_trajectory(sd)
+    assert traj["step"][-1] == float(sum(seps))        # 170 — accumulated across irregular ticks
+    assert np.all(np.diff(traj["step"]) > 0)           # one continuous monotone climb, no resets/dups
+
+
+def test_daemon_live_panel_renders_from_full_trajectory(tmp_path):
+    """R173: render_live_panel is a PURE function of the accumulated trajectory dict (the rolling dashboard
+    a cron tick refreshes) — given a longer trajectory it draws more samples and writes a valid PNG."""
+    from alife.genesis import daemon, persist
+    cfg = _r173_cfg()
+    sd = str(tmp_path / "world")
+    daemon.tick(sd, cfg, seed=7, segment_steps=60, log_every=20)
+    traj = persist.load_trajectory(sd)
+    p = str(tmp_path / "panel.png")
+    n = daemon.render_live_panel(traj, p, title="t")
+    assert n == traj["step"].size >= 3 and os.path.getsize(p) > 1000
