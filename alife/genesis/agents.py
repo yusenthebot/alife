@@ -47,6 +47,8 @@ class Population:
         self.diet = np.zeros(c)              # heritable food-type preference (R142 resource niches)
         self.cooldown = np.zeros(c, dtype=np.int32)   # predator digestion timer (R143); 0 for prey
         self.utterance = np.zeros(c)         # last-step emitted signal (R144 emergent signalling); 0 if mute
+        self.referent = np.zeros(c, dtype=np.int8)     # private bit observed THIS step (R178 signalling game)
+        self.ref_emitted = np.zeros(c, dtype=np.int8)  # the bit the CURRENT utterance encodes (R178); for 1-step decode
         self.spec = np.zeros(c)              # heritable caste trait in [0,1] (R147): 0=harvester, 1=processor
         self.tech = np.zeros(c)              # LIFETIME-learned technique (R149 culture): NOT genetic — set once
                                              # at birth via social learning (copy a model) + one innovation step
@@ -91,7 +93,8 @@ class Population:
             "pos": self.pos, "vel": self.vel, "energy": self.energy, "age": self.age,
             "brains": self.brains, "lineage": self.lineage, "generation": self.generation,
             "color": self.color, "diet": self.diet, "cooldown": self.cooldown,
-            "utterance": self.utterance, "spec": self.spec, "tech": self.tech,
+            "utterance": self.utterance, "referent": self.referent, "ref_emitted": self.ref_emitted,
+            "spec": self.spec, "tech": self.tech,
             "alive": self.alive,
         }
 

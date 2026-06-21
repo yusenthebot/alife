@@ -298,6 +298,54 @@ def test_utterance_is_emitted_and_bounded():
     assert np.abs(u).max() <= 1.0 + 1e-9                  # tanh-bounded
 
 
+# ---------- R178: common-interest referential game (make Stage 2 signalling EMERGE) ----------
+def test_signal_game_off_is_byte_identical():
+    # signal_game=False adds no channel and no referent draw: a signalling world is bit-for-bit deterministic
+    # and the referent state stays exactly zero -> the off path is the R144 world untouched.
+    a = GenesisWorld(replace(fast_cfg(n0=120), signalling=True), seed=4)
+    b = GenesisWorld(replace(fast_cfg(n0=120), signalling=True), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.vel, b.pop.vel)
+    assert a.spec.n_in == 10 and a.spec.n_out == 4        # signalling-only shape, no game channels
+    assert a.pop.referent.max() == 0 and a.pop.ref_emitted.max() == 0
+
+
+def test_signal_game_adds_channels():
+    w = GenesisWorld(replace(fast_cfg(), signalling=True, signal_game=True), seed=0)
+    assert w.spec.n_in == 11                              # +1 private referent bit on top of signalling's 10
+    assert w.spec.n_out == 5                              # +1 decode-guess output on top of signalling's 4
+    assert w._guess_out == 4                              # guess is the LAST output (does not shift utterance idx)
+
+
+def test_signal_game_requires_signalling():
+    with pytest.raises(ValueError):
+        GenesisWorld(replace(fast_cfg(), signal_game=True), seed=0)   # no signalling channel to ride on
+
+
+def test_signal_game_readout_and_referent_drawn():
+    w = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True), seed=2)
+    for _ in range(30):
+        w.step()
+    r = w.signal_game_mi()
+    assert set(r) >= {"mi", "null_mean", "null_std", "decode_acc", "n"}
+    assert r["mi"] >= 0.0 and r["n"] > 0
+    assert 0.0 <= r["decode_acc"] <= 1.0                  # a real live decode accuracy was recorded
+    act = w.pop.active()
+    refs = set(w.pop.ref_emitted[act].tolist())
+    assert refs == {0, 1}                                 # both referent bits are genuinely drawn + encoded
+
+
+def test_signal_game_reward_flows_to_correct_decoders():
+    # the DIRECT common-interest payoff is live: a positive signal_reward injects energy that a zero-reward
+    # otherwise-identical run does not, so the rewarded world holds strictly more total energy.
+    paid = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True, signal_reward=2.0), seed=7)
+    free = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True, signal_reward=0.0), seed=7)
+    for _ in range(3):
+        paid.step(); free.step()
+    assert paid.pop.energy[paid.pop.active()].sum() > free.pop.energy[free.pop.active()].sum()
+
+
 def test_heard_channel_reads_nearest_neighbour():
     # the heard signal equals the nearest neighbour's last-step utterance, gated to 0 out of range
     w = GenesisWorld(replace(fast_cfg(n0=30), n_predators0=4, signalling=True), seed=2)

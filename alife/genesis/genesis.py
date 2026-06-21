@@ -123,6 +123,19 @@ class GenesisConfig:
                                        # forced silent. Compared against signalling=True (intact), this
                                        # is the ARTIFACT-IMMUNE test — does HEARING causally help, holding
                                        # brain shape fixed? (MI alone is fooled by sensory-reaction mimicry.)
+    # COMMON-INTEREST referential game (R178 — make Stage 2 signalling finally EMERGE). R144 (no
+    # relatedness) and R145 (kin selection) were BOTH honest negatives: predator-alarm's payoff to the
+    # caller is INDIRECT (inclusive fitness through saved kin) — weak, noisy, slow selection. Skyrms
+    # (2010): a Lewis signalling system emerges readily under DIRECT common interest. signal_game=True
+    # embeds exactly that. Each step every agent observes a private random referent bit (a NEW input)
+    # and emits its utterance; the nearest neighbour HEARS that utterance and decodes it via a guess
+    # output (a NEW output). A correct decode pays BOTH speaker and listener +signal_reward energy NOW
+    # (the direct mutual payoff R144/R145 lacked) -> selection to ENCODE the bit and to DECODE the
+    # neighbour's signal, so a signalling convention bootstraps from random brains. The hypothesis under
+    # test: the missing piece was the PAYOFF STRUCTURE, not the channel. Requires signalling=True.
+    # signal_game=False is byte-identical (no referent draw, no extra channel, brain shape unchanged).
+    signal_game: bool = False
+    signal_reward: float = 0.6         # energy paid to BOTH speaker and listener on a correct decode
     # division of labour (R146 — Stage 3): processing=True makes food spawn RAW (inedible); an agent
     # ripens nearby raw food into edible food via an evolved PROCESS output (an extra brain output), paying
     # process_cost. Ripe food is a LOCAL PUBLIC GOOD — any neighbour can harvest it — and decays back to raw
@@ -586,14 +599,22 @@ class GenesisWorld:
             raise ValueError("culture (R149 cumulative culture) requires building=True (hearths = the repository)")
         if self.build_specialized and not (self.building and self.specialize):
             raise ValueError("build_specialized (R152 builder caste) requires building=True AND specialize=True")
+        if self.cfg.signal_game and not self.signalling:
+            raise ValueError("signal_game (R178 referential game) requires signalling=True (the utterance channel)")
+        self.signal_game = self.cfg.signal_game
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
+                   + (1 if self.signal_game else 0)          # +own private referent bit (R178)
                    + (4 if self.processing else 0)           # +nearest-RAW-food sense channel (R146)
                    + (4 if self.building else 0))            # +nearest-HEARTH sense channel (R148)
         prey_out = (N_OUT + (1 if self.signalling else 0)    # +utterance output (R144); _act ignores it
-                    + (1 if self.processing else 0))         # +process gate output (R146); _act ignores it
+                    + (1 if self.processing else 0)          # +process gate output (R146); _act ignores it
+                    + (1 if self.signal_game else 0))        # +referent-decode guess output (R178)
         # index of the process-gate output (after movement and the optional utterance output)
         self._proc_out = N_OUT + (1 if self.signalling else 0)
+        # index of the R178 guess output (appended LAST, so it never shifts _proc_out / utterance idx)
+        self._guess_out = prey_out - 1 if self.signal_game else -1
+        self._last_decode_acc = float("nan")             # live decode accuracy of the R178 game (set per step)
         self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=prey_out)
         self.pop = Population(PopConfig(self.cfg.capacity, self.spec.n_weights))
         self.step_count = 0
@@ -836,6 +857,25 @@ class GenesisWorld:
             return np.zeros((act.size, 1))
         return (self.pop.utterance[act][ni] * (nprox > 0)).reshape(-1, 1)
 
+    def _signal_game_reward(self, act, out, ni, nprox):
+        """R178 Lewis game: the listener act[i] decoded its nearest neighbour ni's LAST-step utterance via
+        the guess output; a correct decode of the bit that utterance encoded (ref_emitted[ni]) pays BOTH
+        listener and speaker +signal_reward — the direct common interest that R144/R145 lacked. Returns the
+        per-active energy reward and records _last_decode_acc (the live decode accuracy of audible pairs)."""
+        n = act.size
+        rew = np.zeros(n)
+        if n < 2 or ni is None:
+            self._last_decode_acc = float("nan")
+            return rew
+        guess = (out[:, self._guess_out] > 0.0).astype(np.int8)   # listener's decode, per active i
+        spoken = self.pop.ref_emitted[act][ni]                    # the bit the heard utterance encoded
+        audible = nprox > 0                                       # only when a neighbour was within range
+        correct = (guess == spoken) & audible
+        rew[correct] += self.cfg.signal_reward                    # the listener earns
+        np.add.at(rew, ni[correct], self.cfg.signal_reward)       # the speaker earns (ni indexes the active subset)
+        self._last_decode_acc = float(correct[audible].mean()) if audible.any() else float("nan")
+        return rew
+
     def _sense_food(self, pos, r, u, f, act):
         """Nearest food in the body frame. With resource types each agent senses only its own type."""
         cfg = self.cfg
@@ -880,12 +920,19 @@ class GenesisWorld:
                 parts.append(self._sense_predators(pos, r, u, f))
             if self.signalling:                             # +heard-neighbour-utterance channel (R144)
                 parts.append(self._heard(act, ni, nprox))
+            if self.signal_game:                            # R178: each agent observes a private referent bit
+                ref = self.rng.integers(0, 2, size=act.size).astype(np.int8)
+                p.referent[act] = ref
+                parts.append((2.0 * ref - 1.0).reshape(-1, 1))   # ±1-centred input the sender can encode
             if self.processing:                             # +nearest-RAW-food sense channel (R146)
                 parts.append(_sense_kd(pos, r, u, f, self.food[~self.food_ripe], cfg.sense_range))
             if self.building:                               # +nearest-HEARTH sense channel (R148)
                 parts.append(self._sense_hearths(pos, r, u, f))
             parts.append(e)
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
+            # R178: reward a correct decode of the neighbour's LAST-step utterance (reads ref_emitted BEFORE
+            # it is overwritten below) — the direct common-interest payoff that makes signalling evolve.
+            game_rew = self._signal_game_reward(act, out, ni, nprox) if self.signal_game else None
             hi = self._cap_speed(act)                        # R154: per-agent max speed (culture-gated locomotion)
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, hi)  # _act reads out[:,:3]
             p.vel[act] = newvel
@@ -894,12 +941,16 @@ class GenesisWorld:
             if self.signalling:                             # the evolved extra output IS the utterance
                 p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
                 emit = cfg.emit_cost * np.abs(p.utterance[act])  # honest-signalling cost -> silence default
+            if self.signal_game:                            # this fresh utterance now encodes THIS step's bit
+                p.ref_emitted[act] = p.referent[act]
             speed = np.linalg.norm(newvel, axis=1)
             upkeep = 0.0
             if self.tech_actions and cfg.recipe_upkeep > 0.0:    # R157: metabolic cost of carried recipe knowledge
                 upkeep = cfg.recipe_upkeep * self.rep[act][:, self._recipe_tech[1:]].sum(axis=1)
             p.energy[act] = np.minimum(p.energy[act] - (cfg.base_cost + cfg.move_cost * speed + emit + upkeep),
                                        cfg.e_max)
+            if game_rew is not None:                        # R178: direct mutual payoff for a correct decode
+                p.energy[act] = np.minimum(p.energy[act] + game_rew, cfg.e_max)
             if self.building:                               # deposit/reinforce a persistent hearth (R148)
                 self._build(act, out)
             elif self.processing:                           # ripen nearby raw food (the costly labour)
@@ -2205,6 +2256,8 @@ class GenesisWorld:
                 self._gen_parent.append(int(self._gen_node[ps]))
         if self.signalling:
             p.utterance[slots] = 0.0                      # newborns start mute (don't inherit a stale slot's signal)
+        if self.signal_game:
+            p.ref_emitted[slots] = 0                      # newborn's "encoded bit" is reset (no stale-slot decode)
         if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
             p.diet[slots] = np.clip(p.diet[parents] + self.rng.normal(0, cfg.diet_mut_sigma, parents.size),
                                     0.0, cfg.n_food_types - 1e-6)
@@ -2328,6 +2381,25 @@ class GenesisWorld:
         if not (self.signalling and self.has_predators) or act.size == 0:
             return 0.0
         return metrics.signal_world_mi(self.pop.utterance[act], self._danger(act), self.cfg.signal_bins)
+
+    def signal_game_mi(self) -> dict:
+        """R178 emergence read-out: I(utterance ; the referent bit it encodes) in bits, the scrambled-channel
+        null (mean,std) that any real MI must clear, and the live decode accuracy. The emergence signal is
+        MI >> null AND decode_acc > 0.5 as a signalling convention evolves from random brains. A LOCAL RNG
+        seeds the null so this diagnostic never perturbs the world's RNG stream."""
+        nan = float("nan")
+        if not self.signal_game:
+            return {"mi": 0.0, "null_mean": 0.0, "null_std": 0.0, "decode_acc": nan, "n": 0}
+        act = self.pop.active()
+        acc = getattr(self, "_last_decode_acc", nan)
+        if act.size < 2 * self.cfg.signal_bins:
+            return {"mi": 0.0, "null_mean": 0.0, "null_std": 0.0, "decode_acc": acc, "n": int(act.size)}
+        u = self.pop.utterance[act]
+        ref = self.pop.ref_emitted[act].astype(int)
+        mi = metrics.signal_world_mi(u, ref, self.cfg.signal_bins)
+        nmean, nstd = metrics.signal_mi_null(u, ref, np.random.default_rng(12345), self.cfg.signal_bins)
+        return {"mi": float(mi), "null_mean": float(nmean), "null_std": float(nstd),
+                "decode_acc": float(acc), "n": int(act.size)}
 
     def signal_causal_test(self, rng: np.random.Generator | None = None) -> dict:
         """Causal LISTENING test: recompute every prey's action with the heard channel intact vs lesioned
