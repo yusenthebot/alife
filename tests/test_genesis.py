@@ -2459,3 +2459,71 @@ def test_live_economy_accelerates_vs_decoupled_control():
     ctrl = lp.step_trajectory(GenesisWorld(_live_combinatorial_cfg(0.0), seed=0), 300)
     assert econ["n_distinct"][-1] > ctrl["n_distinct"][-1]
     assert econ["active"].max() > ctrl["active"].max()      # the economy grows a bigger workforce
+
+
+# --- R167: TECH DEPTH — connected cumulative DAG vs flat scatter ---
+
+def test_closure_and_connected_depth_on_a_known_chain():
+    """A hand-built tree: connected_depth counts the longest fully-known prereq chain; a missing prereq
+    breaks it; closure is the fraction of known non-seed techniques standing on known prereqs."""
+    from alife.genesis import combinatorial as cb
+    from alife.genesis import techdepth as td
+    # seeds 0,1 (level 0); 2 = f(0,1) lvl1; 3 = f(2,0) lvl2; 4 = f(3,1) lvl3
+    pa = np.array([-1, -1, 0, 2, 3], dtype=np.int64)
+    pb = np.array([-1, -1, 1, 0, 1], dtype=np.int64)
+    level = np.array([0, 0, 1, 2, 3], dtype=np.int64)
+    n_seed = 2
+    full = np.array([True, True, True, True, True])
+    assert td.connected_depth(full, pa, pb, level, n_seed) == 3      # 0/1 -> 2 -> 3 -> 4
+    assert td.closure_fraction(full, pa, pb, n_seed) == 1.0          # every non-seed has both prereqs
+    # drop technique 2 (a prereq of 3): 3's chain breaks (cd 0); 4=f(3,1) still has both prereqs known
+    # so it stands one rung up on a broken foundation -> connected depth collapses from 3 to 1
+    broken = np.array([True, True, False, True, True])
+    assert td.connected_depth(broken, pa, pb, level, n_seed) == 1    # 4 on (known 3, known 1); 3 rootless
+    assert td.closure_fraction(broken, pa, pb, n_seed) == 0.5        # known non-seed {3,4}: only 4 prereq-closed
+
+
+def test_connected_depth_array_matches_level_when_fully_closed():
+    """On a fully-known repertoire, connected depth equals the tree level (the chain is intact end-to-end)."""
+    from alife.genesis import combinatorial as cb
+    from alife.genesis import techdepth as td
+    pa, pb, level = cb.build_tech_tree(80, 6)
+    known = np.ones(80, dtype=bool)
+    cd = td.connected_depth_array(known, pa, pb, level, 6)
+    assert np.array_equal(cd, level)                                 # closed DAG: connected depth == level
+
+
+def test_additive_null_is_broad_but_disconnected():
+    """The structural HEADLINE as a fast deterministic smoke: same machinery, same tree, the ONLY change is
+    combo_prereqs. Combinatorial discovery yields a prereq-closed deep CONNECTED DAG; the additive null
+    reaches a comparable nominal depth but a DISCONNECTED scatter — high max_level, collapsed connected depth
+    and low closure. (The full multi-seed contrast is the REAL-VERIFY run.)"""
+    from alife.genesis.genesis import GenesisWorld
+    from alife.genesis import techdepth as td
+    # a tree large enough that the additive null stays a sparse SUBSET (so the structure is visible, not a
+    # saturated tree where everything-known is trivially closed).
+    cfg = replace(_live_combinatorial_cfg(0.35), max_techniques=8000)
+    oc = td.depth_trajectory(GenesisWorld(cfg, seed=0), 200)
+    oa = td.depth_trajectory(GenesisWorld(replace(cfg, combo_prereqs=False), seed=0), 200)
+    # by BREADTH and NOMINAL depth the additive null looks MORE advanced -- it is broader and reaches a
+    # higher tree level, because it discovers without respecting prerequisites.
+    assert oa["breadth"][-1] > oc["breadth"][-1]
+    assert oa["max_level"][-1] >= oc["max_level"][-1]
+    # but the STRUCTURE inverts the verdict: combinatorial is a prereq-closed CONNECTED ladder, the additive
+    # scatter is broken -- low closure and a collapsed connected depth despite its higher nominal level.
+    assert oc["closure"][-1] > 0.9
+    assert oc["conn_depth"][-1] >= 0.8 * oc["max_level"][-1]
+    assert oa["closure"][-1] < 0.5
+    assert oa["conn_depth"][-1] < oc["conn_depth"][-1]
+
+
+def test_depth_trajectory_shape_and_determinism():
+    """depth_trajectory emits the documented keys, is the right length, and is byte-identical per seed."""
+    from alife.genesis.genesis import GenesisWorld
+    from alife.genesis import techdepth as td
+    o1 = td.depth_trajectory(GenesisWorld(_live_combinatorial_cfg(0.35), seed=1), 40)
+    assert set(o1) == {"step", "breadth", "max_level", "conn_depth", "closure", "active"}
+    assert o1["conn_depth"].size == 40
+    assert np.all(o1["conn_depth"] <= o1["max_level"])              # connected depth never exceeds nominal
+    o2 = td.depth_trajectory(GenesisWorld(_live_combinatorial_cfg(0.35), seed=1), 40)
+    assert np.array_equal(o1["conn_depth"], o2["conn_depth"])
