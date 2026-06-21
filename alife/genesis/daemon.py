@@ -96,7 +96,8 @@ def render_live_panel(traj: dict, panel_path: str, title: str = "GENESIS — una
 # only the cap differs: the uncapped world keeps climbing across the whole horizon while the capped world
 # freezes once its tree is full. `render_climb_panel` draws both so the sustained climb is eye-checkable.
 
-_CLIMB_KEYS = ("tick", "step", "conn_depth", "breadth", "edible_tiers", "realized_axes", "population")
+_CLIMB_KEYS = ("tick", "step", "conn_depth", "breadth", "edible_tiers", "realized_axes",
+               "embodied_scale", "population")
 
 
 def climb_curve(state_dir: str, cfg: GenesisConfig, seed: int, segment_steps: int, n_ticks: int,
@@ -115,7 +116,7 @@ def climb_curve(state_dir: str, cfg: GenesisConfig, seed: int, segment_steps: in
             "tick": float(i + 1), "step": float(tr["step"][-1]),
             "conn_depth": float(tr["conn_depth"][-1]), "breadth": float(tr["breadth"][-1]),
             "edible_tiers": float(tr["edible_tiers"][-1]), "realized_axes": float(tr["realized_axes"][-1]),
-            "population": float(tr["population"][-1]),
+            "embodied_scale": float(tr["embodied_scale"][-1]), "population": float(tr["population"][-1]),
         })
     return {k: np.asarray([row[k] for row in rows]) for k in _CLIMB_KEYS}
 

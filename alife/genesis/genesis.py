@@ -305,6 +305,25 @@ class GenesisConfig:
     # exact uniform rng.choice draw, no extra RNG). Only acts on the generative tree.
     depth_bias: float = 0.0
 
+    # --- R176: OPEN-ENDED EMBODIMENT — a CONTINUOUS depth-scaled phenotype (the body keeps deepening too) ---
+    # R171's depth_gates made the body causal on culture, but CATEGORICALLY: diet is floor(depth/step) clipped to
+    # n_food_tiers-1 and axes are count(depth>=step*(i+1)) clipped to n_capabilities, so the EMBODIED ceiling
+    # SATURATES the instant depth crosses the last fixed threshold (R175 caveat: diet 7 / axes 4 frozen by ~tick 1
+    # while connected DEPTH climbs 32->76). A finite list of tiers/axes is a ceiling by construction. depth_phenotype
+    # adds a CONTINUOUS, UNBOUNDED embodied trait: an agent's max speed and harvest reach scale smoothly with its
+    # realized cultural depth — speed = cfg.speed*(1+pheno_speed_gain*depth), reach = cfg.eat_radius*(1+
+    # pheno_reach_gain*depth) — so as depth keeps climbing the BODY keeps deepening with it, no saturation. The
+    # headline metric embodied_scale() is the living population's MEAN continuous speed multiplier (an emergent
+    # population property, weighted by who is alive), which keeps rising the whole horizon whereas realized_axes/
+    # edible_tiers ceiling at tick 1 in the SAME run. The decisive control is the GAIN itself: gains>0 ->
+    # embodied_scale climbs tick after tick; gains=0 -> embodied_scale flat at 1.0 though depth still climbs
+    # (proving it is the continuous MAPPING that converts depth-gain into body-gain, not a relabel of depth).
+    # Requires depth_gates=True. depth_phenotype=False is byte-identical (the categorical _cap_speed/_cap_reach
+    # thresholds, no continuous path, no extra RNG). The diet stays the depth_gates tier ladder (food is discrete).
+    depth_phenotype: bool = False
+    pheno_speed_gain: float = 0.0     # max speed = cfg.speed*(1 + pheno_speed_gain*realized_depth) (continuous, unbounded)
+    pheno_reach_gain: float = 0.0     # eat radius = cfg.eat_radius*(1 + pheno_reach_gain*realized_depth) (continuous)
+
     # --- R156: emergent divergent cultural TRADITIONS over the open-ended tree ---
     # The combinatorial tree is open-ended, but R150-R155 only ever measured ONE global frontier. A real
     # civilization is not one monoculture of knowledge — it is MANY divergent cultural traditions. R156 asks
@@ -492,6 +511,7 @@ class GenesisWorld:
         self.tech_actions = self.cfg.tech_actions
         self.tech_capabilities = self.cfg.tech_capabilities
         self.depth_gates = self.cfg.depth_gates
+        self.depth_phenotype = self.cfg.depth_phenotype
         self.cap_niches = self.cfg.cap_niches
         self.culture_decay = self.cfg.culture_decay
         if self.combinatorial and not self.culture:
@@ -504,6 +524,9 @@ class GenesisWorld:
         if self.depth_gates and not self.generative_tree:
             raise ValueError("depth_gates (R171 embodied capability gated on realized cultural DEPTH) requires "
                              "generative_tree=True (it gates on the open-ended grown tree's depth)")
+        if self.depth_phenotype and not self.depth_gates:
+            raise ValueError("depth_phenotype (R176 continuous depth-scaled body) requires depth_gates=True "
+                             "(it makes the depth_gates body continuous/unbounded instead of categorical)")
         if self.tech_actions and not self.combinatorial:
             raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
         if self.tech_capabilities and not self.combinatorial:
@@ -909,6 +932,9 @@ class GenesisWorld:
         node (self._cap_tech[0]) moves at cfg.speed*(1+cap_speed_mult); everyone else at cfg.speed. Returns a
         scalar when tech_capabilities is off (byte-identical) or as a column vector for _limit_speed."""
         cfg = self.cfg
+        if self.depth_phenotype:                             # R176: CONTINUOUS, unbounded — speed scales with depth
+            mult = 1.0 + cfg.pheno_speed_gain * self.pop.tech[act]
+            return (cfg.speed * mult).reshape(-1, 1)
         if self.depth_gates:                                 # R171: locomotion unlocks at cultural DEPTH >= step
             fast = self.pop.tech[act] >= cfg.cap_level_step  # axis 0 threshold (level units)
             return (cfg.speed * (1.0 + cfg.cap_speed_mult * fast)).reshape(-1, 1)
@@ -922,6 +948,8 @@ class GenesisWorld:
         (self._cap_tech[1]) harvests within cfg.eat_radius*(1+cap_reach_mult); others within cfg.eat_radius.
         Returns the scalar cfg.eat_radius when off (byte-identical)."""
         cfg = self.cfg
+        if self.depth_phenotype:                             # R176: CONTINUOUS, unbounded — reach scales with depth
+            return cfg.eat_radius * (1.0 + cfg.pheno_reach_gain * self.pop.tech[eaters_act])
         if self.depth_gates:                                 # R171: reach (axis 1) unlocks at depth >= 2*step
             if cfg.n_capabilities < 2:
                 return cfg.eat_radius
@@ -1091,6 +1119,29 @@ class GenesisWorld:
         max_tier = int(np.clip(np.floor(depth / cfg.recipe_level_step), 0, cfg.n_food_tiers - 1).max())
         axes = np.array([(depth >= cfg.cap_level_step * (i + 1)).any() for i in range(cfg.n_capabilities)])
         return max_tier, int(axes.sum())
+
+    def embodied_scale(self) -> dict:
+        """R176 read-out (read-only; no RNG, no state change): the living population's CONTINUOUS depth-scaled
+        embodied phenotype under depth_phenotype. The categorical ceiling (diet_capability_ceiling) saturates the
+        instant depth crosses the last fixed threshold; this metric instead measures the UNBOUNDED phenotype that
+        keeps deepening with depth. Returns:
+          - mean_speed_mult : living-pop MEAN of (1 + pheno_speed_gain*depth) — the headline; an emergent
+                              population property (weighted by who is alive) that rises as the depth distribution
+                              rises, never saturating. 1.0 when gains=0 (the body is frozen though depth climbs).
+          - max_speed_mult  : the deepest living agent's speed multiplier (the frontier of the body).
+          - mean_reach_mult : living-pop MEAN of (1 + pheno_reach_gain*depth).
+          - mean_depth      : mean realized cultural depth of the living pop (the driver, for the control).
+        All 1.0/0.0 when no agent is alive. depth_phenotype off -> still reports the would-be multipliers from the
+        configured gains (0 -> all 1.0), so a control run is directly comparable."""
+        cfg = self.cfg
+        act = self.pop.active()
+        if act.size == 0:
+            return {"mean_speed_mult": 1.0, "max_speed_mult": 1.0, "mean_reach_mult": 1.0, "mean_depth": 0.0}
+        depth = self.pop.tech[act].astype(float)
+        smult = 1.0 + cfg.pheno_speed_gain * depth
+        rmult = 1.0 + cfg.pheno_reach_gain * depth
+        return {"mean_speed_mult": float(smult.mean()), "max_speed_mult": float(smult.max()),
+                "mean_reach_mult": float(rmult.mean()), "mean_depth": float(depth.mean())}
 
     def _do_trade(self, givers: np.ndarray, gain: np.ndarray, t: int) -> None:
         """R158 trade: each giver (just harvested a tier-t>=1 mote it alone could eat) offers trade_share of its
@@ -2181,6 +2232,9 @@ class GenesisWorld:
             max_tier, n_axes = self.diet_capability_ceiling()  # persisted so the climb is visible on disk (R172)
             snap["mean_edible_tiers"] = float(max_tier)
             snap["realized_axes"] = float(n_axes)
+            es = self.embodied_scale()                      # R176: CONTINUOUS depth-scaled body (open-ended ceiling)
+            snap["embodied_scale"] = es["mean_speed_mult"]
+            snap["embodied_scale_max"] = es["max_speed_mult"]
         if self.tech_capabilities:                          # R154: culture-gated physical capability axes
             tc = self.tech_capabilities_test()
             snap["realized_axes"] = float(tc.get("realized_axes", 0))

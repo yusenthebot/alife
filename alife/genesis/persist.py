@@ -33,7 +33,7 @@ from alife.genesis.genesis import GenesisConfig, GenesisWorld
 
 # the civilization-development signals logged per trajectory sample (same family as civdev).
 _KEYS = ("step", "population", "conn_depth", "closure", "breadth",
-         "realized_axes", "edible_tiers", "diversity", "max_gen")
+         "realized_axes", "edible_tiers", "embodied_scale", "diversity", "max_gen")
 
 
 def _observe(world: GenesisWorld) -> dict:
@@ -51,6 +51,7 @@ def _observe(world: GenesisWorld) -> dict:
         "breadth": float(known.sum()),
         "realized_axes": float(snp.get("realized_axes", np.nan)),
         "edible_tiers": float(snp.get("mean_edible_tiers", np.nan)),
+        "embodied_scale": float(snp.get("embodied_scale", np.nan)),    # R176 continuous depth-scaled body
         "diversity": float(snp["diversity"]),
         "max_gen": float(snp["max_gen"]),
     }

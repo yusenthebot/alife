@@ -3089,3 +3089,85 @@ def test_depth_bias_sustains_depth_climb_while_unbiased_plateaus(tmp_path):
     assert bias["conn_depth"][-1] > 3 * unb["conn_depth"][-1]
     assert bias["edible_tiers"][-1] >= unb["edible_tiers"][-1]
     assert bias["population"][-1] >= 500 and unb["population"][-1] >= 500
+
+
+# ---- R176: OPEN-ENDED EMBODIMENT — a CONTINUOUS depth-scaled phenotype (the body keeps deepening too) ----
+# R171's depth_gates made the body causal on culture but CATEGORICALLY (diet floor(depth/step) clipped, axes
+# count(depth>=step*(i+1)) clipped), so the EMBODIED ceiling SATURATES the instant depth crosses the last fixed
+# threshold (R175 caveat: diet 7 / axes 4 frozen by ~tick 1 while connected DEPTH climbs 32->76). depth_phenotype
+# makes speed+reach scale CONTINUOUSLY and UNBOUNDEDLY with realized cultural depth, so the body keeps deepening.
+def _r176_cfg(depth_phenotype, gain, K=20000):
+    """The R175 SUSTAINED-DEPTH regime (depth_bias on, large cap) + the R176 continuous body. The phenotype-vs-
+    categorical control changes depth_phenotype/gain ALONE — same depth-climbing world underneath."""
+    from alife.genesis.civdev import civ_config
+    return civ_config(
+        tech_actions=False, tech_capabilities=False, generative_tree=True, depth_gates=True,
+        depth_phenotype=depth_phenotype, pheno_speed_gain=gain, pheno_reach_gain=gain,
+        max_techniques=K, innov_steps=2, n_food_tiers=8, recipe_level_step=2,
+        n_capabilities=4, cap_level_step=3, tier0_frac=0.4, depth_bias=1.0,
+        n0=300, capacity=1000, food_cap=600, food_regrow=40)
+
+
+def test_depth_phenotype_requires_depth_gates():
+    """depth_phenotype gates on realized cultural DEPTH, which only the generative depth_gates path provides."""
+    from alife.genesis.civdev import civ_config
+    with pytest.raises(ValueError):
+        GenesisWorld(civ_config(depth_phenotype=True, pheno_speed_gain=0.02), seed=0)  # depth_gates off
+
+
+def test_depth_phenotype_off_is_byte_identical():
+    """depth_phenotype=False adds NO code path and consumes NO extra RNG — even with gains set, an OFF world is
+    bit-identical to the depth_gates (R171) world, and an ON world genuinely DIFFERS (the continuous speed acts)."""
+    off_default = GenesisWorld(_r176_cfg(False, 0.0), seed=1)
+    off_gains = GenesisWorld(_r176_cfg(False, 0.05), seed=1)        # gains set but OFF -> must be ignored
+    on = GenesisWorld(_r176_cfg(True, 0.05), seed=1)
+    for _ in range(30):
+        off_default.step(); off_gains.step(); on.step()
+    assert np.array_equal(off_default.pop.pos, off_gains.pop.pos)   # gains have no effect while off
+    assert np.array_equal(off_default.pop.vel, off_gains.pop.vel)
+    assert not np.array_equal(off_default.pop.pos, on.pop.pos)      # the continuous phenotype actually moves bodies
+
+
+def test_embodied_scale_is_the_continuous_depth_mapping():
+    """embodied_scale() is exactly the living-pop mean of (1+gain*depth): a pure continuous function of the depth
+    distribution (no threshold, no clip), so it has no ceiling — unlike diet_capability_ceiling's clipped ints."""
+    w = GenesisWorld(_r176_cfg(True, 0.02), seed=2)
+    for _ in range(60):
+        w.step()
+    act = w.pop.active()
+    depth = w.pop.tech[act].astype(float)
+    es = w.embodied_scale()
+    assert es["mean_speed_mult"] == pytest.approx(float((1.0 + 0.02 * depth).mean()))
+    assert es["max_speed_mult"] == pytest.approx(float((1.0 + 0.02 * depth).max()))
+    # the contrast: the categorical ceiling is a clipped integer (saturable); embodied_scale is unbounded-by-form
+    max_tier, n_axes = w.diet_capability_ceiling()
+    assert n_axes <= w.cfg.n_capabilities and max_tier <= w.cfg.n_food_tiers - 1   # categorical caps bind
+    assert es["max_speed_mult"] > 1.0                                              # continuous body has no such cap
+
+
+def test_depth_phenotype_body_keeps_deepening_while_categorical_saturates(tmp_path):
+    """R176 HEADLINE (falsifiable): driven as REAL resumed ticks, the CONTINUOUS embodied phenotype (embodied_scale
+    = mean realized speed multiplier) keeps RISING across the whole horizon — still rising on the last tick — while
+    the CATEGORICAL body (realized_axes) SATURATES at its ceiling by ~tick 1 in the SAME run. The decisive control
+    is the GAIN: with gain=0 the body is FROZEN at 1.0 though connected DEPTH still climbs identically — proving it
+    is the continuous MAPPING that converts depth-gain into body-gain, not a relabel of depth or a run-length effect."""
+    from alife.genesis import daemon
+    n_ticks, seg = 6, 50
+    half = n_ticks // 2
+    pheno = daemon.climb_curve(str(tmp_path / "pheno"), _r176_cfg(True, 0.02), seed=0, segment_steps=seg, n_ticks=n_ticks)
+    ctrl = daemon.climb_curve(str(tmp_path / "ctrl"), _r176_cfg(True, 0.0), seed=0, segment_steps=seg, n_ticks=n_ticks)
+
+    # CONTINUOUS body keeps deepening: embodied_scale climbs the late horizon and is STILL rising on the last tick
+    assert pheno["embodied_scale"][-1] > pheno["embodied_scale"][half] + 0.05
+    assert pheno["embodied_scale"][-1] - pheno["embodied_scale"][-2] > 0.0
+
+    # CATEGORICAL body SATURATES early in the SAME run: axes ceiling at n_capabilities, flat across the late half
+    assert pheno["realized_axes"][-1] == pheno["realized_axes"][half]               # axes frozen late (no deepening)
+    assert pheno["realized_axes"][-1] <= 4
+
+    # CONTROL (gain=0, same regime): connected DEPTH still climbs strongly, but the body is FROZEN at 1.0 ->
+    # the body-deepening is the continuous MAPPING converting depth-gain into body-gain, not a relabel of depth.
+    assert ctrl["conn_depth"][-1] > ctrl["conn_depth"][0] + 10                      # depth climbs WITHOUT the body
+    assert pheno["conn_depth"][-1] > pheno["conn_depth"][0] + 10                    # depth climbs WITH it too
+    assert np.allclose(ctrl["embodied_scale"], 1.0)                                 # zero-gain body never deepens
+    assert pheno["population"][-1] >= 500 and ctrl["population"][-1] >= 500         # both healthy living worlds
