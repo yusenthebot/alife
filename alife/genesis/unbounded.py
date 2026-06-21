@@ -10,7 +10,14 @@ made before becomes a brand-new technique with a fresh id. Because any two known
 the product is itself composable, the reachable space is the (infinite) closure of the seeds under pairing
 — there is no fixed point and no cap. Frontier depth is then bounded only by the number of composition
 rounds, not by any pre-set ceiling: open-ended BY CONSTRUCTION, and provably so — after t composition
-rounds the deepest reachable level is exactly t (a strictly rising envelope with no asymptote).
+rounds the deepest REACHABLE level is exactly t (a strictly rising envelope with no asymptote).
+
+Honest caveat on REALIZED vs reachable (red-teamed to 4000 steps): BREADTH is the clean unbounded metric
+— distinct techniques materialized grow exactly linearly (~n_agents per step), with no asymptote. Realized
+DEPTH also keeps climbing with no asymptote (final-third gain stays positive at every horizon tested), but
+because random repertoire-pairing rarely chains deepest-with-deepest, it rises ~LOGARITHMICALLY in time
+(empirically depth ~ 2.5*ln(breadth) ~ 2.5*ln(t)), far below the linear reachable envelope. So the climb is
+genuinely unbounded but strongly DECELERATING in depth — not the un-slowing linear rate the envelope sets.
 
 The level is the LONGEST ancestral composition chain back to the seeds (`chain_len` proves the invariant
 `chain_len(k) == level(k)`): a level-L technique genuinely descends through L compositions from primitive
