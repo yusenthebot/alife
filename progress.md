@@ -1,5 +1,51 @@
 # alife — progress
 
+## Current state (Round 158 — 2026-06-20) — GENESIS inter-agent TRADE economy: a real local exchange network, but CAUSALLY INERT (honest negative)
+
+**R158 attacked the Stage-4 "civilization leap": turn R157's ecologically-segregated region-specialists into an
+ECONOMY via EXCHANGE. The mechanism is correct and the exchange network is real and structured — but the round
+delivers an HONEST NEGATIVE, red-teamed across four regimes: bolting trade onto ecological traditions is
+CAUSALLY INERT (it redistributes energy without changing population or tradition outcomes). 禁止造假.**
+
+**The mechanism (additive, unit-tested, byte-identical when off — `trade=False` = exact R157).** New flag
+`trade` (requires `tech_actions`), `genesis.py`: when an agent harvests a LOCKED-tier (t≥1) mote it alone could
+eat, a fraction `trade_share` of the gain flows to the nearest HUNGRY COMPLEMENTARY agent (one that LACKS tier
+t's recipe, so physically could not have eaten the food) within `trade_radius`. The surplus is modeled as
+otherwise-spoiled (the giver keeps its full harvest) so the transfer is positive-sum — like food ripening
+(R148) it is a WORLD MECHANIC, not faked behaviour. `_do_trade` + a `trade_test` read-out (count, volume,
+mean partner distance, complementary frac, cross-region frac). The causal NULL `trade_scramble`: deliver each
+share to a UNIFORMLY-RANDOM hungry agent (locality + complementarity cut), same energy injected. 5 new tests
+(151 genesis green): requires-tech_actions, scramble-requires-trade, byte-identical-off (pos+energy+rep),
+transfers-only-to-complementary-partner (hand-built), real-is-local+complementary+less-cross-region-than-
+scramble, and the headline regression **`test_trade_is_causally_inert_on_population`**.
+
+**REAL-VERIFY (`scripts/run_genesis_trade.py 300`; `runs/r158_trade/panel.png` EYE-VERIFIED — off/trade/trade-g2
+population curves OVERLAP at the 900 capacity ceiling = inert; structure bars show real-local+complementary vs
+scramble-dispersed; substantial volume; a branch-coloured 3D living world), saturated regime (capacity 900),
+2 seeds, 300 steps:**
+- **STRUCTURE (positive, by-construction + emergent volume):** real trade is LOCAL (mean partner dist **7.6**
+  ≪ radius 12) and fully COMPLEMENTARY (**1.00** of receivers lack the recipe), volume **~86k**; the matched-
+  energy SCRAMBLE is dispersed (dist **65.4**, compl **0.69**). Real trade is mostly WITHIN-region (cross-region
+  frac **0.07** vs scramble **0.61**) — it feeds nearby off-branch MINORITIES, not a cross-border economy.
+- **CAUSAL INERTNESS (the finding):** off / trade / trade-with-2×-energy-INJECTING-gain all settle at n=**900**
+  on **both** seeds (|trade−off| = **0**, |g2−off| = **0**; + 4/4 in tests). Redistribution — even net energy
+  injection — does NOT lift the capacity/food-bound ceiling, and alignment is unchanged (noise). An inter-agent
+  economy alone does not relax the binding constraint, so it does not drive a population/tradition transition.
+
+**RED-TEAM (mandatory; inline, refutation-first; verdict: ROBUST NEGATIVE).** Adversarially probed FOUR regimes
+trying to find ANY robust trade positive: (a) `recipe_budget=1` SHARP-specialist rescue — trade ON and OFF both
+collapse to the IDENTICAL 59 survivors (no surplus exists during the bootstrap collapse); (b) harsher lifeline
+(low `tier0_frac`) — universal collapse to ~5–16 (locked tiers can't bootstrap); (c) alignment sharpening —
+NOISE (real 0.036 ≈ off 0.038 over 4 seeds, real<off only 2/4); (d) carrying-capacity via `trade_gain`∈{1,2,3}
+— pinned at the ceiling regardless. NO regime gave trade a clean robust benefit; the inertness is genuine
+because the limiting constraint (capacity/food, not energy distribution) is not relaxable by moving energy
+around. **HONEST caveat:** the inertness is cleanest in the capacity-bound saturated regime (where nothing can
+raise pop past the cap); in sub-capacity regimes trade's effect is pure seed-dependent NOISE, and in a richer
+full-stack regime it even DESTABILIZED one seed (boom-bust). Across all: never a robust positive. The mechanism
++ scramble null are committed (default-off) and reusable for R159's redesign (trade in GOODS that unlock wasted
+food). **An honest, important negative: an economy must be coupled to a relaxable constraint to matter — see
+## Frontier.**
+
 ## Current state (Round 157 — 2026-06-20) — GENESIS ECOLOGICALLY-SELECTED divergent traditions (region↔branch alignment), red-teamed ROBUST
 
 **R156 grew divergent traditions but they were NEUTRAL DRIFT (modest F_ST ~0.03). R157's question: how do you
@@ -1264,6 +1310,18 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R158): R157 ecologically-selected (modest) traditions + a real but CAUSALLY INERT
+inter-agent trade economy. The R158 lesson is the next rung's design constraint: an economy only MATTERS when
+trade is coupled to a RELAXABLE limiting constraint.** Candidate R159 frontiers, ranked ambition × feasibility:
+(1) **TRADE IN GOODS THAT UNLOCK WASTED FOOD** (top pick) — a specialist harvests its region's tier and GIFTS
+the edible PRODUCT to a complementary partner who could never access it, so the population eats food the world
+otherwise denies it (`locked_food_frac` falls, true carrying capacity rises). This makes trade relax the binding
+constraint → an economy that changes outcomes, with the same scramble null. (2) **STORAGE / markets** — surplus
+banked across time smooths scarcity (a relaxable temporal constraint). (3) **Cultural phylogeny / cladistics
+across generations** — the R157-next option, independent of trade (reconstruct the tradition tree, measure
+cumulative open-ended cultural complexity climbing). The R158 trade mechanism + scramble null are committed
+substrate to build (1) on.
 
 ### CEO DIRECTION SHIFT (2026-06-20, R140) — GENESIS: a living 3D world that grows a civilization
 Yusen steered the loop to a new major frontier: **build a real, alive 3D world that — just by running
