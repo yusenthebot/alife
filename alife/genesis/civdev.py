@@ -21,7 +21,17 @@ to a colour by its realized capability breadth, so the 3D render SHOWS deep-cult
 The falsifiable headline (red-teamed by the driver): under the full stack with social learning + evolution
 the civilization DEVELOPS — connected tech depth and realized capability axes CLIMB over a long run — whereas
 an ASOCIAL control (`learn=False`, no inter-generational transmission) cannot accumulate and stays shallow.
-Same world, same physics; the only change is whether culture is transmitted.
+Same world, same physics, the SAME per-lifetime innovation budget; the only change is whether culture is
+transmitted. This is Tomasello's ratchet, not a rigged null.
+
+HONEST CAVEAT (red-team R168, baked in): the asocial control's floor (connected depth 0, society breadth ==
+n_seed_tech) is structural at the SHARED `innov_steps=1` — an agent born with an empty repertoire makes one
+discovery from its adjacent possible (the seeds), and a level-1 technique needs TWO prerequisites held at
+once, which one lifetime's innovation cannot reach. It is NOT that innovation is switched off: with a generous
+per-lifetime budget the SAME asocial world DOES develop (innov_steps=30 -> connected depth ~8, both capability
+axes). So the load-bearing claim is precisely "at a MATCHED per-lifetime innovation budget, cumulative depth
+requires social TRANSMISSION" (generation N+1 must start where N left off) — fair because both arms share
+`civ_config`'s `innov_steps=1`, NOT "asocial agents cannot innovate at all."
 """
 
 from __future__ import annotations

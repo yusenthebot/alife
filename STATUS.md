@@ -1,31 +1,31 @@
 # STATUS — main
-updated: 2026-06-21T02:10 · loop 167
+updated: 2026-06-21T02:55 · loop 168
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R167 added a NEW AXIS to the cumulative-culture analysis: STRUCTURE (connected
-          dependency DAG), not another breadth/rate increment.
-doing:    R167 DONE. New alife/genesis/techdepth.py — closure_fraction / connected_depth / realized_edges /
-          depth_trajectory measure the STRUCTURE of the living civilization's tech on the live combinatorial
-          GenesisWorld. HEADLINE: breadth & nominal max_level MISLEAD — the additive null (combo_prereqs=False)
-          is ~12× BROADER and ~3× higher nominal level yet its DAG is DISCONNECTED (closure ~0.13, connected
-          depth ~5), while combinatorial culture is a prereq-CLOSED CONNECTED ladder (closure ~1, connected
-          depth == nominal). Cumulative culture is deep-and-connected, not broad.
+phase:    review — R168 is a LEAP BACK FROM ABSTRACTION: the R160-R167 arc analysed cumulative culture
+          on standalone registry toys; R168 runs the WHOLE civilization stack TOGETHER in one persistent,
+          RENDERED, watchable world — the CEO's actual deliverable.
+doing:    R168 DONE. New alife/genesis/civdev.py: civ_config (canonical full-stack regime — building/processing
+          + combinatorial culture + tech-gated diet tiers + culture-gated physical capabilities), develop_
+          trajectory (read-only observer of the civilization-development signals), develop_vs_control (full vs
+          asocial null), capability_color (3D agents coloured violet→gold by realized culture depth). First
+          time every separately-validated R148-R167 mechanism runs as ONE living world.
 owns:     all of ~/alife (single session)
-verify:   scripts/run_genesis_techdepth.py 500 → runs/r167_techdepth/panel.png EYE-VERIFIED (102s, 2 regimes
-          × 2 seeds, max_techniques=20000 so the additive scatter stays sparse): (A) combinatorial connected-
-          depth climbs to ~11, additive flat ~5-6; (B) additive breadth ~7700 vs ~650; (C) closure-vs-breadth
-          combinatorial flat 1.0, additive ~0.13; (D)(E) DAGs: combinatorial connected pyramid vs additive
-          rootless x's floating to level 32; (F) nominal vs connected bars — additive 32/6 dissociation. 196
-          genesis tests (+4).
-redteam:  CONFIRMED-WITH-CAVEAT (independent agent). Inversion holds 3 fresh seeds (combo closure 1.0 &
-          connected==max_level; additive 8-20× broader, 3× higher nominal, closure 0.10-0.16). SATURATION
-          CONFOUND DESTROYED: doubling tree to 40000 drops additive closure FURTHER (0.03), matched-breadth
-          additive closure ~0.000. Independent recompute matches bit-for-bit. CAVEAT (baked into docstring):
-          combinatorial UNION closure ~1.0 is effectively guaranteed by construction at 2000 agents; the
-          genuinely sub-1 quantity is PER-AGENT closure. Load-bearing contrast = additive ~0.1, holds regardless.
+verify:   scripts/run_genesis_civ.py 1500 800 → runs/r168_civ/{civ.gif,panel.png,checkpoint.npz} EYE-VERIFIED
+          (~30s). PANEL: connected tech depth climbs 0→14 (cumulative staircase), both capability axes unlock
+          ~step150, edible diet 1→3.86/4 tiers, population persistent at capacity, resume_ok=True. GIF: agents
+          start VIOLET (base phenotype) and the whole population turns GOLD as culture deepens — the civilization
+          developing, watchable. Asocial control (learn=False) flat: conn_depth 0, axes 0, eats tier-0 only.
+          199 genesis tests (+3). Checkpoint save→reload→continuity proven.
+redteam:  CONFIRMED-WITH-CAVEAT (independent agent). Holds 3 fresh seeds (full conn_depth 9-11 & axes=2 vs
+          control 0); connected_depth independently recomputed bit-for-bit (=11); deterministic observer. CAVEAT
+          (baked into docstring): the asocial floor is structural at the SHARED innov_steps=1 (one lifetime's
+          discovery from empty rep can't reach a 2-prereq level-1 node); a generous budget DOES let the asocial
+          world develop (innov_steps=30→depth~8). Honest claim = Tomasello's ratchet: at a MATCHED per-lifetime
+          innovation budget, cumulative depth requires TRANSMISSION. Fair: both arms share innov_steps=1.
 blocked:  none
-docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only). MEMORY: ONE sim at a time; live combinatorial world ~2k agents × 20k-bit rep ≈ 40 MB, <100 MB; no GL this round.
-next:     R168 should be a LEAP IN KIND (analysis arc is now deep — breadth/rate/structure/temporal all mapped):
-          (1) BREAK OUT — wire unbounded.TechSpace into the LIVE world so the OPEN repertoire GATES physical
-          actions & is SELECTED (sparse rep rewrite, vr-lead architectural gate). (2) A single PERSISTENT LONG
-          RUN rendered + watchable (the CEO deliverable; GL/GIF path fragile — commit-early, shrink frames).
-          (3) Stage-2 SIGNALLING redesign (synchronous lethal arena; beat frozen+deaf+causal, ≥3 seeds). 禁止造假.
+docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife). MEMORY: ONE sim at a time; full-stack world ~2k agents <200 MB; GL context released after render.
+next:     R169 LEAP options (frontier): (1) the world develops a FULL civilization but each run RESETS — wire a
+          single PERSISTENT LONG/RESUMABLE run (checkpoint chain) the CEO can leave running cloud/local, with
+          development surfaced live. (2) BREAK OUT — wire unbounded.TechSpace (R164) into the live world so the
+          OPEN repertoire keeps climbing past the fixed-tree ceiling (sparse-rep rewrite, vr-lead gate). (3)
+          Stage-2 SIGNALLING redesign (synchronous lethal arena, beat frozen+deaf+causal, ≥3 seeds). 禁止造假.

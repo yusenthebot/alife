@@ -1,5 +1,53 @@
 # alife — progress
 
+## Current state (Round 168 — 2026-06-21) — GENESIS FULL-STACK LIVING CIVILIZATION: run the WHOLE world at once, RENDER it, WATCH it develop. The first time every separately-validated R148-R167 mechanism runs together as ONE persistent watchable world (red-teamed CONFIRMED-WITH-CAVEAT, 3 fresh seeds + bit-for-bit metric recompute)
+
+**R168 is a deliberate LEAP BACK FROM ABSTRACTION.** R148-R167 validated each civilization mechanism in
+ISOLATION (niche construction / processing / cumulative combinatorial culture / tech-gated diet tiers /
+culture-gated capabilities / demes & traditions / the structural depth of the tech DAG), and the R160-R167
+arc then drifted into ever-finer analysis of those mechanisms on STANDALONE REGISTRY TOYS (rate laws, DAG
+closure, Mantel tests). The CEO's actual deliverable — "a world that, just by running, freely develops toward
+a civilization" — was never assembled or rendered. R168 does exactly that: turns the WHOLE stack ON together
+in one persistent `GenesisWorld` and renders it developing. 禁止造假.**
+
+**The contribution (one small shared module + a driver; reuses validated mechanisms, no new physics).** New
+`alife/genesis/civdev.py`:
+- **`civ_config`** — the canonical full-stack regime (building/processing + combinatorial culture +
+  tech-gated diet tiers + culture-gated physical capabilities), factored out as the ONE source of truth the
+  unit test and driver share. `learn=False` turns it into the asocial control.
+- **`develop_trajectory`** — a READ-ONLY observer over `world.step()` + `snapshot()` + the society repertoire
+  (no new RNG, no state change) logging the civilization-development signals the abstract arc could not see
+  together: connected tech depth (R167) + closure + breadth, AND the EMBODIED signals — realized physical
+  capability axes, mean edible diet tiers, population, lineage diversity, descent depth.
+- **`develop_vs_control`** (full vs asocial null) and **`capability_color`** (3D agents coloured violet→gold
+  by realized culture depth, so deep-culture agents emerge visibly in the render).
+
+**HEADLINE — the civilization DEVELOPS just by running, and it is WATCHABLE.** REAL-VERIFY
+(`scripts/run_genesis_civ.py 1500 800` → `runs/r168_civ/{civ.gif,panel.png,checkpoint.npz}`, EYE-VERIFIED,
+~30s): the **panel** shows connected tech depth climbing 0→14 as a cumulative STAIRCASE (each rung when a
+prereq chain completes), both physical capability axes unlocking ~step 150, the edible diet broadening 1→3.86
+of 4 tiers, and population persistent at capacity with `resume_ok=True`. The **3D GIF** is the payoff: agents
+start VIOLET (base phenotype, no culture) and the whole population turns GOLD as accumulated culture unlocks
+their physical capabilities — the civilization developing, watchable with the eyes. The **asocial control**
+(`learn=False`, same world same physics) stays flat: connected depth 0, 0 capability axes, eats tier-0 food
+only. **Persistence proven**: checkpoint saved mid-run, reloaded into a fresh world, continuity confirmed
+(the CEO's "just by running locally or in the cloud" requirement). 199 genesis tests (+3).
+
+**RED-TEAM (mandatory; refutation-first; verdict CONFIRMED-WITH-CAVEAT — independent agent).** (1) SEED
+ROBUST: 3 fresh seeds (5,6,7 @600 steps) all show full conn_depth 9-11 & axes=2 & diet ~3.5-3.8 vs control
+conn_depth 0 & axes 0 & tier-0-only & population collapse (89-98). (2) METRIC SOUND: an independent numpy
+recompute of the longest mutually-known prereq chain = 11, matching `techdepth.connected_depth` bit-for-bit;
+conn_depth ≤ nominal max known level ≤ tree max. (3) DETERMINISTIC observer (byte-identical across runs).
+**HONEST CAVEAT (baked into the docstring): the asocial control's floor is STRUCTURAL at the SHARED
+`innov_steps=1`** — an agent born with an empty repertoire makes one discovery (a seed), and a level-1
+technique needs TWO prerequisites held at once, which one lifetime's innovation cannot reach. It is NOT that
+innovation is switched off: the SAME asocial world with a generous per-lifetime budget DOES develop
+(`innov_steps=30` → connected depth ~8, both axes). So the load-bearing claim is precisely "**at a MATCHED
+per-lifetime innovation budget, cumulative depth requires social TRANSMISSION**" (Tomasello's ratchet:
+generation N+1 must start where N left off) — fair because both arms share `civ_config`'s `innov_steps=1`,
+NOT "asocial agents cannot innovate at all." A genuine result: the integrated, embodied, watchable living
+civilization the whole staged ladder was building toward. Next leap in `## Frontier / next`.
+
 ## Current state (Round 167 — 2026-06-21) — GENESIS TECH DEPTH: cumulative culture is a CONNECTED dependency DAG, not a broad scatter. The R160-R166 arc measured culture by BREADTH/RATE; R167 measures its STRUCTURE and finds breadth/nominal-depth MISLEAD (red-teamed CONFIRMED-WITH-CAVEAT, 3 fresh seeds + saturation control destroyed)
 
 **R167 changes the AXIS, not the increment.** Six rounds (R160-R166) measured the cumulative-culture repertoire
@@ -1748,6 +1796,25 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R168): the integration leap is DONE — the whole civilization stack runs as ONE
+persistent, RENDERED, watchable world that develops just by running (connected tech depth → 14, capability axes
+unlock, diet broadens; agents visibly violet→gold; resume proven). For the first time the CEO's "a world that,
+just by running, develops toward a civilization" is a concrete artifact, not a pile of isolated mechanisms.
+Durable instruments: `civdev.py` (civ_config = the canonical full-stack regime, develop_trajectory observer,
+develop_vs_control null, capability_color) + `scripts/run_genesis_civ.py` (the watchable driver). The
+honest-claim discipline tightened: the asocial null is fair only at a MATCHED innovation budget (Tomasello's
+ratchet), baked into the docstring.** Candidate R169+ frontiers, ranked ambition × feasibility:
+(1) **PERSISTENT, RESUMABLE LONG RUN (TOP — the literal CEO deliverable now within reach).** R168 proved a single
+run develops + checkpoints; the next rung is a CHECKPOINT-CHAIN long/cloud run the CEO can just leave running,
+with development surfaced live (rolling panel/GIF), so the world keeps climbing across sessions/days. Feasible on
+the committed checkpoint API; lands the "just by running" promise. (2) **BREAK OUT — make open-endedness CAUSAL.**
+Wire `unbounded.TechSpace` (R164) into the live world so the OPEN repertoire keeps climbing past the fixed-tree
+ceiling and GATES physical actions — requires the fixed-width `rep` → sparse repertoire (spike-then-migrate,
+`vr-lead` architectural gate). The R160-R168 instruments now exist to validate it. (3) **Stage-2 SIGNALLING
+redesign (the one parked rung)** — synchronous sharply-lethal predation arena; believe emergence only if it beats
+frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: R168 reconnected to the embodied world; keep the momentum
+THERE — (1) the persistent runnable civilization, or (2) the causal open-endedness — not back into standalone analysis.**
 
 **Current ceiling (post-R167): the cumulative-culture repertoire is now characterised on FOUR axes — BREADTH
 (R160-R166), RATE (R165-R166, emergent from the live economy), and now STRUCTURE: connected DEPTH + prereq CLOSURE
