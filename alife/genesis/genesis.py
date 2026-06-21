@@ -1400,12 +1400,13 @@ class GenesisWorld:
         gnode = self._gen_node[act]                              # genealogy node id per living agent
         parent = np.array(self._gen_parent, dtype=np.int64)
         rng = np.random.default_rng(seed)
-        freqs, samp_nodes, counts = [], [], []
+        freqs, samp_nodes, counts, centroids = [], [], [], []
         for d in np.unique(deme_id):
             rows = np.where(deme_id == d)[0]
             if rows.size < min_deme:
                 continue
             freqs.append(rep[rows].mean(axis=0))
+            centroids.append(pos[rows].mean(axis=0))            # R162: deme centroid -> inter-deme spatial dist
             nd = gnode[rows]
             if nd.size > sample_per_deme:                       # subsample members for the O(S^2) patristic block
                 nd = rng.choice(nd, size=sample_per_deme, replace=False)
@@ -1415,8 +1416,9 @@ class GenesisWorld:
         empty = {"n_demes": D, "n_informative": 0, "mantel_corr": float("nan"),
                  "mantel_null_mean": float("nan"), "mantel_null_std": float("nan"), "mantel_z": float("nan"),
                  "mantel_p": float("nan"), "n_perm": 0, "treelikeness": float("nan"),
-                 "shuffle_treelikeness": float("nan"), "d_cult": [], "d_gen": [], "dom_tech": [],
-                 "counts": counts, "n": int(act.size)}
+                 "shuffle_treelikeness": float("nan"), "d_cult": [], "d_gen": [], "d_spatial": [],
+                 "partial_mantel_corr": float("nan"), "partial_mantel_p": float("nan"),
+                 "partial_mantel_z": float("nan"), "dom_tech": [], "counts": counts, "n": int(act.size)}
         if D < 4:
             return empty
         freqs = np.array(freqs)
@@ -1437,6 +1439,9 @@ class GenesisWorld:
                     val = float(block.mean())
                 d_gen[i, j] = d_gen[j, i] = val
         mt = gn.mantel_test(d_cult, d_gen, n_perm=n_perm, seed=seed)
+        cen = np.array(centroids)                               # R162: inter-deme spatial (centroid) distances
+        d_spatial = np.linalg.norm(cen[:, None, :] - cen[None, :, :], axis=-1)
+        pmt = gn.partial_mantel_test(d_cult, d_gen, d_spatial, n_perm=n_perm, seed=seed)  # control for space
         null = ph.column_shuffle_null(freqs, 20)
         level = self._tree_level
         dom = [int(np.where(f >= 0.5, level, -1).argmax()) if (f >= 0.5).any() else -1 for f in freqs]
@@ -1445,8 +1450,9 @@ class GenesisWorld:
             "mantel_corr": mt["corr"], "mantel_null_mean": mt["null_mean"], "mantel_null_std": mt["null_std"],
             "mantel_z": mt["z"], "mantel_p": mt["p"], "n_perm": mt["n_perm"],
             "treelikeness": ph.treelikeness(d_cult), "shuffle_treelikeness": null["treelikeness"],
-            "d_cult": d_cult.tolist(), "d_gen": d_gen.tolist(), "dom_tech": dom, "counts": counts,
-            "n": int(act.size),
+            "partial_mantel_corr": pmt["corr"], "partial_mantel_p": pmt["p"], "partial_mantel_z": pmt["z"],
+            "d_cult": d_cult.tolist(), "d_gen": d_gen.tolist(), "d_spatial": d_spatial.tolist(),
+            "dom_tech": dom, "counts": counts, "n": int(act.size),
         }
 
     def ecological_traditions_test(self, min_region: int = 20) -> dict:

@@ -2072,6 +2072,47 @@ def test_mantel_recovers_and_rejects():
     assert abs(gn.mantel_corr(d_true, other)) < 0.9           # an unrelated matrix is not perfectly correlated
 
 
+def test_partial_mantel_removes_a_shared_confound():
+    """Partial Mantel controlling for a confound: when two matrices are correlated ONLY because both track a
+    third (control) matrix, the full Mantel is high but the partial Mantel ~ 0 (the spurious association is
+    removed). When they share signal BEYOND the control, the partial stays positive. This is the
+    isolation-by-distance red-team: does cultural distance track genealogy beyond shared spatial structure?"""
+    from alife.genesis import genealogy as gn
+    rng = np.random.default_rng(3)
+    def sym(n):
+        m = rng.random((n, n)); m = m + m.T; np.fill_diagonal(m, 0.0); return m
+    n = 12
+    ctrl = sym(n)
+    # both d1 and d2 = ctrl + INDEPENDENT noise -> high full Mantel, ~0 partial (conditionally independent)
+    d1 = ctrl + 0.15 * sym(n)
+    d2 = ctrl + 0.15 * sym(n)
+    assert gn.mantel_corr(d1, d2) > 0.6                        # spuriously correlated via the shared control
+    assert abs(gn.partial_mantel_corr(d1, d2, ctrl)) < 0.3     # ...but the partial removes it
+    pt = gn.partial_mantel_test(d1, d2, ctrl, n_perm=200, seed=1)
+    assert pt["p"] > 0.05                                      # not significant once space is controlled
+    # now give them shared signal BEYOND the control -> partial recovers it
+    shared = sym(n)
+    e1 = ctrl + shared + 0.1 * sym(n)
+    e2 = ctrl + shared + 0.1 * sym(n)
+    assert gn.partial_mantel_corr(e1, e2, ctrl) > 0.5
+    pt2 = gn.partial_mantel_test(e1, e2, ctrl, n_perm=200, seed=1)
+    assert pt2["z"] > 3 and pt2["p"] <= 0.02
+
+
+def test_genealogy_phylogeny_test_reports_partial_mantel_and_spatial():
+    """genealogy_phylogeny_test now also returns an inter-deme spatial distance matrix and a partial Mantel
+    (cultural vs genealogical controlling for space). Fields present and well-shaped on a live run."""
+    w = GenesisWorld(_ecocfg(n0=850, spatial_tiers=False, recipe_budget=2, tier0_frac=0.8,
+                             track_genealogy=True, vertical_only=True), seed=0)
+    for _ in range(200):
+        w.step()
+    o = w.genealogy_phylogeny_test(grid=3, min_deme=12, sample_per_deme=10, n_perm=99)
+    if o.get("n_demes", 0) >= 4:
+        D = o["n_demes"]
+        assert np.array(o["d_spatial"]).shape == (D, D)
+        assert "partial_mantel_corr" in o and "partial_mantel_p" in o
+
+
 def test_track_genealogy_is_byte_identical_off_vs_on():
     """track_genealogy is a PASSIVE observer (no RNG, no state change): the sim trajectory must be identical
     whether it is on or off. Compare positions + energy + repertoire after a run."""

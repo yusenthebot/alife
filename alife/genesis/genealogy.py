@@ -90,6 +90,60 @@ def mantel_corr(d1: np.ndarray, d2: np.ndarray) -> float:
     return float(np.corrcoef(x, y)[0, 1])
 
 
+def _resid(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Residual of vector y after an ordinary-least-squares linear regression on x (with intercept).
+    resid = y - (a + b*x); if x has no variance, regress out only the mean."""
+    if x.std() < 1e-12:
+        return y - y.mean()
+    b = np.cov(x, y, bias=True)[0, 1] / x.var()
+    return y - (y.mean() - b * x.mean()) - b * x
+
+
+def partial_mantel_corr(d1: np.ndarray, d2: np.ndarray, d_ctrl: np.ndarray) -> float:
+    """Partial Mantel correlation between d1 and d2 CONTROLLING for d_ctrl: the Pearson correlation of the
+    residuals of d1~d_ctrl and d2~d_ctrl over the upper-triangle entries. This isolates the d1<->d2
+    association that is NOT explained by the control distance (here: cultural<->genealogical correlation
+    after removing the shared spatial/isolation-by-distance structure). nan if degenerate or < 3 taxa."""
+    a, b, c = (np.asarray(m, dtype=float) for m in (d1, d2, d_ctrl))
+    n = a.shape[0]
+    if n < 3 or b.shape[0] != n or c.shape[0] != n:
+        return float("nan")
+    iu = np.triu_indices(n, k=1)
+    x, y, z = a[iu], b[iu], c[iu]
+    if x.std() < 1e-12 or y.std() < 1e-12:
+        return float("nan")
+    rx, ry = _resid(x, z), _resid(y, z)
+    if rx.std() < 1e-12 or ry.std() < 1e-12:
+        return float("nan")
+    return float(np.corrcoef(rx, ry)[0, 1])
+
+
+def partial_mantel_test(d_recon: np.ndarray, d_true: np.ndarray, d_ctrl: np.ndarray,
+                        n_perm: int = 999, seed: int = 20250621) -> dict:
+    """Partial Mantel test: the partial correlation between the reconstructed CULTURAL distances and the TRUE
+    GENEALOGICAL distances controlling for a CONTROL distance (the spatial inter-deme distance), against a
+    null built by jointly permuting the taxon order (rows+cols) of the true matrix. Answers the isolation-by-
+    distance red-team: does cultural distance track genealogical distance BEYOND the spatial structure both
+    share? Returns {corr, null_mean, null_std, z, p, n_perm} (same shape as mantel_test)."""
+    obs = partial_mantel_corr(d_recon, d_true, d_ctrl)
+    dt = np.asarray(d_true, dtype=float)
+    n = dt.shape[0]
+    rng = np.random.default_rng(seed)
+    null = []
+    if not np.isnan(obs) and n >= 3:
+        for _ in range(max(1, n_perm)):
+            perm = rng.permutation(n)
+            cc = partial_mantel_corr(d_recon, dt[np.ix_(perm, perm)], d_ctrl)
+            if not np.isnan(cc):
+                null.append(cc)
+    arr = np.array(null, dtype=float)
+    nm = float(arr.mean()) if arr.size else float("nan")
+    ns = float(arr.std()) if arr.size else float("nan")
+    z = float((obs - nm) / ns) if (arr.size and ns > 1e-12) else float("nan")
+    p = float((np.sum(arr >= obs) + 1) / (arr.size + 1)) if arr.size else float("nan")
+    return {"corr": float(obs), "null_mean": nm, "null_std": ns, "z": z, "p": p, "n_perm": int(arr.size)}
+
+
 def mantel_test(d_recon: np.ndarray, d_true: np.ndarray, n_perm: int = 999, seed: int = 20250621) -> dict:
     """Mantel test: observed correlation between the reconstructed CULTURAL distances and the TRUE
     GENEALOGICAL distances, against a null built by jointly permuting the taxon order (rows+cols) of the
