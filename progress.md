@@ -1,5 +1,52 @@
 # alife — progress
 
+## Current state (Round 169 — 2026-06-21) — GENESIS PERSISTENT, RESUMABLE LONG RUN: the world you leave running. GENESIS is now a process that SURVIVES PROCESS DEATH and resumes the SAME civilization (the literal CEO "just by running locally or in the cloud" deliverable), proven by BIT-FOR-BIT trajectory continuity across genuine restarts (red-teamed CONFIRMED — load-bearing negative controls break continuity)
+
+**R169 lands the top-ranked post-R168 frontier (1): a PERSISTENT, RESUMABLE long run.** R168 proved the
+full-stack civilization develops in one ~30s run and that a single checkpoint reload preserves population/
+max_gen at the reload instant. R169 turns GENESIS into an actual persistent PROCESS: it runs in SEGMENTS,
+checkpointing each segment to disk and APPENDING the development trajectory to a durable on-disk log, so a
+brand-new process resumes from the latest checkpoint and CONTINUES the same civilization — across sessions,
+machines, days. The CEO can leave it running, kill it, restart it, and it keeps climbing the SAME ladder
+instead of starting over. 禁止造假.
+
+**The contribution (a thin persistence layer + a driver; reuses R168 civdev signals + the committed checkpoint
+API, no new sim mechanism, no new RNG).** New `alife/genesis/persist.py`:
+- **`run_segment(state_dir, cfg, seed, segment_steps)`** — the persistent driver primitive: one call loads the
+  latest on-disk checkpoint + rolling trajectory (or bootstraps fresh), advances one segment, appends the new
+  development samples to the on-disk trajectory, rewrites the checkpoint. This is what a cron / supervisor / a
+  fresh `python` invocation calls each tick to keep the world developing unattended.
+- **`continuous_trajectory` / `chained_trajectory`** — the matched pair the continuity proof compares.
+  `chained_trajectory` destroys and rebuilds the world object from a disk checkpoint at EVERY segment boundary
+  (a simulated process death); `continuous_trajectory` runs the same total length uninterrupted.
+- **`continuity_max_abs_diff`** — max |difference| across every development signal (NaN-vs-NaN counts as equal).
+
+**HEADLINE — process death is INVISIBLE to the civilization's development.** REAL-VERIFY
+(`scripts/run_genesis_persist.py` → `runs/r169_persist/{panel.png,world.gif}`, EYE-VERIFIED, ~32s):
+- **6 REAL subprocess restarts** (distinct PIDs, each a genuine separate `python` process that loads disk state
+  and continues): connected tech depth climbs **0→13**, society breadth **6→598**, capability axes **→2**, edible
+  diet **→3.85** ACROSS the restarts; the on-disk trajectory is one strictly-advancing history **step 0→1200**
+  (`strictly-advancing-across-restarts=True`). If each subprocess had started fresh, conn_depth would reset to ~8
+  every segment; instead it monotonically climbs 8→10→11→12→13 — the proof the world RESUMES, not restarts.
+- **THE FALSIFIABLE CONTINUITY PROOF:** a resumed chain (process death every segment) vs one uninterrupted run of
+  the same length is **BIT-FOR-BIT IDENTICAL — max|diff| = 0.000e+00** across all signals (panel bottom-right: the
+  two curves are exactly coincident). If resume were lossy (any stepped state not checkpointed) or non-deterministic
+  (any RNG not restored), the chained trajectory would diverge; it does not.
+- **The GIF** is the watchable payoff: the developed population loaded from the FINAL checkpoint renders entirely
+  GOLD (full physical capability unlocked by deep culture) — the civilization that grew across 6 restarts, alive
+  and watchable. 201 genesis tests (+2: continuity bit-for-bit; run_segment extends-on-disk monotonically).
+
+**RED-TEAM (mandatory; refutation-first; verdict CONFIRMED — the continuity proof is not vacuous).** The obvious
+attack: "continuous == chained trivially because a fresh `GenesisWorld(cfg, seed)` reconstructs the same world
+without the checkpoint even mattering." REFUTED by two load-bearing NEGATIVE CONTROLS that make checkpoint reload
+the ONLY difference: (A) at each boundary build a fresh world but DO NOT load the checkpoint → the trajectory
+diverges (step resets, breadth collapses to the fresh-start value); (B) load a checkpoint from a DIFFERENT seed
+(999) at each boundary → max|diff| > 0. So the bit-for-bit continuity is genuinely CAUSED by lossless checkpoint
+reload, not by the world being reconstructable from the seed alone. Both controls are committed as a PERMANENT
+unit test (`test_persist_continuity_proof_is_not_vacuous`), so the proof can never silently become vacuous.
+A genuine result: GENESIS is now a persistable, resumable process — the CEO's "just by running locally or in the
+cloud, freely develops toward a civilization" is a concrete, restart-proof artifact. Next leap in `## Frontier / next`.
+
 ## Current state (Round 168 — 2026-06-21) — GENESIS FULL-STACK LIVING CIVILIZATION: run the WHOLE world at once, RENDER it, WATCH it develop. The first time every separately-validated R148-R167 mechanism runs together as ONE persistent watchable world (red-teamed CONFIRMED-WITH-CAVEAT, 3 fresh seeds + bit-for-bit metric recompute)
 
 **R168 is a deliberate LEAP BACK FROM ABSTRACTION.** R148-R167 validated each civilization mechanism in
@@ -1796,6 +1843,25 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R169): GENESIS is now a PERSISTABLE, RESUMABLE PROCESS — it survives process death and
+resumes the SAME civilization (bit-for-bit continuous, proven against load-bearing negative controls), so the
+CEO's "just by running locally or in the cloud, freely develops toward a civilization" is a concrete, restart-proof
+artifact: 6 real subprocess restarts climb connected depth 0→13 / breadth 6→598 as ONE history. Durable instruments:
+`persist.py` (run_segment = the per-tick persistent driver primitive; continuous/chained_trajectory = the continuity
+proof) + `scripts/run_genesis_persist.py`. The R168 watchable full-stack world + this persistence layer = the literal
+deliverable.** Candidate R170+ frontiers, ranked ambition × feasibility:
+(1) **BREAK OUT — make open-endedness CAUSAL (TOP AMBITION).** Wire `unbounded.TechSpace` (R164) into the live world
+so the OPEN repertoire climbs past the fixed-tree `max_techniques` ceiling AND gates physical actions — requires the
+fixed-width boolean `rep` matrices → a sparse repertoire (spike-then-migrate, `vr-lead` architectural gate). The
+R160-R168 instruments + R169 persistence now exist to validate a genuinely open-ended LONG run. (2) **WIRE THE
+SUPERVISOR to `persist.run_segment`** for a genuine multi-day cloud climb: an external driver calls one segment per
+tick (network-resilient, like evolving-loop.sh), with a rolling live panel regenerated from the on-disk trajectory —
+the world literally left running for days. Cheap; turns R169 into a standing artifact. (3) **Stage-2 SIGNALLING
+redesign (the one parked rung)** — synchronous sharply-lethal predation arena; believe emergence only if it beats
+frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: R168+R169 built the embodied, persistent world; the next
+LEAP IN KIND is (1) causal open-endedness — make the repertoire genuinely unbounded IN the living world — not more
+plumbing or analysis. Gate the rep-matrix redesign on vr-lead first.**
 
 **Current ceiling (post-R168): the integration leap is DONE — the whole civilization stack runs as ONE
 persistent, RENDERED, watchable world that develops just by running (connected tech depth → 14, capability axes

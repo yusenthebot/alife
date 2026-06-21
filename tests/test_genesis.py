@@ -2604,3 +2604,41 @@ def test_run_segment_extends_persistent_world_on_disk(tmp_path):
     assert np.all(np.diff(traj["step"]) > 0)            # strictly increasing, no duplicated boundary sample
     # the on-disk trajectory IS the live record a rolling panel reads — it must reflect real development.
     assert traj["breadth"][-1] >= traj["breadth"][0]
+
+
+def test_persist_continuity_proof_is_not_vacuous(tmp_path):
+    """R169 RED-TEAM as a permanent control: the bit-for-bit continuity proof is CAUSED by lossless checkpoint
+    reload, not by a fresh world being reconstructable from the seed alone. Two load-bearing negative controls
+    that make checkpoint reload the ONLY difference MUST break continuity: (A) rebuild a fresh world at each
+    boundary but DON'T reload the checkpoint (step resets) -> diverges; (B) reload a DIFFERENT-seed checkpoint
+    -> diverges. If either matched the uninterrupted run, the proof would be vacuous."""
+    from alife.genesis import civdev, persist
+    from alife.genesis.genesis import GenesisWorld
+    cfg = civdev.civ_config()
+    total, seg, le = 120, 40, 20
+    cont = persist.continuous_trajectory(cfg, seed=1, total_steps=total, log_every=le)
+
+    def boundary_chain(reload_fn):
+        samples, w = [], GenesisWorld(cfg, seed=1, evolve=True)
+        while w.step_count < total:
+            if w.step_count % le == 0:
+                samples.append(persist._observe(w))
+            if w.step_count > 0 and w.step_count % seg == 0:
+                del w
+                w = GenesisWorld(cfg, seed=1, evolve=True)
+                reload_fn(w)
+            w.step()
+        return persist._stack(samples)
+
+    # control A: no reload -> step_count resets each segment, so the sampled history diverges.
+    no_load = boundary_chain(lambda w: None)
+    assert persist.continuity_max_abs_diff(cont, no_load) > 0.0
+
+    # control B: reload a checkpoint built from a DIFFERENT seed -> mid-stream state is wrong -> diverges.
+    wrong = GenesisWorld(cfg, seed=999, evolve=True)
+    for _ in range(seg):
+        wrong.step()
+    wrong_path = str(tmp_path / "wrong.npz")
+    wrong.save_checkpoint(wrong_path)
+    wrong_chain = boundary_chain(lambda w: w.load_checkpoint(wrong_path))
+    assert persist.continuity_max_abs_diff(cont, wrong_chain) > 0.0
