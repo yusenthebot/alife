@@ -2236,3 +2236,94 @@ def test_vertical_only_off_is_deterministic_default_on_changes_world():
     assert np.array_equal(a, r) and np.array_equal(off.rep[a], ref.rep[r])   # default path is deterministic
     # vertical-only diverges (culture -> survival feedback); at minimum its mean repertoire differs
     assert not np.allclose(off.rep[off.pop.active()].mean(0), on.rep[on.pop.active()].mean(0))
+
+
+# ---------- R164: GENUINELY UNBOUNDED generative tech space ----------
+def test_unbounded_combine_materializes_and_dedups():
+    from alife.genesis import unbounded as ub
+    s = ub.TechSpace(n_seed=4)
+    assert s.n == 4
+    k = s.combine(0, 1, step=5)
+    assert k == 4 and s.n == 5
+    assert s.levels[k] == 1 and s.parents[k] == (0, 1) and s.first_step[k] == 5
+    assert s.combine(1, 0, step=9) == k and s.n == 5            # same pair (order-free) -> same id, no growth
+
+
+def test_unbounded_level_is_composition_depth():
+    from alife.genesis import unbounded as ub
+    s = ub.TechSpace(n_seed=4)
+    a = s.combine(0, 1)                                          # level 1
+    b = s.combine(a, 2)                                          # 1 + max(1,0) = 2
+    c = s.combine(a, b)                                          # 1 + max(1,2) = 3
+    assert s.levels[a] == 1 and s.levels[b] == 2 and s.levels[c] == 3
+    with pytest.raises(ValueError):
+        s.combine(a, a)                                          # cannot compose with itself
+
+
+def test_unbounded_chain_len_equals_level_invariant():
+    """The cumulative-descent invariant: a level-L technique descends through exactly L compositions from
+    the seeds. chain_len (computed by recursion on parents) must equal level for every materialized node."""
+    from alife.genesis import unbounded as ub
+    out = ub.run_population(n_agents=20, n_seed=5, steps=60, fidelity=0.5, seed=3)
+    s = out["space"]
+    assert s.n > 50                                             # the space actually grew well past the seeds
+    assert all(s.chain_len(k) == s.levels[k] for k in range(s.n))
+
+
+def test_cap_freezes_the_space():
+    from alife.genesis import unbounded as ub
+    s = ub.TechSpace(n_seed=4, cap=6)
+    assert s.combine(0, 1) == 4
+    assert s.combine(0, 2) == 5
+    assert s.n == 6
+    assert s.combine(1, 2) is None                              # full -> refuses to materialize a new one
+    assert s.combine(0, 1) == 4                                 # but an EXISTING pair still resolves
+    assert s.n == 6
+
+
+def test_unbounded_depth_climbs_without_plateau():
+    """Open-endedness: frontier depth keeps rising across the run — the last third climbs strictly more than
+    a flat line would, i.e. there is no asymptote within the run."""
+    from alife.genesis import unbounded as ub
+    out = ub.run_population(n_agents=40, n_seed=6, steps=150, fidelity=0.5, cap=None, seed=1)
+    ml = out["max_level"]
+    third = len(ml) // 3
+    early_gain = ml[third] - ml[0]
+    late_gain = ml[-1] - ml[2 * third]
+    assert ml[-1] > ml[third] > ml[0]                          # monotone climb across thirds
+    assert late_gain > 0                                       # still climbing in the final third -> no plateau
+
+
+def test_capped_plateaus_and_unbounded_beats_it():
+    """The decisive control: IDENTICAL dynamics/seed, the ONLY difference is the cap. The capped run's depth
+    freezes once the registry fills; the uncapped run climbs far past it."""
+    from alife.genesis import unbounded as ub
+    cap_k = 80
+    capped = ub.run_population(n_agents=40, n_seed=6, steps=150, fidelity=0.5, cap=cap_k, seed=1)
+    free = ub.run_population(n_agents=40, n_seed=6, steps=150, fidelity=0.5, cap=None, seed=1)
+    assert capped["n_distinct"][-1] == cap_k                   # capped fills exactly to the cap
+    assert free["n_distinct"][-1] > 5 * cap_k                  # uncapped materializes a far larger space
+    # capped depth plateaus: no gain in the final third once the space is full
+    cm = capped["max_level"]
+    third = len(cm) // 3
+    assert cm[-1] == cm[2 * third]                             # frozen
+    assert free["max_level"][-1] > capped["max_level"][-1]     # uncapped frontier is strictly deeper
+
+
+def test_unbounded_temporal_ladder_holds():
+    """Over the unbounded climb the temporal ladder persists: deeper techniques appear later (positive
+    level<->first_step Spearman) — the R163 ladder survives lifting the ceiling."""
+    from alife.genesis import unbounded as ub
+    from alife.genesis.phylogeny import _spearman
+    out = ub.run_population(n_agents=40, n_seed=6, steps=150, fidelity=0.5, seed=2)
+    first, lvl = ub.ladder_arrays(out["space"])
+    assert first.size > 100
+    assert _spearman(lvl, first) > 0.3                         # deeper == later, robustly
+
+
+def test_unbounded_run_is_deterministic():
+    from alife.genesis import unbounded as ub
+    a = ub.run_population(n_agents=30, n_seed=5, steps=80, fidelity=0.5, seed=7)
+    b = ub.run_population(n_agents=30, n_seed=5, steps=80, fidelity=0.5, seed=7)
+    assert np.array_equal(a["max_level"], b["max_level"])
+    assert np.array_equal(a["n_distinct"], b["n_distinct"])
