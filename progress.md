@@ -1,6 +1,46 @@
 # alife — progress
 
-## Current state (Round 171 — 2026-06-21) — OPEN-ENDED CULTURE NOW DRIVES THE BODY: depth gates. The generative grown tree (R170) was an abstract repertoire; R171 makes its open-endedness CAUSAL on EMBODIMENT — the diet tiers an agent can eat and the locomotion/reach axes it has unlocked are gated on its realized cultural DEPTH, so the embodied ceiling is open-ended too (red-teamed CONFIRMED — capped freezes the body even with a healthy pop; the freeze is the depth-CAP, not death)
+## Current state (Round 172 — 2026-06-21) — PERSISTENCE ON THE OPEN-ENDED GENERATIVE SUBSTRATE: the grown tree survives process death.
+
+**R172 lands the top-ranked post-R171 frontier (1): make the generative open-ended world PERSISTENT.** R169
+made the world resumable, but only on the FIXED civ_config substrate (no generative tree) — so a resumed run
+that used `generative_tree=True` would silently collapse: the grown tree's deep nodes were never checkpointed,
+so on reload the deep techniques in each agent's `rep` mapped back to a fresh seed-only `GrowingTree` (level 0),
+killing realized depth and the depth-gated body. R172 closes that hole: the GROWN tree itself now survives
+process death, so the open-ended climb (depth + embodied diet ceiling + axes) persists across real restarts —
+the literal "leave it running for days, it keeps developing" deliverable now works on the OPEN-ENDED substrate.
+
+**The contribution (checkpoint the grown tree; no new physics, no new RNG, off-path byte-identical).**
+- `GrowingTree.state()` / `restore()` (combinatorial.py): round-trip the grown tree losslessly. The (a,b)->id
+  registry is NOT stored — it is rebuilt from the materialized parent pairs on restore, so an already-composed
+  pair returns its original id and a genuinely new composition extends from `n`. `restore` copies IN PLACE
+  (`pa[:]=…`) so a World that bound `_tree_pa/_tree_pb/_tree_level` to the tree's arrays keeps seeing the
+  restored state. Raises on a saved-tree > capacity (cfg mismatch).
+- `GenesisWorld.save/load_checkpoint`: persist `tree_pa/pb/level/n` when `generative_tree` is on; restore IN
+  PLACE on load (keeps the array binding). depth_gates snapshot now also records the embodied diet ceiling +
+  axes so the climb is visible on the on-disk trajectory.
+
+**HEADLINE — on the GENERATIVE substrate, a resumed chain == an uninterrupted run, BIT FOR BIT.** REAL-VERIFY
+(`scripts/run_genesis_r172.py` → `runs/r172_persist/{panel.png,world.gif}`, EYE-VERIFIED, ~8.5s):
+**4 REAL subprocess restarts** (`subprocess.run` = genuine process death) × 80 steps on the generative +
+depth_gates world: on-disk trajectory continuous (step 0→320), connected tech depth climbs 3→9, embodied diet
+ceiling climbs 1→4, axes→2, population persistent at 1000. **Continuity proof:** uninterrupted run vs a chain
+that suffers process death every segment is `max|diff|=0.000e+00`, bit_for_bit_identical=True across ALL signals
+(depth/breadth/axes/edible/pop/diversity/max_gen). The 3D render shows the restored, developed population —
+agents gold (deep realized culture) over green food motes, proving the tree was restored not collapsed.
+
+**RED-TEAM CONFIRMED (load-bearing not-vacuous control — the restore CAUSES the continuity).** The obvious
+attack is "bit-for-bit identity is trivial because the tree is reconstructable from rep anyway." Refuted by a
+permanent test (`test_persist_generative_tree_restore_is_load_bearing`): a boundary chain that reloads the
+checkpoint but then RESETS the tree to a fresh seed-only `GrowingTree` (the pre-R172 behavior) DIVERGES
+(`continuity_max_abs_diff > 0`) — so the bit-for-bit continuity is caused by restoring the grown tree, not by
+trivial reconstruction. Plus: the depth/diet trajectory genuinely CLIMBS in the window (not flat, so there is
+real development to be continuous through), and `state()/restore()` round-trips losslessly with the registry
+rebuilt from parents (unit test). 216 genesis tests (+3).
+
+---
+
+## Round 171 (2026-06-21) — OPEN-ENDED CULTURE NOW DRIVES THE BODY: depth gates. The generative grown tree (R170) was an abstract repertoire; R171 makes its open-endedness CAUSAL on EMBODIMENT — the diet tiers an agent can eat and the locomotion/reach axes it has unlocked are gated on its realized cultural DEPTH, so the embodied ceiling is open-ended too (red-teamed CONFIRMED — capped freezes the body even with a healthy pop; the freeze is the depth-CAP, not death)
 
 **R171 lands the top-ranked post-R170 frontier (1): GATE EMBODIED ACTIONS ON THE GROWN TREE — close the
 open-endedness→body loop.** R170's generative `combinatorial.GrowingTree` made the cultural REPERTOIRE
@@ -1936,6 +1976,30 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R172): the open-ended embodied world is now PERSISTENT — it survives process death.**
+R171 made the open-ended grown tree drive the body; R172 makes that whole climb durable: the grown tree itself
+is checkpointed (`GrowingTree.state()/restore()` + `save/load_checkpoint`), so a resumed run on the generative +
+depth_gates substrate is BIT-FOR-BIT identical to an uninterrupted one (verified across 4 REAL OS-process
+restarts, `max|diff|=0`), with depth (3→9) and embodied diet ceiling (1→4) climbing across the restart
+boundaries. Load-bearing red-team: sabotaging the restore (reset to a fresh seed-only tree = pre-R172 bug)
+forces divergence, so the continuity is CAUSED by the restore. Durable instrument: `scripts/run_genesis_r172.py`
++ the persist tree-checkpoint path. This UNBLOCKS the "left running for days" deliverable on the open-ended
+substrate. Candidate R173+ frontiers, ranked ambition × feasibility:
+(1) **STAND UP THE MULTI-DAY UNATTENDED CLIMB (TOP — now unblocked).** Wire a supervisor/cron tick to call
+`persist.run_segment` on the generative + depth_gates `gen_cfg()` against a single on-disk `state_dir`, with a
+rolling live panel regenerated each tick from the accumulated trajectory — a genuine standing artifact where
+depth/diet-ceiling/axes keep advancing on disk across days and real restarts. R172 proved the segment loop is
+correct; this makes it a continuously-running world, the CEO's core "just by running, it develops" deliverable.
+(2) **LONG-HORIZON DEPTH DIVERGENCE verify (paired with the body)** — over a long persistent run, a FIXED tree
+plateaus at its hard ceiling while the generative tree keeps deepening; show "fixed vs generative" diverging in
+the EMBODIED diet/axes ceiling, not just in an abstract count, over thousands of steps via the persist path.
+(3) **Stage-2 SIGNALLING redesign (parked rung)** — synchronous sharply-lethal predation arena; believe
+emergence only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: the next LEAP IN KIND is (1)
+— now that the open-ended embodied world is provably persistent, actually LEAVE IT RUNNING and watch depth + the
+body keep climbing on disk across days.** **Caveat carried forward:** continuity is exact only when the resumed
+process rebuilds the SAME `gen_cfg()` (a cfg/capacity mismatch raises on restore by design); the multi-day
+driver must pin the config.
 
 **Current ceiling (post-R171): the open-ended grown tree now CAUSALLY drives the BODY.** R170 made the cultural
 repertoire open-ended; R171 fuses it with embodiment via `depth_gates`: the diet tiers an agent can physically eat
