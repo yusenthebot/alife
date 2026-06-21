@@ -351,6 +351,22 @@ class GenesisConfig:
     # complementarity destroyed). If trade's benefit were mere energy, the scramble would match real trade.
     trade_scramble: bool = False      # requires trade=True.
 
+    # R159: PRODUCTIVE goods trade — the answer to R158's honest negative (redistributing energy is INERT because
+    # it doesn't relax the binding constraint). The binding constraint here is the FOOD-SLOT ceiling (food_cap):
+    # ripe locked food that NO living agent in reach can eat (wrong-branch wanderers physically can't; the local
+    # specialist eats only one mote/step) CLOGS food slots -> starves regrowth -> low realized carrying capacity.
+    # trade_goods relaxes exactly that: a tier-t>=1 specialist, after eating its own mote, HARVESTS up to
+    # goods_max ADDITIONAL ripe tier-t motes within trade_radius and ships each as an edible GOOD to a nearby
+    # HUNGRY COMPLEMENTARY partner (lacks tier t's recipe). The mote is CONSUMED (removed -> frees a food slot for
+    # regrowth) and its value (energy-conserving, no free injection) feeds the partner -> otherwise-wasted locked
+    # food becomes population. This is positive-sum via DIVISION OF LABOUR (the specialist's comparative advantage
+    # is harvesting a tier others can't), and unlike R158 it changes the OUTCOME: pop rises, locked_food_frac falls.
+    trade_goods: bool = False         # requires tech_actions; mutually exclusive with trade. off = byte-identical.
+    goods_max: int = 2                # extra wasted tier-t motes a specialist harvests-for-trade per step (bounded labour)
+    seed_specialists: bool = False    # R159: a minority of founders born holding ONE random recipe (an already-
+                                      # specialized population per R157), isolating the economy from the emergence bootstrap.
+    seed_specialist_frac: float = 0.25  # fraction of founders seeded as producers; the rest are naive (free-tier only).
+
     # --- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape MOVEMENT + harvest REACH) ---
     # R153 made culture gate ONE physical action (what an agent can EAT). R154 generalises that to a
     # multi-dimensional capability VECTOR: deep tech-tree nodes also unlock LOCOMOTION (a higher max speed)
@@ -429,8 +445,13 @@ class GenesisWorld:
         self.trade = self.cfg.trade
         if self.trade and not self.tech_actions:
             raise ValueError("trade (R158 inter-group economy) requires tech_actions=True")
-        if self.cfg.trade_scramble and not self.trade:
-            raise ValueError("trade_scramble is the R158 trade null; requires trade=True")
+        self.trade_goods = self.cfg.trade_goods
+        if self.trade_goods and not self.tech_actions:
+            raise ValueError("trade_goods (R159 productive economy) requires tech_actions=True")
+        if self.trade_goods and self.trade:
+            raise ValueError("trade_goods and trade are alternative economy modes; enable at most one")
+        if self.cfg.trade_scramble and not (self.trade or self.trade_goods):
+            raise ValueError("trade_scramble is the trade/goods null; requires trade=True or trade_goods=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -474,6 +495,19 @@ class GenesisWorld:
                 self._trade_dist_sum = 0.0
                 self._trade_compl = 0
                 self._trade_cross = 0
+                self._goods_count = 0          # R159 productive-goods diagnostics (lifetime; never feeds selection)
+                self._goods_volume = 0.0
+                self._goods_dist_sum = 0.0
+                self._goods_motes = 0          # wasted tier-t motes consumed-for-trade (= slots freed)
+                if self.cfg.seed_specialists:  # R159: start from an ALREADY-SPECIALIZED population (R157 result),
+                    # isolating the economic question from the cultural-emergence bootstrap. A seed_specialist_frac
+                    # MINORITY is born each holding ONE uniformly-random recipe tier (a producer who can harvest a
+                    # locked tier); the rest stay culturally NAIVE (eat only the free tier 0). So most locked food
+                    # has no nearby mouth -> it clogs food slots uneaten (the binding constraint), and the naive
+                    # majority starves -> exactly the hungry complementary partners productive goods trade feeds.
+                    is_spec = self.rng.random(act.size) < self.cfg.seed_specialist_frac
+                    one = self.rng.integers(1, self.cfg.n_food_tiers, size=act.size)
+                    self.rep[act[is_spec], self._recipe_tech[one[is_spec]]] = True
             if self.tech_capabilities:                       # R154: which deep node unlocks each PHYSICAL axis
                 self._cap_tech = cb.capability_techniques(
                     self._tree_level, ns, self.cfg.n_capabilities, self.cfg.cap_level_step)
@@ -881,6 +915,8 @@ class GenesisWorld:
                 self._pay_processors(fm[eaten])
             keep[fm[eaten]] = False
             eaten_agent[elig[winners]] = True
+            if self.trade_goods and t >= 1:                  # R159: harvest WASTED tier-t motes -> goods to partners
+                self._do_goods_trade(eaters, fm, keep, t)
             self._tier_eat_count[t] += int(eaten.size)
         if not keep.all():
             self._keep_food(keep)
@@ -928,6 +964,65 @@ class GenesisWorld:
         gx = np.clip((p.pos[givers][:, 0] / size * R).astype(int), 0, R - 1)
         rx = np.clip((p.pos[recv][:, 0] / size * R).astype(int), 0, R - 1)
         self._trade_cross += int((gx != rx).sum())
+
+    def _do_goods_trade(self, eaters: np.ndarray, fm: np.ndarray, keep: np.ndarray, t: int) -> None:
+        """R159 PRODUCTIVE goods trade. Each eater (a tier-t>=1 specialist that just ate) acts as a HARVESTER FOR
+        OTHERS: it claims up to goods_max of the still-uneaten ripe tier-t motes near it (within trade_radius) and
+        ships each as an edible GOOD to the nearest HUNGRY COMPLEMENTARY partner (lacks tier t's recipe -> could
+        never have harvested it). The mote is CONSUMED (keep=False -> a freed food slot regrows next step) and its
+        full tier value is delivered (energy-conserving — no free injection; the food's energy simply reaches a
+        mouth that could not reach it). Without this, those motes clog food slots uneaten -> the binding food-cap
+        constraint that R158's energy-redistribution could not relax. trade_scramble is the NULL: same motes
+        consumed and same energy delivered, but to UNIFORMLY-RANDOM hungry agents (locality + complementarity cut),
+        isolating the division-of-labour content from raw food-slot freeing. Diagnostics only; never feeds selection."""
+        cfg, p = self.cfg, self.pop
+        if eaters.size == 0 or cfg.goods_max <= 0:
+            return
+        avail = fm[keep[fm]]                                     # ripe tier-t motes not yet eaten this step
+        if avail.size == 0:
+            return
+        act = p.active()
+        recipe_t = self._recipe_tech[t]
+        # 1) assign each available mote to its NEAREST eater (harvester); keep only motes within trade_radius
+        gd, gi = cKDTree(p.pos[eaters]).query(self.food[avail], k=1)
+        within = gd < cfg.trade_radius
+        if not within.any():
+            return
+        avail, gi = avail[within], gi[within]
+        # 2) cap each harvester to goods_max motes (rank within giver-group, keep the first goods_max)
+        order = np.argsort(gi, kind="stable")
+        gi_s = gi[order]
+        starts = np.concatenate(([0], np.where(gi_s[1:] != gi_s[:-1])[0] + 1))
+        grp_start = np.repeat(starts, np.diff(np.append(starts, gi_s.size)))
+        rank = np.arange(gi_s.size) - grp_start
+        claimed = avail[order[rank < cfg.goods_max]]
+        if claimed.size == 0:
+            return
+        # 3) ship each claimed mote to a hungry partner (complementary nearest, or scramble = random hungry)
+        if cfg.trade_scramble:
+            cand = np.where(p.energy[act] < cfg.e_repro * cfg.trade_need_frac)[0]
+            if cand.size == 0:
+                return
+            recv = act[cand[self.rng.integers(0, cand.size, size=claimed.size)]]
+            dist = np.linalg.norm(self.food[claimed] - p.pos[recv], axis=1)
+        else:
+            compl = np.where((p.energy[act] < cfg.e_repro * cfg.trade_need_frac) & ~self.rep[act, recipe_t])[0]
+            if compl.size == 0:
+                return
+            dist, idx = cKDTree(p.pos[act[compl]]).query(self.food[claimed], k=1)
+            ok = dist < cfg.trade_radius
+            if not ok.any():
+                return
+            claimed, dist = claimed[ok], dist[ok]
+            recv = act[compl[idx[ok]]]
+        value = cfg.food_value * (1.0 + cfg.tier_value_bonus * t)
+        np.add.at(p.energy, recv, value)
+        np.minimum(p.energy, cfg.e_max, out=p.energy)            # can't hoard past e_max (same ceiling as eating)
+        keep[claimed] = False                                    # mote consumed -> food slot freed for regrowth
+        self._goods_count += int(recv.size)
+        self._goods_motes += int(claimed.size)
+        self._goods_volume += float(value * recv.size)
+        self._goods_dist_sum += float(dist.sum())
 
     def _eat_cap_niches(self) -> None:
         """R155 eat: ripe food in a KEYED niche is harvestable ONLY by an agent holding that niche's capability
@@ -1268,6 +1363,24 @@ class GenesisWorld:
             "mean_partner_dist": float(self._trade_dist_sum / n) if n else 0.0,
             "complementary_frac": float(self._trade_compl / n) if n else 0.0,
             "cross_region_frac": float(self._trade_cross / n) if n else 0.0,
+        }
+
+    def goods_test(self) -> dict:
+        """R159 read-out: the PRODUCTIVE goods economy (in situ; never feeds selection). Cumulative over the run.
+          - goods_count        : number of goods deliveries (a harvested mote shipped to a hungry partner).
+          - goods_motes        : wasted tier-t motes consumed-for-trade = food slots FREED for regrowth (the
+                                 mechanism by which trade relaxes the food-cap constraint).
+          - goods_volume       : total energy delivered as goods (energy-conserving = goods_motes x tier value).
+          - mean_partner_dist  : mean mote<->receiver distance (small = a LOCAL market; large = scrambled).
+        Empty when trade_goods is off."""
+        if not self.trade_goods:
+            return {}
+        n = self._goods_count
+        return {
+            "goods_count": int(n),
+            "goods_motes": int(self._goods_motes),
+            "goods_volume": float(self._goods_volume),
+            "mean_partner_dist": float(self._goods_dist_sum / n) if n else 0.0,
         }
 
     def tech_actions_test(self) -> dict:

@@ -1632,6 +1632,73 @@ def test_trade_is_causally_inert_on_population():
         assert abs(on.pop.active().size - off.pop.active().size) <= 5  # energy injection does not lift the ceiling
 
 
+# ---------- R159: PRODUCTIVE goods trade — an economy that CHANGES THE OUTCOME (vs R158's inert redistribution) ----------
+def _goodscfg(**kw):
+    """The R159 PRODUCTIVE-economy regime. seed_specialists starts an already-specialized population (per R157)
+    so the economic question is isolated from the cultural-emergence bootstrap: a minority of founders each hold
+    one recipe (producers who can harvest a locked tier), the rest are naive (free-tier only) -> in every region
+    a few specialists sit among many complementary partners. trade_goods then lets a specialist harvest EXTRA
+    wasted tier-t motes and ship them as edible GOODS to nearby hungry complementary partners (food-slot freed,
+    energy conserved). This is the regime where the productive economy fires reliably and its effect on the
+    carrying capacity is measured."""
+    base = dict(spatial_tiers=True, recipe_budget=2, tier0_frac=0.35, tier_value_bonus=3.0,
+                food_cap=900, food_regrow=45, seed_specialists=True, seed_specialist_frac=0.3, goods_max=3)
+    base.update(kw)
+    return _ecocfg(**base)
+
+
+def test_goods_off_is_byte_identical_to_r157():
+    # trade_goods/seed_specialists default off add no dynamics and no extra RNG draws: an eco run is bit-for-bit
+    # the R157 baseline, and the goods read-out is empty.
+    a = GenesisWorld(_ecocfg(n0=300, tier0_frac=0.35), seed=4)
+    b = GenesisWorld(_ecocfg(n0=300, tier0_frac=0.35, trade_goods=False, seed_specialists=False), seed=4)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.energy, b.pop.energy)
+    assert a.goods_test() == {}                                   # off -> empty read-out
+
+
+def test_goods_requires_tech_actions_and_excludes_trade():
+    import pytest
+    with pytest.raises(ValueError):
+        GenesisWorld(replace(fast_cfg(), trade_goods=True), seed=0)   # no tech_actions
+    with pytest.raises(ValueError):
+        GenesisWorld(_goodscfg(n0=80, trade=True, trade_goods=True), seed=0)  # mutually exclusive modes
+
+
+def test_goods_test_fields_and_local():
+    """Over a real run the productive economy fires (motes consumed-for-trade > 0, energy delivered) and is LOCAL
+    (partners within trade_radius); the scramble null delivers the same goods to arbitrarily-distant random agents
+    (locality destroyed). Read-out empty when off."""
+    real = GenesisWorld(_goodscfg(n0=500, trade_goods=True), seed=1)
+    scr = GenesisWorld(_goodscfg(n0=500, trade_goods=True, trade_scramble=True), seed=1)
+    for _ in range(250):
+        real.step(); scr.step()
+    ro, so = real.goods_test(), scr.goods_test()
+    assert {"goods_count", "goods_motes", "goods_volume", "mean_partner_dist"} <= set(ro)
+    assert ro["goods_count"] > 0 and ro["goods_motes"] > 0 and ro["goods_volume"] > 0.0
+    assert ro["mean_partner_dist"] < real.cfg.trade_radius        # real: a local market (within radius)
+    assert ro["mean_partner_dist"] < so["mean_partner_dist"]      # scramble partners are arbitrarily far
+    assert GenesisWorld(_goodscfg(n0=80, trade_goods=False), seed=0).goods_test() == {}
+
+
+def test_goods_trade_is_causally_inert_on_carrying_capacity():
+    """HONEST NEGATIVE (the R159 finding, pinned as a regression) — DEEPER than R158's. The productive goods
+    economy is REAL (specialists harvest wasted locked motes and ship them as goods to starving complementary
+    partners: goods_motes > 0) yet it does NOT raise the carrying capacity: pop ON == pop OFF. The reason is
+    structural and stronger than R158's redistribution result — the population is NOT food-quantity-limited here
+    (it equilibrates by foraging/lifespan dynamics, frequently exceeding the standing food count), so UNLOCKING
+    otherwise-wasted food cannot lift a ceiling that food abundance never set. Production, like redistribution,
+    leaves the binding constraint untouched."""
+    for seed in (0, 1):
+        on = GenesisWorld(_goodscfg(n0=600, trade_goods=True), seed=seed)
+        off = GenesisWorld(_goodscfg(n0=600, trade_goods=False), seed=seed)
+        for _ in range(300):
+            on.step(); off.step()
+        assert on._goods_motes > 0                                       # the productive economy actually fired
+        assert abs(on.pop.active().size - off.pop.active().size) <= 8    # yet carrying capacity is unchanged
+
+
 # ---------- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape movement + reach) ----------
 def _tccfg(**kw):
     """The R154 regime: the R153 tech-actions world plus tech_capabilities — deep tech-tree nodes ALSO unlock
