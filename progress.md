@@ -1,5 +1,49 @@
 # alife — progress
 
+## Current state (Round 171 — 2026-06-21) — OPEN-ENDED CULTURE NOW DRIVES THE BODY: depth gates. The generative grown tree (R170) was an abstract repertoire; R171 makes its open-endedness CAUSAL on EMBODIMENT — the diet tiers an agent can eat and the locomotion/reach axes it has unlocked are gated on its realized cultural DEPTH, so the embodied ceiling is open-ended too (red-teamed CONFIRMED — capped freezes the body even with a healthy pop; the freeze is the depth-CAP, not death)
+
+**R171 lands the top-ranked post-R170 frontier (1): GATE EMBODIED ACTIONS ON THE GROWN TREE — close the
+open-endedness→body loop.** R170's generative `combinatorial.GrowingTree` made the cultural REPERTOIRE
+open-ended (depth climbs with the cap, freezes when capped) but nothing physical depended on how deep the
+culture had grown — the fixed-node gates (tech_actions/tech_capabilities) designate SPECIFIC pre-built deep
+nodes ahead of the run, which a generative tree (whose deep nodes don't exist until composed) cannot use. R171
+adds `depth_gates`: embodied capability is gated on the agent's REALIZED cultural depth (`pop.tech` = its
+deepest known technique level), which needs no pre-built node. So open-ended culture now CAUSALLY drives an
+open-ended BODY. 禁止造假.
+
+**The contribution (a gate mechanism over the existing dense rep; reuses the diet/capability config, no new
+physics, no new RNG).** New `depth_gates` flag (requires `generative_tree=True`):
+- food tier t≥1 is edible ONLY by an agent whose culture has reached level ≥ `recipe_level_step * t` (a deeper
+  tier demands a strictly deeper culture; tier 0 is the free resource) — new `_eat_depth_gates` eat path;
+- capability axis i unlocks at level ≥ `cap_level_step * (i+1)` (axis 0 = locomotion speed, 1 = harvest reach)
+  — `_cap_speed`/`_cap_reach` grow a depth-gated branch;
+- `GenesisWorld.diet_capability_ceiling()` = read-only read-out (max edible tier, n axes unlocked) over the
+  living pop, bounded above by the grown tree's depth → freezes when capped, climbs when not;
+- `depth_gates=False` is BYTE-IDENTICAL (food_tier all-zero, no extra RNG, eat/speed/reach paths unchanged);
+  mutually exclusive with the fixed-node gates (it IS their generative replacement).
+
+**HEADLINE — the embodied diet/capability CEILING tracks the cultural cap.** REAL-VERIFY
+(`scripts/run_genesis_r171.py` → `runs/r171_depth/{panel.png,world.gif}`, EYE-VERIFIED, ~8s, 3 live full-stack
+worlds ×320 steps): **uncapped (K=4000)** cultural depth climbs 4→11, the embodied diet ceiling climbs to the
+TOP tier (4 of 4), both capability axes unlock, the population EATS across all 5 tiers (`_tier_eat_count` all
+positive) and sits at capacity 1000. **capped (K=20):** the SAME machinery freezes — depth flat at 1, diet
+ceiling 0, 0 axes, only tier-0 eaten. **null (innov_steps=0):** the tree never grows (n=n_seed), depth 0,
+ceiling 0. The 3D render shows the developed uncapped population, agents violet→gold by culture depth = what
+their bodies can do.
+
+**RED-TEAM CONFIRMED (decisive control — freeze is the depth-CAP, not population death).** The capped/null pops
+also crash (8-9), so the obvious attack is "ceiling 0 is just death." Refuted: a capped world with ALL food
+free (`tier0_frac=1.0`, no starvation from locked tiers) keeps a HEALTHY pop (309) yet its depth/tree/diet
+ceiling/axes stay frozen at 1/20/0/0, while the uncapped all-free world reaches 10/4000/4/2 — the CAP is the
+ONLY difference, so the embodied freeze is the depth-cap. Plus the committed controls: cap-sweep monotone
+(ceiling non-decreasing in K, strictly out-reaches the small cap), the load-bearing innov_steps=0 null (no
+composition → no unlock even at K=4000), and `depth_gates=False` byte-identity. 213 genesis tests (+6).
+
+**HONEST CAVEAT (baked in):** the diet/axes ceiling is the MAX over living agents, so it pins early once any one
+agent reaches a depth — the load-bearing claim is the CAP control + the BROAD realized eating across all tiers,
+not the single-agent max. depth_gates is the generative replacement for the fixed-node gates, mutually exclusive
+with them by construction. Next rung: leave this embodied open-ended world running for days via the supervisor.
+
 ## Current state (Round 170 — 2026-06-21) — OPEN-ENDEDNESS MADE CAUSAL IN THE LIVE WORLD: the generative tech tree. The living civilization's culture is no longer explored on a FIXED pre-built tree (a frozen ceiling) — it GROWS the tree on demand from the population's real compositions, open-ended BY CONSTRUCTION, bounded only by the memory cap (red-teamed CONFIRMED — the freeze is the CAP not pop death; a no-composition null never grows)
 
 **R170 lands the top-ranked post-R169 frontier (1): BREAK OUT — make open-endedness CAUSAL.** Across R164-R169
@@ -1892,6 +1936,30 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R171): the open-ended grown tree now CAUSALLY drives the BODY.** R170 made the cultural
+repertoire open-ended; R171 fuses it with embodiment via `depth_gates`: the diet tiers an agent can physically eat
+and the locomotion/reach capability axes it has unlocked are gated on its REALIZED cultural DEPTH (`pop.tech`), not
+on pre-built nodes — so the EMBODIED ceiling inherits the grown tree's open-endedness. REAL-VERIFY + red-team
+CONFIRMED: uncapped (K=4000) → depth 4→11, diet ceiling → top tier 4, both axes, pop 1000; capped (K=20) → depth
+frozen 1, ceiling 0, no axes; null (innov=0) → tree never grows, ceiling 0. The decisive red-team control: a capped
+world with ALL food free keeps a HEALTHY pop (309) yet its ceiling stays 0 — the freeze is the depth-CAP, not pop
+death; the cap is the only difference. Durable instrument: `depth_gates` + `GenesisWorld.diet_capability_ceiling()`
++ `scripts/run_genesis_r171.py`. Candidate R172+ frontiers, ranked ambition × feasibility:
+(1) **WIRE THE SUPERVISOR to `persist.run_segment` on the generative + depth_gates substrate (TOP — the literal
+"left running for days" deliverable).** A genuine multi-day cloud climb where depth, diet ceiling, axes and the
+rolling live panel all keep advancing on disk — open-ended embodiment unfolding unattended. Cheap; turns R169-R171
+into one standing artifact.
+(2) **LONG-HORIZON DEPTH DIVERGENCE verify** — over a long run, fixed tree plateaus at its hard ceiling while the
+generative tree keeps deepening; pair it with the embodied ceiling so "fixed vs generative" shows up in the BODY.
+(3) **Stage-2 SIGNALLING redesign (parked rung)** — synchronous sharply-lethal predation arena; believe emergence
+only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: the next LEAP IN KIND is (1) — leave the
+now-embodied open-ended world running for days and watch the body keep climbing; this is the CEO's core deliverable.**
+**HONEST caveat carried forward:** the diet/axes ceiling is the MAX over living agents, so it pins early once any
+agent reaches a depth; the load-bearing claim is the CAP control (capped/null frozen vs uncapped climbing) + the
+broad realized eating (`_tier_eat_count` positive across ALL tiers in the uncapped pop), not the single-agent max.
+Also depth_gates is the GENERATIVE replacement for the fixed-node gates (tech_actions/tech_capabilities), mutually
+exclusive with them by construction.
 
 **Current ceiling (post-R170): open-endedness is now CAUSAL IN THE LIVING WORLD.** The live civilization no longer
 explores a FIXED pre-built tech tree (a frozen pre-set ceiling) — `combinatorial.GrowingTree` (the dense-rep
