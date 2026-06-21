@@ -136,6 +136,22 @@ class GenesisConfig:
     # signal_game=False is byte-identical (no referent draw, no extra channel, brain shape unchanged).
     signal_game: bool = False
     signal_reward: float = 0.6         # energy paid to BOTH speaker and listener on a correct decode
+    # WITHIN-LIFETIME signalling reinforcement (R179 — the diagnosed fix for R178's honest negative).
+    # R144/R145/R178 are THREE Stage-2 negatives all tracing to the SAME gap: with FROZEN NN genomes and
+    # SHIFTING partners a random decoder scores 50% regardless of how speakers encode, so genetic evolution
+    # gets NO selection gradient and the encoder/decoder chicken-and-egg never breaks. Skyrms (2010) /
+    # Roth-Erev: a Lewis signalling system emerges readily under WITHIN-LIFETIME reinforcement learning. So
+    # signal_learn=True gives every agent two small mutable URNS that learn within its own life, BESIDE the
+    # frozen brain: a SENDER urn (propensity over symbol | own referent bit) and a RECEIVER urn (propensity
+    # over guess | heard symbol). Each step the sender SAMPLES a symbol from its urn for the referent it sees,
+    # the listener SAMPLES a guess from its urn for the symbol it heard; on a CORRECT decode BOTH urns are
+    # reinforced (+signal_lr on the winning cell, Roth-Erev). Positive feedback amplifies a coherent shared
+    # convention from random play -> decode_acc climbs above chance and MI(symbol;referent) clears the null,
+    # WITHIN a single run. The decisive one-knob control is signal_lr=0 (urns frozen uniform = no learning =
+    # R178 chicken-and-egg = chance). Requires signal_game=True. signal_learn=False is byte-identical (no
+    # urns, no extra RNG draws, the R178 brain-output emission/decode path untouched).
+    signal_learn: bool = False
+    signal_lr: float = 0.3             # Roth-Erev reinforcement increment on a correct decode; 0 = no learning (control)
     # division of labour (R146 — Stage 3): processing=True makes food spawn RAW (inedible); an agent
     # ripens nearby raw food into edible food via an evolved PROCESS output (an extra brain output), paying
     # process_cost. Ripe food is a LOCAL PUBLIC GOOD — any neighbour can harvest it — and decays back to raw
@@ -602,6 +618,9 @@ class GenesisWorld:
         if self.cfg.signal_game and not self.signalling:
             raise ValueError("signal_game (R178 referential game) requires signalling=True (the utterance channel)")
         self.signal_game = self.cfg.signal_game
+        if self.cfg.signal_learn and not self.signal_game:
+            raise ValueError("signal_learn (R179 within-lifetime reinforcement) requires signal_game=True")
+        self.signal_learn = self.cfg.signal_learn
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (1 if self.signal_game else 0)          # +own private referent bit (R178)
@@ -617,6 +636,10 @@ class GenesisWorld:
         self._last_decode_acc = float("nan")             # live decode accuracy of the R178 game (set per step)
         self.spec = BrainSpec(n_in=prey_in, n_hidden=self.cfg.n_hidden, n_out=prey_out)
         self.pop = Population(PopConfig(self.cfg.capacity, self.spec.n_weights))
+        if self.signal_learn:                            # R179: per-agent mutable Lewis urns (2 referents/symbols)
+            cap = self.cfg.capacity                      # send[i,r,s]=propensity emit symbol s for referent r;
+            self._urn_send = np.ones((cap, 2, 2))        # recv[i,s,g]=propensity guess g having heard symbol s.
+            self._urn_recv = np.ones((cap, 2, 2))        # uniform start -> a random (chance) signalling policy
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
@@ -876,6 +899,41 @@ class GenesisWorld:
         self._last_decode_acc = float(correct[audible].mean()) if audible.any() else float("nan")
         return rew
 
+    def _signal_learn_decode(self, act, ni, nprox):
+        """R179 within-lifetime Lewis game. The listener SAMPLES a guess from its RECEIVER urn for the symbol
+        it heard (its nearest neighbour's last-step utterance); on a correct decode of that neighbour's encoded
+        referent BOTH the listener's receiver urn and the speaker's sender urn are reinforced (+signal_lr,
+        Roth-Erev). Returns the per-active energy reward and records _last_decode_acc. Reads the PRIOR-step
+        symbol/referent (must run BEFORE this step's re-emission). signal_lr=0 -> urns never change = control."""
+        n = act.size
+        rew = np.zeros(n)
+        if n < 2 or ni is None:
+            self._last_decode_acc = float("nan")
+            return rew
+        heard = np.clip(np.rint(self.pop.utterance[act][ni]), 0, 1).astype(np.int8)  # neighbour's prior symbol
+        spoken = self.pop.ref_emitted[act][ni].astype(np.int8)                         # bit that symbol encoded
+        gp = self._urn_recv[act, heard]                                                # (n,2) guess propensities
+        guess = (self.rng.random(n) >= gp[:, 0] / gp.sum(1)).astype(np.int8)           # sample guess ~ urn
+        audible = nprox > 0
+        correct = (guess == spoken) & audible
+        rew[correct] += self.cfg.signal_reward                    # listener earns the direct payoff
+        np.add.at(rew, ni[correct], self.cfg.signal_reward)       # speaker earns it too (common interest)
+        lr = self.cfg.signal_lr
+        if lr > 0.0 and correct.any():                            # Roth-Erev: reinforce the winning urn cells
+            li, si = act[correct], act[ni[correct]]              # listener / speaker global slot ids
+            np.add.at(self._urn_recv, (li, heard[correct], guess[correct]), lr)
+            np.add.at(self._urn_send, (si, spoken[correct], heard[correct]), lr)
+        self._last_decode_acc = float(correct[audible].mean()) if audible.any() else float("nan")
+        return rew
+
+    def _signal_learn_emit(self, act):
+        """R179: each agent SAMPLES this step's symbol from its SENDER urn for the referent bit it observes,
+        and stores it in the utterance channel (0/1) so a neighbour can hear+decode it next step."""
+        r = self.pop.referent[act]                               # 0/1, drawn this step
+        sp = self._urn_send[act, r]                              # (n,2) symbol propensities for that referent
+        sym = (self.rng.random(act.size) >= sp[:, 0] / sp.sum(1)).astype(np.int8)
+        return sym.astype(float)
+
     def _sense_food(self, pos, r, u, f, act):
         """Nearest food in the body frame. With resource types each agent senses only its own type."""
         cfg = self.cfg
@@ -932,7 +990,12 @@ class GenesisWorld:
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
             # R178: reward a correct decode of the neighbour's LAST-step utterance (reads ref_emitted BEFORE
             # it is overwritten below) — the direct common-interest payoff that makes signalling evolve.
-            game_rew = self._signal_game_reward(act, out, ni, nprox) if self.signal_game else None
+            if self.signal_learn:                           # R179: within-lifetime urn-policy decode + reinforce
+                game_rew = self._signal_learn_decode(act, ni, nprox)
+            elif self.signal_game:                          # R178: frozen brain-output decode
+                game_rew = self._signal_game_reward(act, out, ni, nprox)
+            else:
+                game_rew = None
             hi = self._cap_speed(act)                        # R154: per-agent max speed (culture-gated locomotion)
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, hi)  # _act reads out[:,:3]
             p.vel[act] = newvel
@@ -941,6 +1004,8 @@ class GenesisWorld:
             if self.signalling:                             # the evolved extra output IS the utterance
                 p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
                 emit = cfg.emit_cost * np.abs(p.utterance[act])  # honest-signalling cost -> silence default
+            if self.signal_learn:                           # R179: the urn-sampled symbol IS the utterance
+                p.utterance[act] = self._signal_learn_emit(act)
             if self.signal_game:                            # this fresh utterance now encodes THIS step's bit
                 p.ref_emitted[act] = p.referent[act]
             speed = np.linalg.norm(newvel, axis=1)
@@ -2258,6 +2323,9 @@ class GenesisWorld:
             p.utterance[slots] = 0.0                      # newborns start mute (don't inherit a stale slot's signal)
         if self.signal_game:
             p.ref_emitted[slots] = 0                      # newborn's "encoded bit" is reset (no stale-slot decode)
+        if self.signal_learn:                             # R179: each newborn LEARNS its own urns from scratch
+            self._urn_send[slots] = 1.0                   # (within-lifetime learning is not inherited) -> uniform
+            self._urn_recv[slots] = 1.0
         if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
             p.diet[slots] = np.clip(p.diet[parents] + self.rng.normal(0, cfg.diet_mut_sigma, parents.size),
                                     0.0, cfg.n_food_types - 1e-6)

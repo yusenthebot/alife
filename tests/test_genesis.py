@@ -346,6 +346,52 @@ def test_signal_game_reward_flows_to_correct_decoders():
     assert paid.pop.energy[paid.pop.active()].sum() > free.pop.energy[free.pop.active()].sum()
 
 
+def test_signal_learn_off_is_byte_identical():
+    # R179: signal_learn=False allocates no urns and draws no extra RNG -> a signal_game world is bit-for-bit
+    # the R178 path, untouched.
+    a = GenesisWorld(replace(fast_cfg(n0=120), signalling=True, signal_game=True), seed=4)
+    b = GenesisWorld(replace(fast_cfg(n0=120), signalling=True, signal_game=True), seed=4)
+    for _ in range(60):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.utterance, b.pop.utterance)
+    assert not hasattr(a, "_urn_send") and not hasattr(a, "_urn_recv")
+
+
+def test_signal_learn_requires_signal_game():
+    with pytest.raises(ValueError):
+        GenesisWorld(replace(fast_cfg(), signalling=True, signal_learn=True), seed=0)  # no referential game
+
+
+def test_signal_learn_allocates_urns_and_emits_binary_symbols():
+    w = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True, signal_learn=True), seed=1)
+    assert w._urn_send.shape == (w.cfg.capacity, 2, 2) and w._urn_recv.shape == (w.cfg.capacity, 2, 2)
+    for _ in range(5):
+        w.step()
+    act = w.pop.active()
+    assert set(np.unique(w.pop.utterance[act]).tolist()) <= {0.0, 1.0}   # the urn emits a discrete symbol
+
+
+def test_signal_learn_bootstraps_a_convention_vs_no_learning_control():
+    # THE R179 HEADLINE (the diagnosed fix for the R178 chicken-and-egg): with within-lifetime Roth-Erev
+    # reinforcement (signal_lr>0) the population bootstraps a Lewis signalling convention -> decode_acc
+    # climbs WELL above chance; the one-knob control (signal_lr=0, urns frozen uniform = no learning) stays
+    # pinned at chance. Same machinery, same seed; the ONLY difference is whether the urns learn.
+    cfg = dict(n0=400, signalling=True, signal_game=True, signal_learn=True)
+    learn = GenesisWorld(replace(fast_cfg(**cfg), signal_lr=0.4), seed=0)
+    ctrl = GenesisWorld(replace(fast_cfg(**cfg), signal_lr=0.0), seed=0)
+    learn_acc, ctrl_acc = [], []
+    for t in range(800):
+        learn.step(); ctrl.step()
+        if t >= 700:                                       # average the tail (converged) accuracy
+            la, ca = learn._last_decode_acc, ctrl._last_decode_acc
+            if la == la: learn_acc.append(la)
+            if ca == ca: ctrl_acc.append(ca)
+    learn_mean, ctrl_mean = float(np.mean(learn_acc)), float(np.mean(ctrl_acc))
+    assert ctrl_mean < 0.6                                 # no learning -> stuck at chance (~0.5)
+    assert learn_mean > 0.7                                # learning -> a real convention emerged
+    assert learn_mean > ctrl_mean + 0.15                   # decisive PAID-learning > control asymmetry
+
+
 def test_heard_channel_reads_nearest_neighbour():
     # the heard signal equals the nearest neighbour's last-step utterance, gated to 0 out of range
     w = GenesisWorld(replace(fast_cfg(n0=30), n_predators0=4, signalling=True), seed=2)
