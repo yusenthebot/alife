@@ -2027,3 +2027,93 @@ def test_phylogeny_signal_beats_shuffle_on_substrate():
             if out["treelikeness"] > out["shuffle_treelikeness"]:
                 wins += 1
     assert wins >= 1                                          # at least one seed shows a real tree signal
+
+
+# --- R161: GROUND-TRUTH cultural cladistics (does the cladogram recover the true descent?) ---
+
+def _balanced_forest():
+    """A clean balanced bifurcating birth tree, append-ordered (parent id < child id):
+    one root 0; children 1,2; grandchildren 3,4 (of 1) and 5,6 (of 2). Patristic distances are exact and
+    known: siblings 3,4 are 2 apart; 3 vs 5 (cousins under the same root) are 4 apart."""
+    return np.array([-1, 0, 0, 1, 1, 2, 2], dtype=np.int64)
+
+
+def test_genealogy_depths_and_patristic_on_known_tree():
+    from alife.genesis import genealogy as gn
+    parent = _balanced_forest()
+    depth = gn.build_depths(parent)
+    assert depth.tolist() == [0, 1, 1, 2, 2, 2, 2]
+    P = gn.patristic_distance_matrix(parent, np.array([3, 4, 5, 6]))
+    # 3,4 are siblings (LCA=1, depth1) -> 2+2-2*1 = 2; 3,5 share only root (depth0) -> 2+2-0 = 4
+    assert P[0, 1] == pytest.approx(2.0) and P[2, 3] == pytest.approx(2.0)
+    assert P[0, 2] == pytest.approx(4.0) and P[1, 3] == pytest.approx(4.0)
+    assert np.allclose(P, P.T) and np.allclose(np.diag(P), 0.0)
+
+
+def test_genealogy_cross_founder_uses_virtual_root():
+    """Two separate founder trees (a forest) are joined at a virtual super-root at depth -1, so a cross-founder
+    pair's patristic distance = depth[a]+depth[b]+2 (strictly greater than any within-tree pair)."""
+    from alife.genesis import genealogy as gn
+    parent = np.array([-1, 0, -1, 2], dtype=np.int64)         # tree A: 0->1 ; tree B: 2->3
+    P = gn.patristic_distance_matrix(parent, np.array([1, 3]))
+    assert P[0, 1] == pytest.approx(1 + 1 + 2)                # depth1 + depth1 - 2*(-1)
+
+
+def test_mantel_recovers_and_rejects():
+    """Mantel correlation is ~1 when the reconstructed matrix equals the true one, and the label-permutation
+    null sits near 0 with the observed far above it; an unrelated matrix gives a low z."""
+    from alife.genesis import genealogy as gn
+    rng = np.random.default_rng(0)
+    d_true = rng.random((6, 6)); d_true = d_true + d_true.T; np.fill_diagonal(d_true, 0.0)
+    assert gn.mantel_corr(d_true, d_true) == pytest.approx(1.0)
+    mt = gn.mantel_test(d_true, d_true, n_perm=200, seed=1)
+    assert mt["corr"] == pytest.approx(1.0) and mt["z"] > 3 and mt["p"] <= 0.02
+    other = rng.random((6, 6)); other = other + other.T; np.fill_diagonal(other, 0.0)
+    assert abs(gn.mantel_corr(d_true, other)) < 0.9           # an unrelated matrix is not perfectly correlated
+
+
+def test_track_genealogy_is_byte_identical_off_vs_on():
+    """track_genealogy is a PASSIVE observer (no RNG, no state change): the sim trajectory must be identical
+    whether it is on or off. Compare positions + energy + repertoire after a run."""
+    base = dict(n0=400, spatial_tiers=True)
+    off = GenesisWorld(_ecocfg(**base, track_genealogy=False), seed=0)
+    on = GenesisWorld(_ecocfg(**base, track_genealogy=True), seed=0)
+    for _ in range(120):
+        off.step(); on.step()
+    a, b = off.pop.active(), on.pop.active()
+    assert np.array_equal(a, b)
+    assert np.allclose(off.pop.pos[a], on.pop.pos[b])
+    assert np.allclose(off.pop.energy[a], on.pop.energy[b])
+    assert np.array_equal(off.rep[a], on.rep[b])
+
+
+def test_genealogy_log_grows_and_maps_living_agents():
+    """With tracking on, every living agent maps to a valid genealogy node and the parent log is append-ordered
+    (each child's parent id is smaller than the child's own id -> a valid forest)."""
+    w = GenesisWorld(_ecocfg(n0=400, spatial_tiers=True, track_genealogy=True), seed=0)
+    for _ in range(150):
+        w.step()
+    act = w.pop.active()
+    nodes = w._gen_node[act]
+    assert (nodes >= 0).all() and nodes.max() < len(w._gen_parent)
+    parent = np.array(w._gen_parent)
+    children = np.where(parent >= 0)[0]
+    assert (parent[children] < children).all()                # append-ordered: parent precedes child
+
+
+def test_genealogy_phylogeny_test_fields_and_gating():
+    """genealogy_phylogeny_test returns the Mantel/ground-truth fields on the tracked substrate, is empty
+    without track_genealogy, and its Mantel correlation is a valid number in [-1, 1] when >=4 demes form."""
+    w = GenesisWorld(_ecocfg(n0=600, spatial_tiers=True, track_genealogy=True), seed=0)
+    for _ in range(300):
+        w.step()
+    out = w.genealogy_phylogeny_test(grid=3, min_deme=12, sample_per_deme=10, n_perm=200)
+    assert {"mantel_corr", "mantel_null_mean", "mantel_z", "mantel_p", "n_demes", "d_cult", "d_gen"} <= set(out)
+    if out["n_demes"] >= 4 and not np.isnan(out["mantel_corr"]):
+        assert -1.0001 <= out["mantel_corr"] <= 1.0001
+        assert len(out["d_gen"]) == out["n_demes"] == len(out["d_cult"])
+    # gated off without tracking
+    w2 = GenesisWorld(_ecocfg(n0=400, spatial_tiers=True, track_genealogy=False), seed=0)
+    for _ in range(20):
+        w2.step()
+    assert w2.genealogy_phylogeny_test() == {}

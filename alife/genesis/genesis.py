@@ -405,6 +405,12 @@ class GenesisConfig:
     niche_value_bonus: float = 1.0    # a keyed mote is worth food_value*(1+niche_value_bonus) (specializing pays)
     cap_force_mono: bool = False      # CONTROL: force every agent to key 0 only (a monoculture) -> wastes niche>0 food
     cap_skew_key0: float = -1.0       # PROBE: seed founders key0 w.p. this, else key1 (>=0 grants founder keys); -1 off
+    # R161 GROUND-TRUTH cladistics: log the BIRTH genealogy (a parent-pointer forest) so the reconstructed
+    # cultural cladogram can be tested for whether it RECOVERS the true line of descent (genealogy_phylogeny_test).
+    # track_genealogy=True is a passive observer: it consumes NO RNG and changes NO sim state, so the trajectory
+    # is byte-identical to off (the log just grows append-only). Analysis-only instrumentation — for bounded
+    # verification runs, not multi-day persistent worlds (the log is unbounded by design, like a tracer).
+    track_genealogy: bool = False
     # metric
     persist_steps: int = 200
 
@@ -475,6 +481,12 @@ class GenesisWorld:
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
+        if self.cfg.track_genealogy:                         # R161: passive birth-genealogy log (no RNG, no state)
+            self._gen_parent: list[int] = []                 # node -> parent node id (-1 for a founder/root)
+            self._gen_node = np.full(self.cfg.capacity, -1, dtype=np.int64)  # live slot -> its genealogy node id
+            for slot in self.pop.active():                   # each founder is a distinct root lineage
+                self._gen_node[slot] = len(self._gen_parent)
+                self._gen_parent.append(-1)
         if self.combinatorial:                               # R150: build the fixed tech tree + repertoire pools
             from . import combinatorial as cb
             K, ns = self.cfg.max_techniques, self.cfg.n_seed_tech
@@ -1356,6 +1368,81 @@ class GenesisWorld:
             "n": int(act.size),
         }
 
+    def genealogy_phylogeny_test(self, grid: int = 3, min_deme: int = 15, sample_per_deme: int = 12,
+                                 n_perm: int = 999, seed: int = 20250621) -> dict:
+        """R161 GROUND-TRUTH read-out: does the reconstructed cultural cladogram RECOVER the true line of descent?
+        Requires track_genealogy. Partitions the living pop into a grid^3 spatial lattice of demes (the taxa) and
+        builds two inter-deme distance matrices: (a) RECONSTRUCTED CULTURAL distance = mean-L1 over the informative
+        technique columns (the same character distance R160's cladogram is built from); (b) TRUE GENEALOGICAL
+        distance = mean pairwise patristic (birth-forest) distance between up to sample_per_deme members of each
+        pair of demes (the diagonal is each deme's mean WITHIN-deme patristic distance). Headline = a Mantel
+        correlation between the two against a label-permutation null: does cultural similarity track REAL descent?
+        This upgrades R160's "tree-like vs a flat shuffle" to "recovers the TRUE tree". In situ; never feeds selection."""
+        from . import genealogy as gn
+        from . import phylogeny as ph
+        if not self.combinatorial or not self.cfg.track_genealogy:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < min_deme * 2:
+            return {}
+        pos = p.pos[act]
+        rep = self.rep[act]
+        size = self.cfg.world.size
+        cell = np.clip((pos / size * grid).astype(int), 0, grid - 1)
+        deme_id = (cell[:, 0] * grid + cell[:, 1]) * grid + cell[:, 2]
+        gnode = self._gen_node[act]                              # genealogy node id per living agent
+        parent = np.array(self._gen_parent, dtype=np.int64)
+        rng = np.random.default_rng(seed)
+        freqs, samp_nodes, counts = [], [], []
+        for d in np.unique(deme_id):
+            rows = np.where(deme_id == d)[0]
+            if rows.size < min_deme:
+                continue
+            freqs.append(rep[rows].mean(axis=0))
+            nd = gnode[rows]
+            if nd.size > sample_per_deme:                       # subsample members for the O(S^2) patristic block
+                nd = rng.choice(nd, size=sample_per_deme, replace=False)
+            samp_nodes.append(nd)
+            counts.append(int(rows.size))
+        D = len(freqs)
+        empty = {"n_demes": D, "n_informative": 0, "mantel_corr": float("nan"),
+                 "mantel_null_mean": float("nan"), "mantel_null_std": float("nan"), "mantel_z": float("nan"),
+                 "mantel_p": float("nan"), "n_perm": 0, "treelikeness": float("nan"),
+                 "shuffle_treelikeness": float("nan"), "d_cult": [], "d_gen": [], "dom_tech": [],
+                 "counts": counts, "n": int(act.size)}
+        if D < 4:
+            return empty
+        freqs = np.array(freqs)
+        info = ph.informative_columns(freqs)
+        d_cult = ph.l1_distance_matrix(freqs[:, info])
+        allnodes = np.concatenate(samp_nodes)
+        P = gn.patristic_distance_matrix(parent, allnodes)      # [S, S] patristic distance among sampled members
+        idx = np.concatenate([np.full(len(samp_nodes[i]), i) for i in range(D)])
+        d_gen = np.zeros((D, D))
+        for i in range(D):
+            for j in range(i, D):
+                block = P[np.ix_(idx == i, idx == j)]
+                if i == j:
+                    m = block.shape[0]
+                    vals = block[np.triu_indices(m, k=1)] if m > 1 else np.zeros(1)
+                    val = float(vals.mean()) if vals.size else 0.0
+                else:
+                    val = float(block.mean())
+                d_gen[i, j] = d_gen[j, i] = val
+        mt = gn.mantel_test(d_cult, d_gen, n_perm=n_perm, seed=seed)
+        null = ph.column_shuffle_null(freqs, 20)
+        level = self._tree_level
+        dom = [int(np.where(f >= 0.5, level, -1).argmax()) if (f >= 0.5).any() else -1 for f in freqs]
+        return {
+            "n_demes": D, "n_informative": int(info.sum()),
+            "mantel_corr": mt["corr"], "mantel_null_mean": mt["null_mean"], "mantel_null_std": mt["null_std"],
+            "mantel_z": mt["z"], "mantel_p": mt["p"], "n_perm": mt["n_perm"],
+            "treelikeness": ph.treelikeness(d_cult), "shuffle_treelikeness": null["treelikeness"],
+            "d_cult": d_cult.tolist(), "d_gen": d_gen.tolist(), "dom_tech": dom, "counts": counts,
+            "n": int(act.size),
+        }
+
     def ecological_traditions_test(self, min_region: int = 20) -> dict:
         """R157 read-out: does ECOLOGICAL selection lock each spatial REGION to its OWN recipe BRANCH? Partitions
         the living population into n_food_tiers-1 x-axis slabs (the same regions spatial_tiers uses to assign
@@ -1814,6 +1901,10 @@ class GenesisWorld:
         p.vel[slots] = d / np.linalg.norm(d, axis=1, keepdims=True) * cfg.min_speed
         p.lineage[slots] = p.lineage[parents]
         p.generation[slots] = p.generation[parents] + 1
+        if self.cfg.track_genealogy:                          # R161: record each birth as a new genealogy node
+            for ps, cs in zip(parents.tolist(), slots.tolist()):
+                self._gen_node[cs] = len(self._gen_parent)
+                self._gen_parent.append(int(self._gen_node[ps]))
         if self.signalling:
             p.utterance[slots] = 0.0                      # newborns start mute (don't inherit a stale slot's signal)
         if cfg.n_food_types > 1:                          # diet is heritable + mutable -> niches evolve
