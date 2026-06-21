@@ -1,5 +1,15 @@
 # alife — progress
 
+## Current state (Round 179 — 2026-06-21) — STAGE-2 SIGNALLING CLEARED (POSITIVE, red-teamed): a Lewis signalling convention EMERGES via WITHIN-LIFETIME reinforcement — the diagnosed fix for the R178 chicken-and-egg. THREE prior Stage-2 negatives (R144 no-relatedness, R145 kin-selection, R178 direct-payoff) all traced to the SAME gap: with FROZEN NN genomes + SHIFTING partners a random decoder scores 50% regardless of how speakers encode → genetic evolution gets NO selection gradient and the encoder/decoder chicken-and-egg never breaks. Skyrms (2010)/Roth-Erev: a Lewis system emerges readily under WITHIN-LIFETIME reinforcement learning. R179 adds EXACTLY that and it WORKS. 禁止造假 — the figure shows the emergence AND its honest caveats.
+
+**The fix (`signal_learn`, default-off byte-identical; requires signal_game=True).** Every agent carries two small MUTABLE urns BESIDE the frozen brain: a SENDER urn `_urn_send[i,referent,symbol]` (propensity to emit each symbol for the referent bit it observes) and a RECEIVER urn `_urn_recv[i,symbol,guess]` (propensity to guess each bit having heard a symbol), both shape (capacity,2,2), uniform start = a random (chance) policy. Each step the sender SAMPLES this step's symbol from its urn for the referent it sees (`_signal_learn_emit`, stored in the utterance channel as 0/1); the listener SAMPLES a guess from its urn for the symbol it heard from its nearest neighbour last step, and on a CORRECT decode of that neighbour's encoded referent BOTH urns are reinforced +`signal_lr` on the winning cell (`_signal_learn_decode`, Roth-Erev). Positive feedback amplifies a coherent SHARED convention from random play across shifting partners. Newborns reset to uniform urns (within-life learning is NOT inherited). `signal_learn=False` is byte-identical (no urns allocated, no extra RNG draw, the R178 brain-output path untouched — test-asserted).
+
+**HEADLINE — a convention bootstraps WITHIN a run with learning; the one-knob no-learning control stays at chance.** REAL-VERIFY (`scripts/run_genesis_r179.py` → `runs/r179_signal_learn/signal_learn.png`, EYE-VERIFIED, 2s; LEARN lr=0.4 vs CONTROL lr=0, 1200 steps, dense small world cap=300/n0=120): LEARN decode_acc climbs 0.49→0.86 MONOTONE and MI(symbol;referent) z-score reaches 114 (far past the z=3 emergence line); CONTROL (signal_lr=0, the ONLY knob changed — urns frozen uniform = no learning = the R178 chicken-and-egg) pinned at chance 0.51 with z≈0. The left panel shows blue climbing to a real convention while orange flat-lines on the chance dotted line; the right panel shows blue MI z exploding to >100 while orange sits at 0 below the green z=3 threshold.
+
+**RED-TEAM CONFIRMED (3/3 seeds; two independent controls; degeneracy ruled out).** The verify is adversarial BY CONSTRUCTION — (a) the `signal_lr=0` arm is a strict one-knob control (identical seed/world/energy-reward; ONLY the urn update differs), and (b) the scrambled-label MI null is the second independent control; both refute the no-emergence null. Multi-seed probe (seeds 1/2/3, 1000 steps): LEARN decode_acc 0.65/0.83/0.74 with MI z 55/64/69 (all ≫3); CONTROL 0.53/0.54/0.44 with z≈0 — emergence robust 3/3. DEGENERACY ruled out: emitted symbols are balanced ~51/49 and the referent bit is balanced ~50/50, so a constant-guess strategy caps at 50% on a balanced random referent — the observed 0.65–0.86 is IMPOSSIBLE without genuine symbol↔referent encoding (and the MI z confirms it).
+
+**HONEST CAVEATS (recorded).** (1) Signalling here is within-life LEARNED (Roth-Erev urns), NOT genetically EVOLVED — the urns are reset to uniform at birth, so every generation re-learns the convention from scratch. This is faithfully Skyrms' mechanism (and exactly the diagnosed missing piece), but the signalling policy lives in a dedicated 2×2 urn pair LAYERED BESIDE the NN genome, not inside the evolved brain weights. (2) Convention STRENGTH varies by seed (tail decode_acc 0.65–0.86); some seeds settle into weaker/partial-pooling equilibria rather than a perfect (1.0) signalling system — emergence (≫control, z≫3) is robust but the magnitude is not always maximal. (3) This is the canonical DISCRETE 2-referent/2-symbol Lewis game (Skyrms' minimal model); a larger/compositional vocabulary (Kirby iterated learning) is a future rung, not claimed here. 4 new tests (241 total). The Stage-2 signalling rung is now CLEARED.
+
 ## Current state (Round 178 — 2026-06-21) — STAGE-2 SIGNALLING, HONEST NEGATIVE: the common-interest referential (Lewis/Skyrms) game does NOT emerge. HYPOTHESIS tested: R144 (no relatedness) and R145 (kin selection) were honest negatives because predator-alarm pays the caller only INDIRECTLY (inclusive fitness through saved kin) — weak, noisy, slow. Skyrms (2010): a Lewis signalling system emerges readily under DIRECT common interest. So `signal_game` (default-off, byte-identical; requires signalling=True) embeds exactly that: each step every agent observes a private random referent BIT (new input), emits its utterance; the nearest neighbour HEARS it and DECODES via a guess output (new output); a correct decode pays BOTH speaker and listener +`signal_reward` NOW. The claim: the missing piece was the PAYOFF STRUCTURE, not the channel → a convention should bootstrap (decode_acc>0.5, MI(utterance;referent)≫scrambled null) in the PAID arm but NOT in the otherwise-identical reward=0 FREE control. **REAL-VERIFY REFUTES IT (scripts/run_genesis_r178.py, runs/r178_signal_game/signal_game.png eye-verified, 2s; + fast probes across strong-reward / small-dense / 1200-step regimes):** decode_acc stays pinned at chance (PAID max 0.537 vs FREE max 0.562 — indistinguishable), and MI z-vs-null is uncorrelated NOISE that transiently spikes >3 in BOTH arms equally (FREE actually spikes first). The built-in FREE control + scrambled-channel null are the adversarial check, and they FALSIFY reward-driven emergence (no PAID>FREE asymmetry). ROOT CAUSE (diagnosed): pure GENETIC evolution with SHIFTING partners can't break the encoder/decoder chicken-and-egg — a random decoder scores 50% regardless of whether speakers encode, so there is NO selection gradient until encoder+decoder align SIMULTANEOUSLY across the whole population, which drift never delivers. So "payoff structure was the only missing piece" is REFUTED: direct payoff is necessary but NOT sufficient — Skyrms' actual mechanism is WITHIN-LIFETIME reinforcement (urn/Roth-Erev) with stable speaker/listener roles, which these FROZEN NN genomes lack. The `signal_game` machinery + `signal_game_mi()` diagnostic are kept (real, unit-tested, default-off) as the SUBSTRATE for that next attempt. 禁止造假 — the figure shows the truth, including that the headline did not hold. Three negatives now on Stage-2 emergence (R144/R145/R178) all point to the same gap: no within-lifetime learning. See `## Decisions pending` + `## Frontier / next`.
 
 ## Current state (Round 177 — 2026-06-21) — CUMULATIVE-CULTURE BODY: drive embodiment off the ACCESSIBLE BANKED cultural record (a lossless external memory), not personal mastery (which saturates). R176 made the body CONTINUOUS but its DRIVER — the agent's PERSONAL realized depth `pop.tech` — SATURATES at the innovation/transmission-loss equilibrium (R176 caveat 2: copy parent+hearth at fidelity<1, add only innov_steps → the living-pop MEAN depth asymptotes). R177 adds `pheno_cumulative`: the body's driver becomes `max(personal pop.tech, the deepest record BANKED in the nearest STRONG hearth within hearth_radius)`. The banked hearth record `struct_tech` is written by a running MAX over every builder ever (`np.maximum.at`, untouched by culture_decay) — a lossless EXTERNAL social memory (Boyd/Richerson: societies store culture better than any individual remembers) — so it exceeds the lossy living-pop mean. `_pheno_driver(act)` feeds `_cap_speed`/`_cap_reach`/`embodied_scale`; default-off is byte-identical (driver stays `pop.tech`, no KD-query, no extra RNG). Requires depth_phenotype=True + building=True. REAL-VERIFY (scripts/run_genesis_r177.py, 8 GENUINE separate-subprocess ticks, K=20000, seed 0; runs/r177_body/{body.png,world.gif} eye-verified, 33s) + red-team CONFIRMED (skeptic read the code): in the SAME cumulative run the body DRIVER (banked) climbs 5.9→56.3 while personal mastery climbs 3.9→42.8 — the GAP GROWS 2.0→13.5, i.e. cumulative culture increasingly outpaces the individual (the Tomasello ratchet). The cumulative body's embodied_scale ends 2.13 > the R176 personal-mastery body's 2.00 DESPITE a SHALLOWER underlying tree (cum conn_depth 63 < per 69), which strengthens it (banked access more than compensates). pop 1000 both arms; world.gif = dense gold (deep-culture) living 3D population.
@@ -1878,6 +1888,18 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R179) STAGE-2 SIGNALLING via WITHIN-LIFETIME reinforcement — RESOLVED, POSITIVE (robust 3/3), no CEO action.**
+  The diagnosed fix for the R178 chicken-and-egg landed. `signal_learn` (default-off byte-identical) gives each agent
+  two mutable Roth-Erev urns (sender symbol|referent + receiver guess|symbol) reinforced within its own life from the
+  decode reward. A Lewis convention bootstraps WITHIN a run: decode_acc 0.49→0.86, MI z=114, vs the one-knob lr=0
+  control pinned at chance (z≈0). Red-teamed 3/3 seeds (two independent controls: lr=0 + scrambled-label null;
+  degeneracy ruled out by balanced symbol/referent fractions). This RESOLVES the four-round Stage-2 thread
+  (R144/R145/R178 negatives + R179 positive) and confirms the shared diagnosis: the missing piece was WITHIN-LIFETIME
+  learning, not payoff structure or relatedness. Honest caveats: learned (not genetically-inherited) urns beside the
+  NN brain; seed-dependent convention strength (0.65–0.86); canonical discrete 2×2 Lewis game. `signal_learn` +
+  `_signal_learn_emit/_decode` + `scripts/run_genesis_r179.py` are reusable substrate for vocabulary scaling / Stage-3
+  coupling. The loop PROCEEDS (R180) to make the now-real channel FUNCTIONAL (larger vocabulary, or couple to
+  division-of-labour). No CEO action.
 - **(R178) STAGE-2 SIGNALLING via DIRECT common interest — RESOLVED as an HONEST NEGATIVE (robust), no CEO action.**
   The common-interest referential (Lewis/Skyrms) game `signal_game` is built, unit-tested (5 tests), committed
   default-off (byte-identical). Finding: it does NOT bootstrap a signalling convention — decode_acc pinned at chance
@@ -2122,26 +2144,26 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R178): Stage-2 emergent signalling is BLOCKED by a diagnosed mechanism gap, NOT a payoff
-gap.** Three honest negatives (R144 no-relatedness, R145 kin-selection, R178 direct common-interest payoff) now
-converge on one root cause: pure GENETIC evolution with shifting partners cannot break the encoder/decoder
-chicken-and-egg, because a random decoder scores 50% regardless of whether speakers encode → no selection gradient
-until both align simultaneously across the whole population. Skyrms' actual mechanism — the one that DOES make
-Lewis games converge — is WITHIN-LIFETIME reinforcement (urn/Roth-Erev) with stable speaker/listener roles, which
-these FROZEN NN genomes lack. The `signal_game` machinery + `signal_game_mi()` diagnostic are real, unit-tested,
-default-off substrate for that fix. **Two live directions, ranked by ambition×feasibility:**
-(A) **WITHIN-LIFETIME SIGNALLING REINFORCEMENT (the diagnosed fix; highest ambition).** Give agents a small
-mutable per-agent signalling policy (or a fast Hebbian/Roth-Erev update on the utterance/guess weights) that adapts
-DURING life from the decode reward, with REPEATED interaction with the same partner(s). This is the literature's
-proven route to Lewis-system emergence and would unlock Stage-2 language genuinely. Bounded ONE attempt — if it
-also fails to clear the FREE control, that is a deep negative about this substrate and we pivot. Risk: introduces
-within-life plasticity (a real new mechanism), needs care to keep default-off byte-identical.
-(B) **PIVOT to STAGE (3) DIVISION OF LABOUR (lower risk, still a leap in kind).** Cooperation/division-of-labour
-seeded by the R142 diet specialists + R177 banked culture + the existing `processing`/`specialize` mechanisms —
-a different ladder rung that does NOT depend on solved signalling. Per the staged ambition ladder this is the
-sanctioned next rung after Stage 2.
-**Bias: try (A) ONCE as the next round (it directly attacks the diagnosed root cause and is the true leap); if it
-does not clear the control, PIVOT cleanly to (B) per anti-thrash. Do NOT re-run the R178 verify as-is again.**
+**Current ceiling (post-R179): Stage-2 emergent signalling is CLEARED — a Lewis convention emerges via the
+diagnosed within-lifetime-reinforcement fix.** The four-round Stage-2 thread is closed: R144/R145/R178 negatives all
+traced to "no within-lifetime learning," and R179 added exactly that (`signal_learn`: per-agent Roth-Erev sender +
+receiver urns reinforced from the decode reward) → decode_acc 0.49→0.86, MI z=114, vs the one-knob lr=0 control at
+chance, red-teamed robust 3/3 seeds. The channel is now REAL but MINIMAL (within-life learned 2×2 Lewis game, not
+genetically evolved, not compositional). The new ceiling: signalling EXISTS but is (a) not inherited, (b) tiny
+vocabulary, (c) not yet FUNCTIONALLY coupled to anything the agents do. **Three live directions, ranked by
+ambition×feasibility:**
+(A) **MAKE THE LEARNED CHANNEL FUNCTIONAL — couple it to Stage-3 division of labour (TOP — turns language into
+behaviour).** The R142 diet specialists + `processing`/`specialize` mechanisms give roles; let an agent signal a
+referent that MATTERS (food-type need / role / hazard) and let listeners ACT on the decoded bit (approach the
+signalled resource, switch role). Emergence test: a learned signal causally improves coordinated foraging vs a
+deaf/scrambled control. This is the Stage-2→Stage-3 bridge and the genuine leap in kind.
+(B) **SCALE THE VOCABULARY / compositionality (Kirby iterated learning).** Move from 2 referents/symbols to K, add a
+transmission bottleneck across generations → pressure for a COMPOSITIONAL code. Highest-ambition language result but
+risks becoming a standalone signalling toy detached from the living world.
+(C) **GENETIC ASSIMILATION of the learned signal (Baldwin effect).** Let the learned urn bias seed the offspring's
+prior → over generations the convention becomes partly innate. Elegant but incremental.
+**Bias: (A) next — it makes the just-won channel DO something in the world and advances the staged ladder to
+cooperation, rather than polishing signalling in isolation. Decide at ORIENT. Do NOT re-run the R178/R179 verify.**
 
 **Current ceiling (post-R177): the body's DRIVER is now the SOCIETY's ACCUMULATED EXTERNAL culture (the banked
 hearth record, a lossless running-max), not the lossy individual's personal mastery — so the body deepens with
