@@ -1,5 +1,43 @@
 # alife — progress
 
+## Current state (Round 175 — 2026-06-21) — SUSTAINED connected DEPTH, not just breadth: a depth-rewarding SELECTION PRESSURE pushes the open-ended world past R174's plateau. R174 proved the unattended world keeps developing across many ticks, but with an honest caveat — under the UNIFORM composition draw society BREADTH climbs the whole horizon while connected tech DEPTH PLATEAUS by ~tick 6 (max connected depth advances only when the current-deepest technique is re-composed, a ~2/|known| event that VANISHES as breadth grows). R175 adds the missing cultural-evolution force: `depth_bias` makes the per-composition draw a SOFTMAX over tree LEVEL, so the DEEPEST techniques are preferentially re-composed ("rich get richer" / preferential reuse on the frontier). REAL-VERIFY + red-team CONFIRMED: the biased world keeps DEPTH climbing the whole horizon (32→76, still deepening on the final tick) while the unbiased control (R174 regime, identical cap + tick count, only depth_bias=0) plateaus at depth 12 from tick 6.
+
+**R175 lands frontier (1)'s SUSTAINED-DEPTH rung.** Not a new sim mechanism, not a representation change, NO new
+RNG when off: same tree, same `combine` rule, same `innov_steps` — only WHICH two known techniques the per-
+composition draw selects differs. A genuine preferential-reuse force (deep/high-value techniques get reused more),
+the cultural analogue of R174's regime fix but acting on the SELECTION, not the cap. 禁止造假.
+
+**The contribution (one knob, default-off byte-identical).** In `combinatorial.py` `GrowingTree.discover_inplace`
+gains `level_bias` (default 0.0): `level_bias<=0` is the EXACT uniform `rng.choice` path (no extra RNG draw);
+`level_bias>0` draws each known technique with prob ∝ `exp(level_bias·tree_level)` — a stable softmax over DEPTH.
+`GenesisConfig.depth_bias` (default 0.0) threads it through both discovery sites (seed + reproduction). Only acts
+on the generative tree.
+
+**HEADLINE — depth-biased keeps deepening across the WHOLE horizon; unbiased plateaus. Only depth_bias differs.**
+REAL-VERIFY (`scripts/run_genesis_r175.py` → `runs/r175_depth/{depth.png,world.gif}`, EYE-VERIFIED, ~44s): 10 ticks
+× 60 steps driven as GENUINE separate subprocesses (true process death between every tick), LARGE cap K=20000 for
+BOTH so breadth is never the limiter. BIASED (depth_bias=1.0): connected DEPTH 32→76 monotone, still +2 on the very
+last tick; breadth 1537→4651; diet ceiling 7, axes 4 (saturated from tick 1); pop 1000; restored tree.n=4738,
+diet_ceiling=(7,4). UNBIASED (depth_bias=0.0, == R174, only knob that differs): DEPTH 5→12 then FROZEN at 12 from
+tick 6 (ticks 6-10 all 12); breadth 133→5700; diet 6, axes 4; pop 1000. Biased ends 6× deeper (76 vs 12). The depth
+panel shows the biased depth (blue) climbing the whole way vs the flat-lined unbiased depth (red); the world gif
+shows a dense, alive, nearly-all-gold (deep-culture) 3D population over food — a deep living civilization.
+
+**RED-TEAM CONFIRMED (the metric is not gameable; the control is clean).** `connected_depth` is the longest chain
+of consecutive MUTUALLY-KNOWN prerequisites held by the society (`techdepth.connected_depth_array`) — a node counts
+only if its ENTIRE prereq chain is known, so depth=76 is a genuinely-held, fully-grounded chain, NOT a global-
+registry artifact or a degenerate spike. The control isolates the mechanism three ways: (a) `depth_bias=0.0` is
+bit-identical to the pre-R175 no-arg call (test asserts identical tree pa/pb/level + rep); (b) on a bare fresh tree
+the biased draw realizes a strictly (≥2×) deeper max level than uniform with the same seed/steps; (c) the full-world
+biased-vs-unbiased run differs ONLY in depth_bias (same cap, same tick count) yet splits sustained-climb vs plateau.
+
+**HONEST CAVEATS (recorded).** (i) Depth-bias TRADES breadth for depth: the unbiased world ends with HIGHER breadth
+(5700 vs 4651) because concentrating composition on the frontier explores fewer distinct broad nodes — depth is
+bought, not free. (ii) The EMBODIED ceiling saturates early: with `n_food_tiers=8`/`n_capabilities=4` the biased diet
+ceiling hits 7 and axes 4 by tick 1, so depth ABOVE the gated tiers is repertoire-deep, not further-embodied (body is
+≥ unbiased throughout but is finite by construction). Making the BODY itself keep deepening with the tech depth (more
+tiers/axes, or depth-scaled phenotype) is the next rung. 2 mechanism tests + 1 full-world control test (224 total).
+
 ## Current state (Round 174 — 2026-06-21) — THE SUSTAINED MULTI-DAY CLIMB: the world that KEEPS developing, not just persists. R173's unattended loop was real but with K=1000 the open-ended climb SATURATED inside tick 1, so "leave it running for days, it keeps developing" was hollow past tick 1. R174 fixes the REGIME (not the mechanism): a large tree cap + gentler innovation + deeper diet/capability gates → depth, breadth AND the embodied diet/axes ceilings keep rising tick after tick over the whole horizon, while the otherwise-identical CAPPED control freezes once its tree fills (red-teamed CONFIRMED across 4 seeds — the freeze is the CAP, not pop death; the only knob that differs is K).
 
 **R174 lands frontier (1)'s sustained-climb rung + the cron wiring.** R173 stood up the unattended tick loop
@@ -2062,6 +2100,30 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R175): the open-ended world's connected DEPTH now keeps climbing across the whole
+horizon, not just breadth.** R174 made breadth/diet/axes climb tick after tick but DEPTH plateaued by ~tick 6
+(uniform composition picks the deepest node ~2/|known| of the time, vanishing as breadth grows). R175 adds
+`depth_bias` — a softmax-over-tree-level composition draw (preferential reuse of the deepest techniques) — and
+the biased world keeps DEPTH climbing the full horizon (32→76, still rising on the last tick) vs the unbiased
+control frozen at 12 from tick 6 (only depth_bias differs; default-off byte-identical; `connected_depth` = a
+fully-known grounded chain, not a registry artifact). Durable instrument: `combinatorial.discover_inplace(level_bias=)`
++ `GenesisConfig.depth_bias` + `scripts/run_genesis_r175.py`. **Honest caveats driving the next rung: depth-bias
+TRADES breadth for depth (unbiased ends broader), and the EMBODIED ceiling (diet 7 / axes 4) saturates by tick 1,
+so depth above the gated tiers is repertoire-deep, not further-embodied.** Candidate R176+ frontiers, ranked
+ambition × feasibility:
+(1) **MAKE THE BODY KEEP DEEPENING WITH THE TECH (TOP).** The repertoire depth now climbs unbounded but the body
+ceilings out at the configured 8 tiers / 4 axes by tick 1. Give the embodiment open-ended headroom — many more
+diet tiers / capability axes, or a depth-SCALED continuous phenotype (e.g. metabolic efficiency / reach / speed
+that scale with realized cultural depth) — so the EMBODIED ceiling keeps rising tick after tick alongside the
+tech depth, closing the R174+R175 caveat that the body saturates while the culture deepens.
+(2) **BREADTH×DEPTH JOINT CLIMB (heal the tradeoff).** depth_bias buys depth at breadth's expense; a regime that
+keeps BOTH climbing (e.g. a mild bias + niche/diet pressure rewarding breadth, or two sub-populations) — a
+genuinely open-ended civilization grows on both axes, not one at a time.
+(3) **RUN THE CRON ENTRYPOINT FOR REAL WALL-CLOCK DAYS** with depth_bias on — `scripts/genesis_daemon_tick.sh`
+against a single state_dir, dashboard visibly climbing depth across dozens of real ticks over days.
+**Bias: the next LEAP IN KIND is (1) — the CULTURE now deepens without bound; make the BODY follow it, so "keeps
+developing" holds in the embodiment, not just the abstract tree.**
 
 **Current ceiling (post-R173): the unattended multi-day climb is a REAL LOOP — start once, glance at a live
 dashboard.** R172 made the open-ended embodied climb durable across process death; R173 stands up the actual
