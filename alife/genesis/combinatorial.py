@@ -207,6 +207,29 @@ class GrowingTree:
         self.n += 1
         return nid
 
+    def state(self) -> dict:
+        """Serializable snapshot of the grown tree for checkpointing (R172 — the open-ended tree must
+        survive process death). The (a,b)->id registry is NOT stored: it is fully reconstructable from the
+        materialized parent pairs, so only the capacity arrays + node count are persisted."""
+        return {"pa": self.pa, "pb": self.pb, "level": self.level, "n": np.int64(self.n)}
+
+    def restore(self, pa: np.ndarray, pb: np.ndarray, level: np.ndarray, n: int) -> None:
+        """Restore a grown tree IN PLACE (R172). Copies into the existing pa/pb/level arrays rather than
+        rebinding them, so a World that bound `_tree_pa/_tree_pb/_tree_level` to this tree's arrays keeps
+        seeing the restored state. Rebuilds the (a,b)->id registry from the materialized parents so future
+        `combine` calls stay consistent (the same pair returns the same id; a genuinely new pair extends
+        from `n`). Raises if the saved tree exceeds this tree's capacity (a cfg/capacity mismatch)."""
+        if int(n) > self.capacity:
+            raise ValueError(f"saved tree has {int(n)} nodes > capacity {self.capacity} (cfg mismatch)")
+        self.pa[:] = pa
+        self.pb[:] = pb
+        self.level[:] = level
+        self.n = int(n)
+        self.registry = {}
+        for nid in range(self.n_seed, self.n):
+            a, b = int(self.pa[nid]), int(self.pb[nid])
+            self.registry[(a, b) if a < b else (b, a)] = nid
+
     def discover_inplace(self, rep: np.ndarray, rng: np.random.Generator, steps: int) -> None:
         """Each agent (row of `rep`) attempts `steps` compositions, each picking two DISTINCT KNOWN
         techniques at random and adding their product (a possibly brand-new node) to its repertoire. Mutates

@@ -2163,6 +2163,10 @@ class GenesisWorld:
             snap["realized_tiers"] = float(ta.get("realized_tiers", 0))
             snap["locked_food_frac"] = float(ta.get("locked_food_frac", 0.0))
             snap["mean_edible_tiers"] = float(ta.get("mean_edible_tiers", 0.0))
+        if self.depth_gates:                                # R171/R172: embodied ceiling gated on the GROWN tree
+            max_tier, n_axes = self.diet_capability_ceiling()  # persisted so the climb is visible on disk (R172)
+            snap["mean_edible_tiers"] = float(max_tier)
+            snap["realized_axes"] = float(n_axes)
         if self.tech_capabilities:                          # R154: culture-gated physical capability axes
             tc = self.tech_capabilities_test()
             snap["realized_axes"] = float(tc.get("realized_axes", 0))
@@ -2347,6 +2351,12 @@ class GenesisWorld:
     def save_checkpoint(self, path: str) -> None:
         st = self.pop.state()
         combo = {"rep": self.rep, "struct_rep": self.struct_rep} if self.combinatorial else {}
+        if self.generative_tree:                             # R172: the GROWN open-ended tree must survive
+            ts = self._tree.state()                          # process death, else resumed depth collapses to
+            combo["tree_pa"] = ts["pa"]                      # a fresh seed-only tree (rep's deep nodes -> level 0)
+            combo["tree_pb"] = ts["pb"]
+            combo["tree_level"] = ts["level"]
+            combo["tree_n"] = ts["n"]
         if self.culture_decay:                               # R157: the decaying memory backs the record
             combo["struct_memory"] = self.struct_memory
         if self.cap_niches:                                  # R155 niche labels (kept in sync only when on)
@@ -2405,6 +2415,9 @@ class GenesisWorld:
         if self.combinatorial and "rep" in d.files:          # R150 repertoire pools
             self.rep = d["rep"]
             self.struct_rep = d["struct_rep"]
+            if self.generative_tree and "tree_n" in d.files:  # R172: restore the grown open-ended tree IN PLACE
+                self._tree.restore(d["tree_pa"], d["tree_pb"],  # (keeps the _tree_pa/_tree_pb/_tree_level binding)
+                                   d["tree_level"], int(d["tree_n"]))
             if self.culture_decay:                           # R157: restore the decaying memory (record derives from it)
                 self.struct_memory = (d["struct_memory"] if "struct_memory" in d.files
                                       else self.struct_rep.astype(np.float32) * self.cfg.memory_reinforce)

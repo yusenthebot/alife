@@ -2799,3 +2799,85 @@ def test_depth_gates_null_no_composition_no_unlock():
     assert w._tree.n == w.cfg.n_seed_tech                          # never composed -> only the seeds materialized
     assert w.diet_capability_ceiling() == (0, 0)
     assert w._tier_eat_count[1:].sum() == 0
+
+
+# ---------- R172: the OPEN-ENDED tree survives process death — the climb persists across restarts ----------
+def test_growing_tree_state_restore_roundtrip():
+    """R172 unit: GrowingTree.state()/restore() round-trips the grown tree losslessly. After restoring a fresh
+    tree from a saved state, the materialized arrays + node count match, the (a,b)->id registry is rebuilt so an
+    ALREADY-COMPOSED pair returns its original id, and a genuinely NEW composition extends from `n` without
+    colliding. This is the per-node guarantee the checkpoint relies on."""
+    from alife.genesis import combinatorial as cb
+    rng = np.random.default_rng(0)
+    src = cb.GrowingTree(capacity=200, n_seed=6)
+    rep = np.zeros((40, 200), dtype=bool)
+    rep[:, :6] = True
+    src.discover_inplace(rep, rng, steps=8)                 # grow a real tree
+    assert src.n > 6                                        # something was composed
+    st = src.state()
+
+    dst = cb.GrowingTree(capacity=200, n_seed=6)
+    dst.restore(st["pa"], st["pb"], st["level"], int(st["n"]))
+    assert dst.n == src.n
+    assert np.array_equal(dst.pa, src.pa) and np.array_equal(dst.pb, src.pb)
+    assert np.array_equal(dst.level, src.level)
+    assert dst.registry == src.registry                    # registry rebuilt from parents, not stored
+    # an already-known pair returns its original id on BOTH trees (registry consistent)...
+    a, b = int(src.pa[6]), int(src.pb[6])
+    assert dst.combine(a, b) == src.registry[(min(a, b), max(a, b))]
+    # ...and a brand-new composition extends from n identically on both. Search over ALL known nodes for a
+    # still-uncomposed pair (the 15 seed pairs may already be exhausted after a real discovery run).
+    fresh_pair = next((i, j) for i in range(src.n) for j in range(i + 1, src.n)
+                      if (i, j) not in src.registry)
+    n_before = dst.n
+    nid = dst.combine(*fresh_pair)
+    assert nid == n_before and dst.n == n_before + 1
+
+
+def test_persist_resume_generative_tree_is_bit_for_bit_continuous(tmp_path):
+    """R172 HEADLINE: persistence now works on the OPEN-ENDED generative substrate. A chain of resumed segments
+    (each a fresh world that loads the previous checkpoint = simulated process death) on the generative_tree +
+    depth_gates world yields a development trajectory BIT-FOR-BIT IDENTICAL to one uninterrupted run — INCLUDING
+    the grown tree's connected depth AND the embodied ceiling (edible diet tiers). Before R172 the grown tree was
+    not checkpointed, so resumed deep nodes collapsed to a fresh seed-only tree and the trajectory diverged."""
+    from alife.genesis import persist
+    cfg = _depth_gate_cfg(1000, innov_steps=3)
+    cont = persist.continuous_trajectory(cfg, seed=1, total_steps=120, log_every=20)
+    chain = persist.chained_trajectory(cfg, seed=1, n_segments=3, segment_steps=40,
+                                       ckpt_path=str(tmp_path / "ck.npz"), log_every=20)
+    # the open-ended depth AND the embodied diet ceiling genuinely CLIMBED in the window (not a flat trajectory).
+    assert cont["conn_depth"][-1] > cont["conn_depth"][0]
+    assert cont["edible_tiers"][-1] > cont["edible_tiers"][0]
+    for k in persist._KEYS:
+        assert np.array_equal(cont[k], chain[k], equal_nan=True), f"generative resume diverged on {k}"
+    assert persist.continuity_max_abs_diff(cont, chain) == 0.0
+
+
+def test_persist_generative_tree_restore_is_load_bearing(tmp_path):
+    """R172 RED-TEAM (permanent not-vacuous control): the bit-for-bit continuity on the generative substrate is
+    CAUSED by restoring the grown tree, not by the tree being trivially reconstructable. A boundary chain that
+    reloads the checkpoint but then RESETS the tree to a fresh seed-only GrowingTree (the pre-R172 behavior) MUST
+    diverge — the deep nodes in `rep` no longer map to their real levels, so depth/diet collapse."""
+    from alife.genesis import persist
+    from alife.genesis.genesis import GenesisWorld
+    from alife.genesis import combinatorial as cb
+    cfg = _depth_gate_cfg(1000, innov_steps=3)
+    total, seg, le = 120, 40, 20
+    cont = persist.continuous_trajectory(cfg, seed=1, total_steps=total, log_every=le)
+
+    samples, w = [], GenesisWorld(cfg, seed=1, evolve=True)
+    ckpt = str(tmp_path / "ck.npz")
+    while w.step_count < total:
+        if w.step_count % le == 0:
+            samples.append(persist._observe(w))
+        if w.step_count > 0 and w.step_count % seg == 0:
+            w.save_checkpoint(ckpt)
+            del w
+            w = GenesisWorld(cfg, seed=1, evolve=True)
+            w.load_checkpoint(ckpt)
+            # sabotage: throw away the restored grown tree (emulate the pre-R172 fresh-tree-on-resume bug).
+            w._tree = cb.GrowingTree(cfg.max_techniques, cfg.n_seed_tech)
+            w._tree_pa, w._tree_pb, w._tree_level = w._tree.pa, w._tree.pb, w._tree.level
+        w.step()
+    sabotaged = persist._stack(samples)
+    assert persist.continuity_max_abs_diff(cont, sabotaged) > 0.0
