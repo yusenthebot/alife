@@ -1956,3 +1956,74 @@ def test_division_of_labour_beats_forced_monoculture():
     assert min(cs_mix["frac_per_key"]) > 0.0                  # mixed: BOTH keyed niches stay covered
     assert cs_mix["profile_entropy"] > 0.3                    # multiple capability profiles coexist
     assert mix.pop.active().size > mono.pop.active().size     # the division of labour out-survives monoculture
+
+
+# ---------- R160: cultural PHYLOGENETICS (cladistics — reconstruct a cladogram of traditions) ----------
+def _phylo_tree_matrix():
+    """A hand-built deme x technique matrix with a clean nested ((d0,d1),(d2,d3)) clade structure: demes 0,1
+    SHARE one branch's techniques (a synapomorphy bundle), demes 2,3 share another, plus one autapomorphy
+    each. The L1 distances are exactly additive on that tree -> treelikeness 1.0, coph_corr 1.0."""
+    return np.array([
+        [1, 1, 0, 0, 1, 0, 0, 0],   # deme0: branchA + autapomorphy0
+        [1, 1, 0, 0, 0, 1, 0, 0],   # deme1: branchA + autapomorphy1
+        [0, 0, 1, 1, 0, 0, 1, 0],   # deme2: branchB + autapomorphy2
+        [0, 0, 1, 1, 0, 0, 0, 1],   # deme3: branchB + autapomorphy3
+    ], dtype=float)
+
+
+def test_phylogeny_metric_integrity_on_known_tree():
+    """A perfectly tree-additive distance matrix returns treelikeness 1.0 and cophenetic correlation 1.0;
+    a degenerate STAR (all pairs equidistant) has no quartet information -> treelikeness is nan."""
+    from alife.genesis import phylogeny as ph
+    f = _phylo_tree_matrix()
+    dist = ph.l1_distance_matrix(f)
+    # the nested structure makes within-clade pairs close (2/8) and across-clade pairs far (6/8)
+    assert dist[0, 1] == pytest.approx(2 / 8) and dist[2, 3] == pytest.approx(2 / 8)
+    assert dist[0, 2] == pytest.approx(6 / 8) and dist[1, 3] == pytest.approx(6 / 8)
+    assert ph.treelikeness(dist) == pytest.approx(1.0)        # additive quartet -> delta 0
+    assert ph.cophenetic_corr(dist) == pytest.approx(1.0)     # ultrametric -> UPGMA fits exactly
+    star = np.full((4, 4), 2.0); np.fill_diagonal(star, 0.0)
+    assert np.isnan(ph.treelikeness(star))                    # all sums equal -> no information
+
+
+def test_phylogeny_column_shuffle_destroys_tree_signal():
+    """The load-bearing null: shuffling each technique independently across demes preserves every technique's
+    frequency but destroys the clade bundling -> mean treelikeness drops well below the real nested matrix's
+    1.0. This is what isolates a phylogenetic signal from mere divergence."""
+    from alife.genesis import phylogeny as ph
+    f = _phylo_tree_matrix()
+    real = ph.treelikeness(ph.l1_distance_matrix(f))
+    null = ph.column_shuffle_null(f, n_shuffle=50)
+    assert real == pytest.approx(1.0)
+    assert null["treelikeness"] < real - 0.05                 # shuffle is measurably less tree-like
+    assert ph.informative_columns(f).sum() == 8               # every column varies across the 4 demes
+
+
+def test_phylogeny_test_fields_and_off_empty():
+    """phylogeny_test returns the tree-signal fields on the combinatorial substrate and is empty without it."""
+    w = GenesisWorld(_ecocfg(n0=500, spatial_tiers=True), seed=0)
+    for _ in range(250):
+        w.step()
+    out = w.phylogeny_test(grid=3, min_deme=12, n_shuffle=8)
+    assert {"treelikeness", "coph_corr", "shuffle_treelikeness", "shuffle_coph", "n_demes", "dist"} <= set(out)
+    if out["n_demes"] >= 4:
+        assert -1.0 <= out["coph_corr"] <= 1.0001
+        assert len(out["dist"]) == out["n_demes"]
+    assert GenesisWorld(_ccfg(), seed=0).phylogeny_test() == {}   # scalar (non-combinatorial) culture -> empty
+
+
+def test_phylogeny_signal_beats_shuffle_on_substrate():
+    """R160 headline (smoke, 2 seeds): on the R157 ecological-selection substrate the reconstructed cladogram of
+    demes is MORE tree-like than the column-shuffle null (real treelikeness > shuffle) -> the cultural
+    divergence is hierarchically structured (descent-with-modification), not flat. Magnitude + the cladogram
+    render + the panmictic causal contrast are the REAL-VERIFY headline (scripts/run_genesis_phylogeny.py)."""
+    wins = 0
+    for seed in (0, 1):
+        w = GenesisWorld(_ecocfg(n0=600, spatial_tiers=True), seed=seed)
+        for _ in range(450):
+            w.step()
+        out = w.phylogeny_test(grid=3, min_deme=12, n_shuffle=20)
+        if out.get("n_demes", 0) >= 4 and not np.isnan(out["treelikeness"]):
+            if out["treelikeness"] > out["shuffle_treelikeness"]:
+                wins += 1
+    assert wins >= 1                                          # at least one seed shows a real tree signal

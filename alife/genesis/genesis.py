@@ -1300,6 +1300,62 @@ class GenesisWorld:
             "dom_tech": dom, "H_T": H_T, "H_S": H_S, "n": int(act.size),
         }
 
+    def phylogeny_test(self, grid: int = 3, min_deme: int = 15, n_shuffle: int = 20) -> dict:
+        """R160 read-out: is the cultural divergence HIERARCHICALLY structured — a reconstructable cladogram
+        of traditions (descent-with-modification), not a flat divergence? Partitions the living population
+        into a grid^3 spatial lattice of demes (the taxa), builds the deme x technique frequency matrix
+        (the character matrix), and measures two tree-signal statistics on the inter-deme L1 distances:
+          - treelikeness : 1 - mean Holland delta-Q over deme quartets (1 = perfectly tree-additive).
+          - coph_corr    : cophenetic correlation of the UPGMA tree (how well one nested hierarchy fits).
+        The load-bearing NULL is a COLUMN-SHUFFLE (alife.genesis.phylogeny.column_shuffle_null): permute
+        each technique independently across demes, preserving per-technique divergence but destroying the
+        cross-technique covariance that bundles a tree branch into a clade -> real > shuffle isolates a
+        genuine PHYLOGENETIC signal, not mere divergence. Also returns the inter-deme distance matrix and
+        each deme's dominant deepest technique (for the cladogram render). In situ; never feeds selection."""
+        from . import phylogeny as ph
+        if not self.combinatorial:
+            return {}
+        p = self.pop
+        act = p.active()
+        if act.size < min_deme * 2:
+            return {}
+        pos = p.pos[act]
+        rep = self.rep[act]                                       # [n, K] bool repertoires
+        size = self.cfg.world.size
+        cell = np.clip((pos / size * grid).astype(int), 0, grid - 1)
+        deme_id = (cell[:, 0] * grid + cell[:, 1]) * grid + cell[:, 2]
+        freqs, counts = [], []
+        for d in np.unique(deme_id):
+            rows = np.where(deme_id == d)[0]
+            if rows.size < min_deme:
+                continue
+            freqs.append(rep[rows].mean(axis=0))                 # [K] per-technique freq in this deme
+            counts.append(int(rows.size))
+        if len(freqs) < 4:                                       # need >=4 taxa for quartet treelikeness
+            return {"n_demes": int(len(freqs)), "n_informative": 0, "treelikeness": float("nan"),
+                    "coph_corr": float("nan"), "shuffle_treelikeness": float("nan"),
+                    "shuffle_coph": float("nan"), "dist": [], "dom_tech": [], "counts": counts,
+                    "n": int(act.size)}
+        freqs = np.array(freqs)                                   # [D, K]
+        info = ph.informative_columns(freqs)
+        f_inf = freqs[:, info]
+        dist = ph.l1_distance_matrix(f_inf)
+        null = ph.column_shuffle_null(freqs, n_shuffle)
+        level = self._tree_level
+        dom = [int(np.where(f >= 0.5, level, -1).argmax()) if (f >= 0.5).any() else -1 for f in freqs]
+        return {
+            "n_demes": int(len(freqs)),
+            "n_informative": int(info.sum()),
+            "treelikeness": ph.treelikeness(dist),
+            "coph_corr": ph.cophenetic_corr(dist),
+            "shuffle_treelikeness": null["treelikeness"],
+            "shuffle_coph": null["coph_corr"],
+            "dist": dist.tolist(),
+            "dom_tech": dom,
+            "counts": counts,
+            "n": int(act.size),
+        }
+
     def ecological_traditions_test(self, min_region: int = 20) -> dict:
         """R157 read-out: does ECOLOGICAL selection lock each spatial REGION to its OWN recipe BRANCH? Partitions
         the living population into n_food_tiers-1 x-axis slabs (the same regions spatial_tiers uses to assign
