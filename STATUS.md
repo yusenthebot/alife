@@ -1,31 +1,31 @@
 # STATUS — main
-updated: 2026-06-21T08:55 · loop 175
+updated: 2026-06-21T09:05 · loop 176
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R175 lands frontier (1)'s SUSTAINED-DEPTH rung: the open-ended world's connected tech
-          DEPTH now keeps climbing the whole horizon, not just breadth. R174's caveat was depth plateaus
-          by ~tick 6 under the UNIFORM composition draw; R175 adds a depth-rewarding SELECTION PRESSURE
-          (depth_bias = softmax over tree level → preferential reuse of the deepest techniques) so the
-          frontier keeps extending tick after tick, vs an identical unbiased control (only depth_bias=0).
-doing:    R175 DONE. combinatorial.discover_inplace gains level_bias (default 0 = EXACT uniform path, no
-          extra RNG; >0 = stable softmax over depth). GenesisConfig.depth_bias threads it to both discovery
-          sites. Not a new mechanism/representation — only WHICH two known techniques the draw selects.
+phase:    review — R176 lands frontier (1)'s OPEN-ENDED-EMBODIMENT rung: the BODY now keeps deepening WITH the
+          tech depth, not ceilinged. R175 caveat was the categorical body (diet 7 / axes 4) saturates by ~tick 1
+          while connected DEPTH climbs. R176 adds depth_phenotype: max speed + harvest reach scale CONTINUOUSLY
+          and unboundedly-by-form with realized cultural depth, so the body has no categorical ceiling.
+doing:    R176 DONE. depth_phenotype makes _cap_speed/_cap_reach a continuous mapping speed=cfg.speed*(1+
+          pheno_speed_gain*depth), reach=cfg.eat_radius*(1+pheno_reach_gain*depth); embodied_scale() reads the
+          living-pop mean speed mult. Requires depth_gates. depth_phenotype=False is BYTE-IDENTICAL (no path, no RNG).
 owns:     all of ~/alife (single session)
-verify:   scripts/run_genesis_r175.py → runs/r175_depth/{depth.png,world.gif} EYE-VERIFIED (~44s). 10 ticks×60
-          steps as GENUINE separate subprocesses; LARGE cap K=20000 for BOTH (breadth never the limiter).
-          BIASED (depth_bias=1.0): connected DEPTH 32→76 monotone, +2 on the very last tick; breadth →4651;
-          diet 7 axes 4; pop 1000; tree.n=4738. UNBIASED (==R174, only knob differs): DEPTH 5→12 then FROZEN
-          12 from tick 6; breadth →5700; diet 6. Biased 6× deeper. World gif = dense gold (deep) living pop.
-redteam:  CONFIRMED — metric not gameable: connected_depth = longest FULLY-KNOWN grounded prereq chain held
-          by the society, not a registry artifact. Control isolated 3 ways: (a) depth_bias=0 bit-identical to
-          pre-R175 no-arg call; (b) bare-tree biased draw ≥2× deeper than uniform same seed; (c) full-world
-          run differs ONLY in depth_bias (same cap, same ticks) yet splits climb-vs-plateau. 224 tests (+3).
+verify:   scripts/run_genesis_r176.py → runs/r176_body/{body.png,world.gif} EYE-VERIFIED (~31s). 8 ticks×50 steps
+          as GENUINE separate subprocesses, K=20000. PHENO (gain=0.02): embodied_scale 1.09→2.00 monotone, STILL
+          rising on the last tick; realized_axes FROZEN at 4 from tick 1 (categorical ceiling); conn_depth 20→69.
+          CTRL (gain=0): embodied_scale FROZEN at 1.000 though conn_depth climbs 8→74. pop ~1000 both. world.gif =
+          dense gold (deep) living 3D population. The continuous body actually moves bodies (off!=on in pos).
+redteam:  CONFIRMED (skeptic, ran code+tests). Mechanism holds: continuous body genuinely affects physics
+          (_cap_speed→_limit_speed clip; _cap_reach→harvest radius), OFF byte-identical (same RNG state), gain=0
+          body frozen at 1.0 while depth climbs. 224 tests (+4). TWO HONEST CAVEATS recorded below.
 blocked:  none
-caveat:   depth-bias TRADES breadth for depth (unbiased ends broader, 5700 vs 4651). And the EMBODIED ceiling
-          (diet 7 / axes 4) saturates by tick 1, so depth above the gated tiers is repertoire-deep, not
-          further-embodied — body is ≥ unbiased throughout but finite (8 tiers / 4 axes). Both honest.
+caveat:   (1) gain=0 "control" is NOT byte-identical one-knob isolation — gain changes physics→energy→birth/death→
+          divergent RNG, so depth trajectories differ (ctrl 8,21,55..74 vs pheno 20,40..69). It STILL isolates the
+          MAPPING (depth climbs to ~70 in BOTH while body_scale stays 1.0 at gain=0 → not a relabel/run-length).
+          (2) embodied_scale is AFFINE in mean living depth, which empirically SATURATES (decel diffs, asymptote
+          ~mean-tech 50). "Unbounded" is true of the FORM (no categorical clip, unlike axes), NOT the observed curve.
 docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife). MEMORY: ONE sim at a time; full-stack world <200 MB; GL context released after render.
-next:     R176 LEAP (frontier 1): MAKE THE BODY KEEP DEEPENING WITH THE TECH. Repertoire depth now climbs
-          unbounded but the body ceilings at 8 tiers / 4 axes by tick 1 — give embodiment open-ended headroom
-          (many more tiers/axes, or a depth-SCALED continuous phenotype) so the EMBODIED ceiling rises tick
-          after tick alongside the tech depth. Alt: (2) breadth×depth JOINT climb (heal the tradeoff); (3)
-          run the cron entrypoint for real wall-clock days with depth_bias on. 禁止造假.
+next:     R177 LEAP (frontier 1/2): the body is now continuous but its DRIVER (mean depth) saturates — push for
+          a body trait whose driver does NOT asymptote. Options: (a) heal the R175 breadth/depth tradeoff so the
+          DEPTH driver itself keeps climbing unbounded (JOINT breadth×depth climb); (b) make embodiment scale with
+          an OPEN-ENDED quantity (tree size / # distinct traditions) not the saturating mean depth; (c) Stage (2)
+          emergent signalling, seeded by the R142 diet specialists — pivot off frontier 1 if its driver ceilings. 禁止造假.
