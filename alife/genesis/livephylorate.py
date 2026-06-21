@@ -37,6 +37,17 @@ HONEST SCOPE: the live tech tree is bounded (`max_techniques`) and the populatio
 `capacity`/food, so the climb is the EARLY accelerating phase before those ceilings bite — "super-linear
 while open", exactly as R165's capped regime predicts, not unbounded forever. The endogeneity claim is
 the SHAPE contrast (rising vs flat) under the tech_gain control at matched N, not an unbounded exponent.
+
+RED-TEAM (R166, independent agent, 4 fresh seeds, CONFIRMED): ECONOMY's final repertoire is 3.3-6.9x
+larger and its workforce 3.6-4.8x larger than CONTROL, 6/6 seeds; tech_gain isolated to the single
+harvest multiplier (genesis.py:835), so both regimes share byte-identical discovery RNG. The LOAD-BEARING
+evidence is the MATCHED-N rate: over the overlapping N range ECONOMY's dN/dt rises (~0.29 -> ~1.0) and is
+~2-3x the CONTROL's (flat ~0.24-0.35) AT EQUAL N, with the gap WIDENING — so the acceleration is genuine
+endogenous effort, not the artefact "more agents trivially make more births". CAVEAT (do not over-claim):
+`rate_slope`'s SIGN is the noisiest read — the CONTROL slope flips between seeds (-0.92..+0.48/kN), so the
+robust contrast is "ECONOMY slope > CONTROL slope" + the matched-N curve + the several-fold repertoire/
+workforce gap, NOT "CONTROL is strictly flat". The combinatorial adjacent possible contributes a weak
+intrinsic rate rise; the energy economy AMPLIFIES it several-fold and is what drives the large repertoire.
 """
 
 from __future__ import annotations

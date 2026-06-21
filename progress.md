@@ -1,5 +1,58 @@
 # alife — progress
 
+## Current state (Round 166 — 2026-06-21) — GENESIS LIVE PHYLORATE: the innovation RATE law EMERGES from the live economy. R165's autocatalytic effort E(N)∝N was POSITED; here it is shown to emerge endogenously in the real evolved-neural GenesisWorld (robust POSITIVE, red-teamed CONFIRMED 4 fresh seeds)
+
+**R166 RECONNECTS the abstract analysis arc (R160-R165) back to the LIVE GenesisWorld — the CEO's actual
+target.** R165 measured the rate law on a standalone registry model (`phylorate.py`) and its sharpest red-team
+caveat was that "technology begets technology" (E(N) ∝ N) was an ASSUMED effort law, not derived. R166 closes
+that caveat by taking the rate law to the real population of evolved-neural agents that sense / metabolise /
+reproduce / die, and showing the autocatalytic effort EMERGES from the world's own energy economy. 禁止造假.**
+
+**The contribution (a thin live driver + one pure metric; reuses R165's rate tools UNCHANGED).** New
+`alife/genesis/livephylorate.py`:
+- **`step_trajectory(world, steps)`** drives a real combinatorial `GenesisWorld` and emits a trajectory dict
+  `{step, n_distinct, new, active}` in EXACTLY the shape `phylorate.rate_vs_size` / `phylorate.acceleration`
+  consume — so R165's abstract rate-law instruments apply to the LIVE economy with no change. Read-only on the
+  world (calls `world.step()` + the existing `combinatorial_test()` read-out only; no new sim mechanism, no
+  extra RNG).
+- **`rate_slope(out)`** = slope of the binned dN/dt-vs-N curve = the live accelerating-or-not discriminator.
+- The endogenous loop is pre-existing machinery never built for this: a newborn makes `innov_steps` combinatorial
+  discoveries when born (so per-step effort ∝ newborns ∝ population), and tech PAYS energy
+  (`_harvest_gain`: gain × (1 + tech_gain·tech), genesis.py:835), so repertoire → energy → population → effort →
+  repertoire is an ENDOGENOUS autocatalysis. 3 new tests (192 genesis green): rate_slope sign on synthetic
+  rising/flat trajectories; step_trajectory shape + non-decreasing N + determinism; the economy>control smoke.
+
+**HEADLINE (POSITIVE, red-teamed CONFIRMED 4 fresh seeds). In the LIVE evolved-neural GenesisWorld the per-step
+innovation rate dN/dt RISES with the accumulated repertoire N (super-linear) BECAUSE mastery pays energy —
+deeper repertoire feeds more agents → more newborns → more combinatorial innovation attempts. The DECISIVE
+CONTROL tech_gain=0 (mastery stops paying) runs the SAME discovery machinery on the SAME tech tree but the
+population can no longer grow with the repertoire: the rate flattens and the realized repertoire saturates
+several-fold lower.** REAL-VERIFY numbers (1200 steps, capacity 9000, max_techniques 8000, n0 900, size 100,
+2 seeds): ECONOMY (tech_gain 0.35) final repertoire 960 / 1937, workforce → capacity 9000, rate_slope
++1.08 / +1.35 per kN; CONTROL (tech_gain 0) repertoire 235 / 397, workforce ~1726-2096, rate_slope -0.44 / +0.31.
+
+**REAL-VERIFY (`scripts/run_genesis_livephylorate.py 1200` → `runs/r166_livephylorate/panel.png` EYE-VERIFIED,
+122s): (A) red ECONOMY rate-vs-N curves rise (~0.5 → 1.3) and sit above the gray CONTROL which stays low and
+flat — the matched-N separation visible directly; (B) ECONOMY cumulative repertoire climbs far above the
+decoupled control; (C) ECONOMY workforce grows to capacity while CONTROL stays stuck low; (D) rate_slope bars
+ECONOMY positive vs CONTROL near-zero/negative.**
+
+**RED-TEAM (mandatory; refutation-first; verdict CONFIRMED — independent agent, 4 FRESH seeds 2-5).** (1)
+ECONOMY's final repertoire is **3.3-6.9× larger** and its workforce **3.6-4.8× larger** than CONTROL on **6/6
+seeds**; ECONOMY slope more positive every seed. (2) **The load-bearing check — MATCHED N:** over the
+OVERLAPPING N range, ECONOMY's dN/dt rises (~0.29 → ~1.0) and is **~2-3× the CONTROL's (flat ~0.24-0.35) AT
+EQUAL N, with the gap WIDENING** — so the acceleration is genuine endogenous effort, NOT the artefact "more
+agents trivially make more births". (3) **RNG isolation:** `tech_gain` enters at exactly one place
+(genesis.py:835 harvest multiplier), absent from the combinatorial discovery path → both regimes share
+byte-identical discovery machinery. **SHARPEST HONEST CAVEAT (baked into the docstring):** `rate_slope`'s SIGN
+is the noisiest read — the CONTROL slope flips between seeds (-0.92 .. +0.48/kN), so the robust contrast is
+"ECONOMY slope > CONTROL slope" + the matched-N curve + the several-fold repertoire/workforce gap, NOT "CONTROL
+is strictly flat". The combinatorial adjacent possible contributes a weak intrinsic rate rise; the energy
+ECONOMY amplifies it several-fold and is what drives the large repertoire. **A genuine result: the "technology
+begets technology" effort law R165 had to posit is shown to EMERGE from the live economy, and is causally tied
+to the tech→energy coupling by the decisive tech_gain=0 control. Reconnects 6 rounds of abstract rate analysis
+to the live world.**
+
 ## Current state (Round 165 — 2026-06-20) — GENESIS PHYLORATE: the RATE law of cumulative innovation. Autocatalytic recombination on the OPEN combinatorial space gives SUPER-LINEAR (exponential) innovation; the decisive cap-control proves it is the OPEN adjacent possible, not the effort multiplier (robust POSITIVE, red-teamed CONFIRMED a/b/c/d over 4 seeds)
 
 **R165 measures the RATE of innovation on R164's unbounded space (frontier option 1: phylorate / accelerating
@@ -1660,27 +1713,27 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R165): open-endedness is OPENED (R164: unbounded tech space) AND its RATE law is
-characterised (R165: phylorate). Innovation on the open combinatorial space can be SUPER-LINEAR (exponential)
-when recombination effort tracks the accumulated repertoire (autocatalytic E(N)∝N), and the decisive cap-control
-proves this is the OPEN adjacent possible (collision_frac→1e-4, pair-space~N² > discoveries~N) and not the
-effort multiplier (capped → collision→1, rate→0). Durable instruments: `alife/genesis/unbounded.py` (TechSpace)
-and `alife/genesis/phylorate.py` (run_additive/run_fixed/run_autocatalytic/acceleration/growth_exponent/
-rate_vs_size). KNOWN-HONEST GAP carried forward: the autocatalytic effort law E(N)∝N is POSITED, not emergent —
-the model shows the open space sustains it, but does not derive WHY a bigger culture innovates faster.** Candidate
-R166 frontiers, ranked ambition × feasibility:
-(1) **EMBED the unbounded tech space into the LIVE world (TOP AMBITION).** Wire `unbounded.TechSpace` into
-`GenesisWorld` so the unbounded repertoire actually GATES physical actions (diet/capability/building) and is
-SELECTED for in the embodied sim, not just an analytical population model. Bigger lift: the World uses fixed-width
-boolean `rep` matrices, which the sparse unbounded repertoire breaks — spike-then-migrate, gated on a real
-`vr-lead` architectural argument. This makes open-endedness CAUSAL in the living world (the integration the CEO
-direction is ultimately about). (2) **ENDOGENOUS phylorate — close the R165 caveat.** Make the alpha·N effort
-EMERGE: accumulated tech → more food/energy → more agents or more recombination attempts per capita, so the
-super-linear rate is a CONSEQUENCE of the economy rather than an assumed effort law. Reuses phylorate.py +
-the R153 tech_actions economy. (3) **Stage-2 SIGNALLING redesign (the one parked rung)** — synchronous, sharply
-lethal predation rounds (Floreano/Mitri arena) where a missed warning reliably kills; only revisit with that
-substrate change, believe emergence only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. Lean (1) as
-the embodied-integration leap (gate the rep-matrix redesign on vr-lead first); (2) is the cheap caveat-closer.
+**Current ceiling (post-R166): open-endedness is OPENED (R164), its RATE law characterised (R165), and that
+rate law is now shown to EMERGE FROM THE LIVE ECONOMY (R166) — closing R165's "E(N)∝N is posited" caveat. In the
+real evolved-neural GenesisWorld the per-step innovation rate rises with the accumulated repertoire BECAUSE tech
+pays energy → bigger population → more innovation attempts; the decisive tech_gain=0 control flattens it and
+saturates the repertoire ~4-5× lower (red-teamed CONFIRMED, 4 fresh seeds; load-bearing evidence = matched-N
+dN/dt ~2-3× the control at equal N). Durable instruments: `unbounded.py`, `phylorate.py`, and now
+`livephylorate.py` (step_trajectory / rate_slope) — the live bridge so the abstract rate tools apply to the real
+world. REMAINING HONEST GAP: this measured the live BREADTH rate; whether the economy also accelerates frontier
+DEPTH (max_level), and whether the live tech space can be made genuinely OPEN (it is still capped at
+max_techniques), are open.** Candidate R167 frontiers, ranked ambition × feasibility:
+(1) **EMBED the unbounded tech space into the LIVE world (TOP AMBITION, still the integration the CEO direction
+is about).** Wire `unbounded.TechSpace` into `GenesisWorld` so the OPEN repertoire GATES physical actions and is
+SELECTED in the embodied sim — making open-endedness CAUSAL in the living world, not just an analytical model.
+Bigger lift: the World uses fixed-width boolean `rep` matrices that the sparse unbounded repertoire breaks —
+spike-then-migrate, gated on a real `vr-lead` architectural argument. R166 now gives the motivating data (the
+live world's rate accelerates but the bounded tree caps it). (2) **ENDOGENOUS-DEPTH — extend R166 to frontier
+DEPTH.** Does the live economy also push max_level (deeper compositions), or only breadth? Add the matched-N
+analysis as a first-class panel and test depth-vs-economy. Cheap, deepens R166. (3) **Stage-2 SIGNALLING redesign
+(the one parked rung)** — synchronous, sharply lethal predation rounds (Floreano/Mitri arena) where a missed
+warning reliably kills; believe emergence only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. Lean
+(1) as the embodied-integration leap (gate the rep-matrix redesign on vr-lead first); (2) is the cheap extension.
 
 **Current ceiling (post-R163): the descent-STRUCTURE rung is CLOSED in BOTH space and time. R160-R162 closed the
 SPATIAL phylogeny (cultural cladistics ground-truthed: vertical transmission recovers the birth genealogy,
