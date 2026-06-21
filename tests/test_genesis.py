@@ -2404,3 +2404,58 @@ def test_phylorate_deterministic():
     b = pr.run_autocatalytic(steps=18, base=10, alpha=0.5, seed=4)
     assert np.array_equal(a["n_distinct"], b["n_distinct"])
     assert np.array_equal(a["new"], b["new"])
+
+
+# --- R166: LIVE phylorate — the rate law emerges from the live economy ---
+
+def _live_combinatorial_cfg(tech_gain: float, capacity: int = 1500):
+    """A small but real combinatorial GenesisWorld for fast live-trajectory tests. capacity must leave
+    the economy room to grow a bigger workforce than the decoupled control (a tighter cap clips both
+    regimes at the same ceiling and the endogenous contrast vanishes)."""
+    from alife.world3d import World3D
+    return replace(GenesisConfig(world=World3D(size=60.0), n0=120, capacity=capacity),
+                   processing=True, building=True, culture=True, combinatorial=True,
+                   max_techniques=400, n_seed_tech=8, innov_steps=1,
+                   hearth_reach_per_strength=3.0, hearth_radius=12.0, tech_gain=tech_gain)
+
+
+def test_rate_slope_sign_on_synthetic_trajectories():
+    """rate_slope is the live discriminator: a rising-rate trajectory -> positive, a flat one -> ~0."""
+    from alife.genesis import livephylorate as lp
+    steps = np.arange(1, 41)
+    # rising rate: discoveries per step grow with cumulative N (autocatalytic-like)
+    rising_new = np.maximum(1, (steps // 3)).astype(int)
+    rising = {"step": steps, "n_distinct": np.cumsum(rising_new), "new": rising_new}
+    # flat rate: constant discoveries per step
+    flat_new = np.full(steps.size, 4, dtype=int)
+    flat = {"step": steps, "n_distinct": np.cumsum(flat_new), "new": flat_new}
+    assert lp.rate_slope(rising, bins=6) > 0
+    assert abs(lp.rate_slope(flat, bins=6)) < 1e-6
+
+
+def test_step_trajectory_shape_and_determinism():
+    """step_trajectory emits the phylorate-shaped keys, N is non-decreasing, and it is deterministic."""
+    from alife.genesis.genesis import GenesisWorld
+    from alife.genesis import livephylorate as lp
+    w1 = GenesisWorld(_live_combinatorial_cfg(0.35), seed=0)
+    o1 = lp.step_trajectory(w1, 30)
+    assert set(o1) == {"step", "n_distinct", "new", "active"}
+    assert o1["n_distinct"].size == 30
+    assert np.all(np.diff(o1["n_distinct"]) >= 0)           # cumulative repertoire never shrinks
+    assert np.all(o1["new"] >= 0)
+    w2 = GenesisWorld(_live_combinatorial_cfg(0.35), seed=0)
+    o2 = lp.step_trajectory(w2, 30)
+    assert np.array_equal(o1["n_distinct"], o2["n_distinct"])  # same seed -> byte-identical trajectory
+
+
+def test_live_economy_accelerates_vs_decoupled_control():
+    """HEADLINE smoke: with mastery paying energy (tech_gain>0) the live world accumulates a larger
+    repertoire than the decoupled control (tech_gain=0) on the SAME combinatorial machinery — the
+    endogenous economy feeds the innovation. (The full rising-vs-flat rate contrast is the REAL-VERIFY
+    run; this is the fast deterministic smoke.)"""
+    from alife.genesis.genesis import GenesisWorld
+    from alife.genesis import livephylorate as lp
+    econ = lp.step_trajectory(GenesisWorld(_live_combinatorial_cfg(0.35), seed=0), 300)
+    ctrl = lp.step_trajectory(GenesisWorld(_live_combinatorial_cfg(0.0), seed=0), 300)
+    assert econ["n_distinct"][-1] > ctrl["n_distinct"][-1]
+    assert econ["active"].max() > ctrl["active"].max()      # the economy grows a bigger workforce
