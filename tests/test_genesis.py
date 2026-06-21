@@ -2568,3 +2568,39 @@ def test_full_civilization_develops_only_with_social_learning():
     # culture unlocks EMBODIED capability: more physical axes and a wider edible diet than the control.
     assert f["realized_axes"][-1] > c["realized_axes"][-1]
     assert f["edible_tiers"][-1] > c["edible_tiers"][-1] + 0.5
+
+
+def test_persist_resume_is_bit_for_bit_continuous(tmp_path):
+    """R169 FALSIFIABLE HEADLINE: a chain of resumed segments — each a freshly-built world that loads the
+    previous checkpoint (simulated process death) — yields a development trajectory BIT-FOR-BIT IDENTICAL
+    to one uninterrupted run of the same total length. Proves resume is lossless: process death is invisible
+    to the civilization's development. If any stepped state or RNG were not restored, the arrays would diverge."""
+    from alife.genesis import civdev, persist
+    cfg = civdev.civ_config()
+    cont = persist.continuous_trajectory(cfg, seed=1, total_steps=120, log_every=20)
+    chain = persist.chained_trajectory(cfg, seed=1, n_segments=3, segment_steps=40,
+                                       ckpt_path=str(tmp_path / "ck.npz"), log_every=20)
+    # the world actually developed in the window (a trivial flat trajectory would pass continuity vacuously).
+    assert cont["step"].size == chain["step"].size >= 4
+    assert cont["breadth"][-1] > cont["breadth"][0]
+    for k in persist._KEYS:
+        assert np.array_equal(cont[k], chain[k], equal_nan=True), f"resume diverged on {k}"
+    assert persist.continuity_max_abs_diff(cont, chain) == 0.0
+
+
+def test_run_segment_extends_persistent_world_on_disk(tmp_path):
+    """run_segment is the persistent driver primitive: each call loads the latest on-disk checkpoint +
+    rolling trajectory and extends BOTH by one segment. The first call bootstraps; later calls resume and
+    the global step strictly advances; the on-disk trajectory grows monotonically in step and never resets."""
+    from alife.genesis import civdev, persist
+    cfg = civdev.civ_config()
+    sd = str(tmp_path / "world")
+    r1 = persist.run_segment(sd, cfg, seed=2, segment_steps=40, log_every=20)
+    assert r1["bootstrap"] and r1["start_step"] == 0 and r1["end_step"] == 40
+    r2 = persist.run_segment(sd, cfg, seed=2, segment_steps=40, log_every=20)
+    assert (not r2["bootstrap"]) and r2["start_step"] == 40 and r2["end_step"] == 80
+    traj = persist.load_trajectory(sd)
+    assert traj["step"][0] == 0.0 and traj["step"][-1] == 80.0
+    assert np.all(np.diff(traj["step"]) > 0)            # strictly increasing, no duplicated boundary sample
+    # the on-disk trajectory IS the live record a rolling panel reads — it must reflect real development.
+    assert traj["breadth"][-1] >= traj["breadth"][0]
