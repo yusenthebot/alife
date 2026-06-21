@@ -437,6 +437,56 @@ def test_signal_task_division_of_labour_tracks_flipping_world_vs_control():
     assert learn_mean > ctrl_mean + 0.15                    # decisive learned > control asymmetry
 
 
+# ---------- R181: SPATIAL signalling — the embodied harvest (Stage-2 -> Stage-3 bridge made physical) ----------
+def test_signal_spatial_off_is_byte_identical():
+    # signal_spatial=False leaves the R180 signal_task path bit-for-bit unchanged (no patches, no steering).
+    base = dict(n0=200, signalling=True, signal_game=True, signal_learn=True, signal_task=True)
+    a = GenesisWorld(replace(fast_cfg(**base), signal_lr=1.5), seed=4)
+    b = GenesisWorld(replace(fast_cfg(**base), signal_lr=1.5), seed=4)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a._urn_recv, b._urn_recv)
+    assert not hasattr(a, "_patches") and not hasattr(a, "_last_spatial_yield")
+
+
+def test_signal_spatial_requires_signal_task():
+    with pytest.raises(ValueError):
+        GenesisWorld(replace(fast_cfg(), signalling=True, signal_game=True, signal_learn=True,
+                             signal_spatial=True), seed=0)
+
+
+def test_signal_spatial_allocates_two_patches():
+    w = GenesisWorld(replace(fast_cfg(), world=World3D(size=80.0), signalling=True, signal_game=True,
+                             signal_learn=True, signal_task=True, signal_spatial=True), seed=0)
+    assert w._patches.shape == (2, 3)
+    assert w._patches[0, 0] < w._patches[1, 0]              # patch 0 low-x, patch 1 high-x, separated
+    assert w._patches[1, 0] - w._patches[0, 0] == pytest.approx(0.6 * 80.0)
+    assert w._patch_r == pytest.approx(0.16 * 80.0)
+
+
+def test_signal_spatial_foragers_reach_ripe_patch_vs_control():
+    # THE R181 HEADLINE — EMBODIED division of labour: blind FORAGERS physically reach the RIPE PATCH a scout's
+    # signal names, and FLIP sides when the world flips. The foraging reward is earned by PRESENCE at the ripe
+    # patch (navigation), not a bare decode. With learning the forager spatial_yield climbs well above chance;
+    # the one-knob control (signal_lr=0, urns frozen) leaves foragers marching to the wrong patch half the time.
+    base = dict(world=World3D(size=78.0), capacity=1000, n0=600, food_cap=200, food_regrow=9,
+                signalling=True, signal_game=True, signal_learn=True, signal_task=True, signal_spatial=True,
+                task_flip=0.012)                           # slower flips: physical transit between patches takes time
+    learn = GenesisWorld(replace(fast_cfg(**base), signal_lr=1.5), seed=0)
+    ctrl = GenesisWorld(replace(fast_cfg(**base), signal_lr=0.0), seed=0)
+    learn_y, ctrl_y = [], []
+    for t in range(1300):
+        learn.step(); ctrl.step()
+        if t >= 1000:                                      # average the tail (converged) yield
+            ly, cy = learn._last_spatial_yield, ctrl._last_spatial_yield
+            if ly == ly: learn_y.append(ly)
+            if cy == cy: ctrl_y.append(cy)
+    learn_mean, ctrl_mean = float(np.mean(learn_y)), float(np.mean(ctrl_y))
+    assert ctrl_mean < 0.6                                  # frozen urns -> foragers reach the ripe patch at chance
+    assert learn_mean > 0.7                                 # learned convention -> foragers navigate to the ripe patch
+    assert learn_mean > ctrl_mean + 0.15                    # decisive embodied learned > control asymmetry
+
+
 def test_heard_channel_reads_nearest_neighbour():
     # the heard signal equals the nearest neighbour's last-step utterance, gated to 0 out of range
     w = GenesisWorld(replace(fast_cfg(n0=30), n_predators0=4, signalling=True), seed=2)

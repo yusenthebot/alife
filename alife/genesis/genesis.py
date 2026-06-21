@@ -168,6 +168,18 @@ class GenesisConfig:
     signal_task: bool = False
     task_flip: float = 0.03            # per-step probability the shared good-type g_t flips (non-stationarity)
     scout_frac: float = 0.5            # fraction of slots that are SCOUTS (observe g_t); the rest are blind foragers
+    # R181 SPATIAL signalling — the Stage-2->Stage-3 bridge made EMBODIED. signal_spatial=True turns the
+    # R180 ABSTRACT decode-reward into a REAL spatial harvest: the shared good-type g_t now names WHICH of two
+    # fixed world PATCHES is ripe. SCOUTS (observe g_t) march to the true ripe patch; BLIND FORAGERS march to
+    # the patch their DECODED scout-signal names. The foraging reward is EARNED BY PHYSICAL PRESENCE at the
+    # ripe patch (not granted on a bare correct decode), so a forager only eats if it navigates to the place a
+    # scout's word points to. Headline metric spatial_yield = fraction of forager-LISTENERS physically at the
+    # ripe patch; with learning it tracks the scouts (who know directly) and FLIPS sides when g_t flips; the
+    # signal_lr=0 control leaves foragers at chance (~0.5) -> half march to the wrong, empty patch. Requires
+    # signal_task=True. signal_spatial=False is byte-identical (no patches, no steering, the R180 path intact).
+    signal_spatial: bool = False
+    patch_sep: float = 0.6             # centre-to-centre patch separation as a fraction of world size (along x)
+    patch_radius_frac: float = 0.16    # a forager "harvests" the ripe patch within this fraction of world size
     # division of labour (R146 — Stage 3): processing=True makes food spawn RAW (inedible); an agent
     # ripens nearby raw food into edible food via an evolved PROCESS output (an extra brain output), paying
     # process_cost. Ripe food is a LOCAL PUBLIC GOOD — any neighbour can harvest it — and decays back to raw
@@ -640,6 +652,9 @@ class GenesisWorld:
         if self.cfg.signal_task and not self.signal_learn:
             raise ValueError("signal_task (R180 functional division of labour) requires signal_learn=True")
         self.signal_task = self.cfg.signal_task
+        if self.cfg.signal_spatial and not self.signal_task:
+            raise ValueError("signal_spatial (R181 embodied spatial harvest) requires signal_task=True")
+        self.signal_spatial = self.cfg.signal_spatial
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (1 if self.signal_game else 0)          # +own private referent bit (R178)
@@ -666,6 +681,15 @@ class GenesisWorld:
             self._is_scout = frac < self.cfg.scout_frac  # scouts observe g_t; the rest are blind foragers
             self._last_task_success = float("nan")       # forager decode accuracy on scout->forager pairs (per step)
             self._last_forager_decode = float("nan")     # mean forager decoded good-type (for the tracking overlay)
+        if self.signal_spatial:                          # R181: two fixed world patches; g_t names the ripe one
+            size = self.cfg.world.size                   # patches separated along x, centred in y/z
+            mid, half = 0.5 * size, 0.5 * self.cfg.patch_sep * size
+            self._patches = np.array([[mid - half, mid, mid],
+                                      [mid + half, mid, mid]], dtype=float)  # patch 0 (low x), patch 1 (high x)
+            self._patch_r = self.cfg.patch_radius_frac * size
+            self._spatial_steer = np.zeros(0, dtype=bool)   # per-act: agents steered to a patch this step
+            self._spatial_guess = np.zeros(0, dtype=np.int8)  # per-act: the patch each steered agent heads to
+            self._last_spatial_yield = float("nan")      # fraction of forager-listeners AT the ripe patch (headline)
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
@@ -972,6 +996,10 @@ class GenesisWorld:
         if n < 2 or ni is None:
             self._last_task_success = float("nan")
             self._last_forager_decode = float("nan")
+            if self.signal_spatial:                                   # scouts still march to the true ripe patch
+                scout = self._is_scout[act] if n else np.zeros(0, dtype=bool)
+                self._spatial_steer = scout
+                self._spatial_guess = np.where(scout, self._good_type, 0).astype(np.int8)
             return rew
         heard = np.clip(np.rint(self.pop.utterance[act][ni]), 0, 1).astype(np.int8)  # neighbour's prior symbol
         spoken = self.pop.ref_emitted[act][ni].astype(np.int8)                         # bit that symbol encoded
@@ -990,6 +1018,46 @@ class GenesisWorld:
             np.add.at(self._urn_send, (si, spoken[correct], heard[correct]), lr)
         self._last_task_success = float(correct[valid].mean()) if valid.any() else float("nan")
         self._last_forager_decode = float(guess[valid].mean()) if valid.any() else float("nan")
+        if self.signal_spatial:                                   # R181: record who marches to which patch
+            scout = self._is_scout[act]                           # scouts head to the TRUE ripe patch (they know g_t)
+            self._spatial_steer = scout | valid                   # foragers head to their DECODED patch (valid listeners)
+            self._spatial_guess = np.where(scout, self._good_type, guess).astype(np.int8)
+            rew[:] = 0.0                                          # energy now comes from the physical harvest, not this decode
+        return rew
+
+    def _spatial_steer_vel(self, act, newvel, pos, hi):
+        """R181: steered agents (scouts + forager-listeners) drive straight at their target patch at full speed.
+        Non-steered foragers keep the evolved brain velocity. The DECODE picks WHICH patch; the body then moves."""
+        steer = self._spatial_steer
+        if steer.size != act.size or not steer.any():
+            return newvel
+        tgt = self._patches[self._spatial_guess[steer]]                 # (k,3) target patch centre per steered agent
+        d = tgt - pos[steer]
+        nrm = np.linalg.norm(d, axis=1, keepdims=True)
+        nrm = np.where(nrm > 1e-9, nrm, 1.0)
+        spd = np.broadcast_to(np.asarray(hi, dtype=float), (act.size,))[steer].reshape(-1, 1)
+        newvel = newvel.copy()
+        newvel[steer] = d / nrm * spd                                  # unit-toward-patch * per-agent max speed
+        return newvel
+
+    def _signal_spatial_harvest(self, act):
+        """R181: the foraging reward is EARNED BY PHYSICAL PRESENCE at the ripe patch (post-move positions).
+        A forager only eats if it navigated to the patch a scout's word named. Records spatial_yield = fraction
+        of forager-LISTENERS physically at the ripe patch (the embodied headline)."""
+        n = act.size
+        rew = np.zeros(n)
+        if n == 0:
+            self._last_spatial_yield = float("nan")
+            return rew
+        pos = self.pop.pos[act]
+        ripe = self._patches[self._good_type]
+        at_ripe = np.linalg.norm(pos - ripe, axis=1) <= self._patch_r   # who stands on the ripe patch now
+        forager = ~self._is_scout[act]
+        earns = at_ripe & forager                                       # blind foragers harvest only by arriving
+        rew[earns] += self.cfg.signal_reward
+        listeners = self._spatial_steer if self._spatial_steer.size == n else np.zeros(n, dtype=bool)
+        listeners = listeners & forager                                 # forager-listeners = the blind sub-population
+        self._last_spatial_yield = float(at_ripe[listeners].mean()) if listeners.any() else float("nan")
         return rew
 
     def _sense_food(self, pos, r, u, f, act):
@@ -1065,8 +1133,12 @@ class GenesisWorld:
                 game_rew = None
             hi = self._cap_speed(act)                        # R154: per-agent max speed (culture-gated locomotion)
             newvel = _act(out, r, u, f, vel, cfg.force, cfg.min_speed, hi)  # _act reads out[:,:3]
+            if self.signal_spatial:                          # R181: steered agents drive at their named patch
+                newvel = self._spatial_steer_vel(act, newvel, pos, hi)
             p.vel[act] = newvel
             p.pos[act] = w.clamp(pos + newvel)
+            if self.signal_spatial:                          # R181: foraging reward EARNED at the ripe patch (post-move)
+                game_rew = self._signal_spatial_harvest(act)
             emit = np.zeros(act.size)
             if self.signalling:                             # the evolved extra output IS the utterance
                 p.utterance[act] = np.tanh(out[:, N_OUT])   # bounded [-1,1]; heard by neighbours next step
