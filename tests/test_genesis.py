@@ -2327,3 +2327,80 @@ def test_unbounded_run_is_deterministic():
     b = ub.run_population(n_agents=30, n_seed=5, steps=80, fidelity=0.5, seed=7)
     assert np.array_equal(a["max_level"], b["max_level"])
     assert np.array_equal(a["n_distinct"], b["n_distinct"])
+
+
+# ---------------------------------------------------------------------------
+# R165 — PHYLORATE: the RATE law of cumulative innovation (additive saturates,
+# fixed-effort linear, autocatalytic+open super-linear, autocatalytic+capped collapses)
+# ---------------------------------------------------------------------------
+
+def test_phylorate_additive_saturates():
+    """Independent invention from a FIXED pool decelerates: cumulative N approaches pool_size and the
+    per-step rate falls (negative acceleration)."""
+    from alife.genesis import phylorate as pr
+    out = pr.run_additive(steps=200, base=40, pool_size=500, seed=0)
+    assert out["n_distinct"][-1] <= 500
+    assert out["n_distinct"][-1] > 400                          # gets most of the pool
+    assert pr.acceleration(out["step"], out["n_distinct"]) < 0  # decelerating
+
+
+def test_phylorate_fixed_is_linear():
+    """Fixed-effort combinatorial on the open space: constant rate -> near-zero curvature, and the
+    per-step novelty stays close to `base` (collisions are rare on an open space)."""
+    from alife.genesis import phylorate as pr
+    out = pr.run_fixed(steps=200, base=40, seed=0)
+    acc = pr.acceleration(out["step"], out["n_distinct"])
+    # essentially flat rate: |curvature| tiny vs the additive saturation curvature
+    assert abs(acc) < 0.05
+    assert out["new"][50:].mean() > 0.8 * 40                    # ~base novelties/step sustained
+
+
+def test_phylorate_autocatalytic_open_is_superlinear():
+    """Autocatalytic effort on the OPEN space -> rate RISES with N (accelerating, super-linear)."""
+    from alife.genesis import phylorate as pr
+    out = pr.run_autocatalytic(steps=22, base=10, alpha=0.5, cap=None, seed=0)
+    assert pr.acceleration(out["step"], out["n_distinct"]) > 0  # accelerating
+    centers, rate = pr.rate_vs_size(out, bins=6)
+    assert rate[-1] > 3 * rate[0]                               # rate grows with size
+    # exponential growth: late power-law exponent is well above linear
+    assert pr.growth_exponent(out["step"], out["n_distinct"], frac=0.5) > 1.5
+
+
+def test_phylorate_autocatalytic_open_collision_falls():
+    """The non-trivial result: on the open space the collision fraction FALLS as N grows (pair-space
+    grows as N^2 while discoveries grow as N), so the adjacent possible stays fed."""
+    from alife.genesis import phylorate as pr
+    out = pr.run_autocatalytic(steps=22, base=10, alpha=0.5, cap=None, seed=0)
+    early = out["collision_frac"][2:6].mean()
+    late = out["collision_frac"][-5:].mean()
+    assert late <= early + 1e-9                                 # collisions do not grow; stay low/fall
+    assert late < 0.3
+
+
+def test_phylorate_autocatalytic_capped_collapses():
+    """DECISIVE control: identical alpha*N effort but a CAPPED space -> once full, every attempt
+    collides (collision_frac -> ~1) and the rate collapses to 0, despite the unchanged effort law.
+    So sustained super-linearity is the OPEN adjacent possible, not the effort multiplier alone."""
+    from alife.genesis import phylorate as pr
+    cap_k = 300
+    out = pr.run_autocatalytic(steps=22, base=10, alpha=0.5, cap=cap_k, seed=0)
+    assert out["n_distinct"][-1] == cap_k                       # frozen at the ceiling
+    assert out["new"][-3:].sum() == 0                           # no novelties once full
+    assert out["collision_frac"][-1] > 0.9                      # nearly all attempts collide
+
+
+def test_phylorate_capped_vs_open_decisive():
+    """Same effort law, only the space differs: open keeps climbing far past the cap; capped freezes."""
+    from alife.genesis import phylorate as pr
+    cap_k = 300
+    openrun = pr.run_autocatalytic(steps=22, base=10, alpha=0.5, cap=None, seed=1)
+    capped = pr.run_autocatalytic(steps=22, base=10, alpha=0.5, cap=cap_k, seed=1)
+    assert openrun["n_distinct"][-1] > 5 * capped["n_distinct"][-1]
+
+
+def test_phylorate_deterministic():
+    from alife.genesis import phylorate as pr
+    a = pr.run_autocatalytic(steps=18, base=10, alpha=0.5, seed=4)
+    b = pr.run_autocatalytic(steps=18, base=10, alpha=0.5, seed=4)
+    assert np.array_equal(a["n_distinct"], b["n_distinct"])
+    assert np.array_equal(a["new"], b["new"])
