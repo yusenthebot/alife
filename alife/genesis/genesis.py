@@ -268,11 +268,28 @@ class GenesisConfig:
     # breadth keep climbing with run length — the decisive open-ended-vs-capped control, now causal in the
     # living evolved-neural world, not an offline analytical model. Every agent is guaranteed to know the
     # seed primitives (level-0 universals) so it can always compose. Requires combinatorial=True.
-    # generative_tree=False is byte-identical to the fixed-tree path (build_tech_tree untouched). NOTE: the
-    # generative tree has no PRE-BUILT deep nodes, so recipe/capability gates (tech_actions/tech_capabilities,
-    # which designate fixed deep nodes ahead of the run) are not yet wired onto it — dynamic recipe
-    # designation on the grown tree is the next frontier rung; combining them raises ValueError.
+    # generative_tree=False is byte-identical to the fixed-tree path (build_tech_tree untouched). The fixed-node
+    # recipe/capability gates (tech_actions/tech_capabilities, which designate SPECIFIC pre-built deep nodes ahead
+    # of the run) cannot ride the generative tree (its deep nodes do not exist until the culture composes them) —
+    # combining them raises ValueError; depth_gates (below) is the dynamic, open-ended replacement.
     generative_tree: bool = False
+
+    # --- R171: DEPTH GATES — the open-ended grown tree CAUSALLY drives EMBODIED capability ---
+    # R170 made the cultural repertoire open-ended (the grown tree's depth climbs with the cap, freezes when
+    # capped) but left it an ABSTRACT scalar: nothing physical depended on how deep the culture had grown. The
+    # fixed-node gates can't bridge that on a generative tree (their pre-designated node ids do not exist yet).
+    # depth_gates instead gates physical capability on the agent's REALIZED CULTURAL DEPTH (pop.tech == its
+    # deepest known technique LEVEL), which needs no pre-built node:
+    #   - food tier t>=1 is edible ONLY by an agent whose culture has reached level >= recipe_level_step * t
+    #     (a deeper tier demands a strictly deeper culture; tier 0 is the free resource);
+    #   - capability axis i unlocks at level >= cap_level_step * (i+1) (axis 0 = locomotion speed, 1 = reach).
+    # Because the generative tree's depth is OPEN-ENDED, the embodied diet/capability CEILING is open-ended too:
+    # cap the tree small and depth freezes -> only the low tiers/axes ever unlock; raise the cap and the embodied
+    # ceiling keeps climbing with it. This is the R170 caveat's next rung — open-ended culture is now CAUSAL on
+    # the body, not just the repertoire. Requires generative_tree=True. depth_gates=False is byte-identical
+    # (food_tier all-zero, no extra RNG, the eat/speed/reach paths unchanged). Mutually exclusive with the
+    # fixed-node gates (it IS their generative replacement).
+    depth_gates: bool = False
 
     # --- R156: emergent divergent cultural TRADITIONS over the open-ended tree ---
     # The combinatorial tree is open-ended, but R150-R155 only ever measured ONE global frontier. A real
@@ -460,6 +477,7 @@ class GenesisWorld:
         self.generative_tree = self.cfg.generative_tree
         self.tech_actions = self.cfg.tech_actions
         self.tech_capabilities = self.cfg.tech_capabilities
+        self.depth_gates = self.cfg.depth_gates
         self.cap_niches = self.cfg.cap_niches
         self.culture_decay = self.cfg.culture_decay
         if self.combinatorial and not self.culture:
@@ -469,6 +487,9 @@ class GenesisWorld:
         if self.generative_tree and (self.tech_actions or self.tech_capabilities):
             raise ValueError("generative_tree (R170) has no pre-built deep nodes, so tech_actions/"
                              "tech_capabilities (fixed-deep-node recipe gates) are not yet wired onto it")
+        if self.depth_gates and not self.generative_tree:
+            raise ValueError("depth_gates (R171 embodied capability gated on realized cultural DEPTH) requires "
+                             "generative_tree=True (it gates on the open-ended grown tree's depth)")
         if self.tech_actions and not self.combinatorial:
             raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
         if self.tech_capabilities and not self.combinatorial:
@@ -547,6 +568,8 @@ class GenesisWorld:
             if self.cfg.track_tech_history:                  # R163: passive first-appearance log (no RNG, no state)
                 self._tech_first_step = np.full(K, -1, dtype=np.int64)
                 self._update_tech_history()                  # stamp the founders' seed repertoire at step 0
+            if self.depth_gates:                             # R171: gates on realized cultural DEPTH (pop.tech),
+                self._tier_eat_count = np.zeros(self.cfg.n_food_tiers, dtype=np.int64)  # no pre-designated nodes
             if self.tech_actions:                            # R153: which deep node unlocks each locked food tier
                 self._recipe_tech = cb.recipe_techniques(
                     self._tree_level, ns, self.cfg.n_food_tiers, self.cfg.recipe_level_step)
@@ -695,7 +718,7 @@ class GenesisWorld:
         is byte-identical to R153 (the spatial branch consumes no RNG)."""
         cfg = self.cfg
         n = pos.shape[0]
-        if not self.tech_actions or cfg.n_food_tiers <= 1:
+        if not (self.tech_actions or self.depth_gates) or cfg.n_food_tiers <= 1:
             return np.zeros(n, dtype=np.int64)
         tiers = np.zeros(n, dtype=np.int64)
         locked = self.rng.random(n) >= cfg.tier0_frac
@@ -872,6 +895,9 @@ class GenesisWorld:
         node (self._cap_tech[0]) moves at cfg.speed*(1+cap_speed_mult); everyone else at cfg.speed. Returns a
         scalar when tech_capabilities is off (byte-identical) or as a column vector for _limit_speed."""
         cfg = self.cfg
+        if self.depth_gates:                                 # R171: locomotion unlocks at cultural DEPTH >= step
+            fast = self.pop.tech[act] >= cfg.cap_level_step  # axis 0 threshold (level units)
+            return (cfg.speed * (1.0 + cfg.cap_speed_mult * fast)).reshape(-1, 1)
         if not self.tech_capabilities:
             return cfg.speed
         fast = self.rep[act, self._cap_tech[0]]              # bool per active agent (the locomotion node)
@@ -882,6 +908,11 @@ class GenesisWorld:
         (self._cap_tech[1]) harvests within cfg.eat_radius*(1+cap_reach_mult); others within cfg.eat_radius.
         Returns the scalar cfg.eat_radius when off (byte-identical)."""
         cfg = self.cfg
+        if self.depth_gates:                                 # R171: reach (axis 1) unlocks at depth >= 2*step
+            if cfg.n_capabilities < 2:
+                return cfg.eat_radius
+            far = self.pop.tech[eaters_act] >= cfg.cap_level_step * 2
+            return cfg.eat_radius * (1.0 + cfg.cap_reach_mult * far)
         if not self.tech_capabilities or cfg.n_capabilities < 2:
             return cfg.eat_radius
         far = self.rep[eaters_act, self._cap_tech[1]]        # bool per candidate eater (the reach node)
@@ -891,6 +922,9 @@ class GenesisWorld:
         cfg, p = self.cfg, self.pop
         act = p.active()
         if act.size == 0 or self.food.shape[0] == 0:
+            return
+        if self.depth_gates:                                # R171: ripe AND DEPTH-unlocked tier (generative tree)
+            self._eat_depth_gates()
             return
         if self.cap_niches:                                 # R155: ripe AND capability-key-gated niche
             self._eat_cap_niches()
@@ -983,6 +1017,66 @@ class GenesisWorld:
             self._tier_eat_count[t] += int(eaten.size)
         if not keep.all():
             self._keep_food(keep)
+
+    def _eat_depth_gates(self) -> None:
+        """R171 eat: ripe food is harvested only from a tier the eater's CULTURAL DEPTH has reached. Tier 0 is
+        free; tier t>=1 is edible only by an agent whose deepest known technique level (pop.tech, the realized
+        depth of its repertoire on the GENERATIVE grown tree) is >= recipe_level_step * t. So embodied diet is
+        gated DIRECTLY on how deep the open-ended culture has grown — no pre-designated recipe node, and the
+        diet CEILING is open-ended because the grown tree's depth is (cap the tree -> depth freezes -> the high
+        tiers can NEVER become edible). Tiers resolve high->low (richer first), each agent eats at most one
+        mote/step, and the tier value (food_value*(1+tier_value_bonus*t)) feeds the usual harvest multipliers
+        via _harvest_gain. Mirrors _eat_tech_actions; the ONLY change is the eligibility gate (depth, not node)."""
+        cfg, p = self.cfg, self.pop
+        act = p.active()
+        ripe = np.where(self.food_ripe)[0]
+        if ripe.size == 0:
+            return
+        keep = np.ones(self.food.shape[0], dtype=bool)
+        eaten_agent = np.zeros(act.size, dtype=bool)         # at most one harvest per agent per step
+        ripe_tier = self.food_tier[ripe]
+        depth = p.tech[act]                                  # realized cultural depth per active agent (level units)
+        for t in range(cfg.n_food_tiers - 1, -1, -1):
+            fm = ripe[(ripe_tier == t) & keep[ripe]]         # ripe, this tier, not already eaten this step
+            if fm.size == 0:
+                continue
+            if t == 0:
+                elig = np.where(~eaten_agent)[0]             # tier 0 is the free resource (any depth)
+            else:                                            # tier t needs cultural depth >= recipe_level_step*t
+                elig = np.where((depth >= cfg.recipe_level_step * t) & ~eaten_agent)[0]
+            if elig.size == 0:
+                continue
+            dist, idx = cKDTree(self.food[fm]).query(p.pos[act[elig]], k=1)
+            reach = self._cap_reach(act[elig])               # R171: per-eater reach (depth-gated capability axis 1)
+            winners, eaten = _resolve(dist, idx, reach)      # winners index into elig; eaten into fm
+            if winners.size == 0:
+                continue
+            eaters = act[elig[winners]]
+            base = np.full(eaters.size, cfg.food_value * (1.0 + cfg.tier_value_bonus * t))
+            p.energy[eaters] += self._harvest_gain(eaters, base=base)
+            keep[fm[eaten]] = False
+            eaten_agent[elig[winners]] = True
+            self._tier_eat_count[t] += int(eaten.size)
+        if not keep.all():
+            self._keep_food(keep)
+
+    def diet_capability_ceiling(self) -> tuple[int, int]:
+        """R171 read-out (read-only; no RNG, no state change): the living population's REALIZED embodied
+        ceiling under depth_gates. Returns (max_diet_tier, n_axes_unlocked):
+          - max_diet_tier  = the deepest food tier ANY living agent can currently eat
+                             (max over agents of min(floor(depth / recipe_level_step), n_food_tiers-1));
+          - n_axes_unlocked = the most capability axes any living agent has unlocked
+                             (max over agents of count of i in 0..n_capabilities-1 with depth >= step*(i+1)).
+        Both are bounded above by the grown tree's depth, so they FREEZE when the tree is capped and CLIMB when
+        it is not — the embodied signature of open-endedness. (0, 0) when no agent is alive."""
+        cfg = self.cfg
+        act = self.pop.active()
+        if act.size == 0:
+            return 0, 0
+        depth = self.pop.tech[act]
+        max_tier = int(np.clip(np.floor(depth / cfg.recipe_level_step), 0, cfg.n_food_tiers - 1).max())
+        axes = np.array([(depth >= cfg.cap_level_step * (i + 1)).any() for i in range(cfg.n_capabilities)])
+        return max_tier, int(axes.sum())
 
     def _do_trade(self, givers: np.ndarray, gain: np.ndarray, t: int) -> None:
         """R158 trade: each giver (just harvested a tier-t>=1 mote it alone could eat) offers trade_share of its

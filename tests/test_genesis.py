@@ -2710,3 +2710,92 @@ def test_persist_continuity_proof_is_not_vacuous(tmp_path):
     wrong.save_checkpoint(wrong_path)
     wrong_chain = boundary_chain(lambda w: w.load_checkpoint(wrong_path))
     assert persist.continuity_max_abs_diff(cont, wrong_chain) > 0.0
+
+
+# ---------- R171: DEPTH GATES — open-ended culture causally drives EMBODIED capability ----------
+def _depth_gate_cfg(K, innov_steps=3):
+    """A full-stack viable generative world whose diet tiers + capability axes are gated on cultural DEPTH."""
+    from alife.genesis.civdev import civ_config
+    return civ_config(
+        tech_actions=False, tech_capabilities=False, generative_tree=True, depth_gates=True,
+        max_techniques=K, innov_steps=innov_steps, n_food_tiers=5, recipe_level_step=2,
+        n_capabilities=2, cap_level_step=2, tier0_frac=0.4,
+        n0=300, capacity=1000, food_cap=600, food_regrow=40)
+
+
+def test_depth_gates_requires_generative_tree():
+    """depth_gates gates on the GROWN tree's depth, so it is meaningless without it -> must raise."""
+    from alife.genesis.civdev import civ_config
+    cfg = civ_config(tech_actions=False, tech_capabilities=False, generative_tree=False, depth_gates=True)
+    with pytest.raises(ValueError, match="depth_gates"):
+        GenesisWorld(cfg, seed=1)
+
+
+def test_depth_gates_off_leaves_food_unlocked_and_is_byte_identical():
+    """depth_gates=False adds NO RNG and no tiers: food_tier all-zero and the generative trajectory is
+    bit-for-bit identical to the same world without the flag (the off path is a true no-op)."""
+    from alife.genesis.civdev import civ_config
+    base = dict(tech_actions=False, tech_capabilities=False, generative_tree=True, max_techniques=2000,
+                innov_steps=2, n0=200, capacity=600, food_cap=400)
+    w_off = GenesisWorld(civ_config(depth_gates=False, **base), seed=3)
+    w_off2 = GenesisWorld(civ_config(**base), seed=3)              # flag never mentioned -> same default
+    assert not w_off.depth_gates
+    assert (w_off.food_tier == 0).all()                           # no tier draw -> all free
+    for _ in range(60):
+        w_off.step(); w_off2.step()
+    a, b = w_off.snapshot(), w_off2.snapshot()
+    assert a["population"] == b["population"]
+    assert np.array_equal(w_off.pop.pos[w_off.pop.active()], w_off2.pop.pos[w_off2.pop.active()])
+
+
+def test_diet_capability_ceiling_readout_matches_hand_set_depth():
+    """The read-out converts realized cultural depth -> embodied ceiling correctly (recipe_level_step=2,
+    n_food_tiers=5 -> tiers 0..4 at depth 0/2/4/6/8; cap_level_step=2, 2 axes at depth 2/4)."""
+    w = GenesisWorld(_depth_gate_cfg(4000), seed=1)
+    act = w.pop.active()
+    w.pop.tech[act] = 0.0
+    w.pop.tech[act[0]] = 7.0                                       # one deep agent: floor(7/2)=3, axes(>=2,>=4)=2
+    tier, axes = w.diet_capability_ceiling()
+    assert tier == 3 and axes == 2
+    w.pop.tech[act] = 0.0                                          # everyone shallow -> only the free tier, no axes
+    assert w.diet_capability_ceiling() == (0, 0)
+
+
+def test_depth_gates_embodied_ceiling_open_ended_vs_capped():
+    """HEADLINE: with the grown tree UNCAPPED the embodied ceiling climbs to the top diet tier and both
+    capability axes; CAP the tree small and the SAME machinery freezes the ceiling at the free tier / no axes
+    -> open-ended culture is now CAUSAL on the body, bounded only by the cultural cap."""
+    big = GenesisWorld(_depth_gate_cfg(4000), seed=1)
+    small = GenesisWorld(_depth_gate_cfg(20), seed=1)
+    for _ in range(180):
+        big.step(); small.step()
+    bt, ba = big.diet_capability_ceiling()
+    st, sa = small.diet_capability_ceiling()
+    assert bt == big.cfg.n_food_tiers - 1 and ba == big.cfg.n_capabilities   # full diet + all axes
+    assert st == 0 and sa == 0                                                # frozen at the free tier, no axes
+    assert big._tier_eat_count[1:].sum() > 0                                  # the uncapped pop EATS locked tiers
+    assert small._tier_eat_count[1:].sum() == 0                               # the capped pop physically cannot
+
+
+def test_depth_gates_ceiling_monotone_in_cap():
+    """The freeze is the CAP, not chance: the embodied diet ceiling is non-decreasing in the capacity cap."""
+    tiers = []
+    for K in (20, 80, 4000):
+        w = GenesisWorld(_depth_gate_cfg(K), seed=2)
+        for _ in range(150):
+            w.step()
+        tiers.append(w.diet_capability_ceiling()[0])
+    assert tiers[0] <= tiers[1] <= tiers[2]
+    assert tiers[2] > tiers[0]                                     # uncapped strictly out-reaches the small cap
+
+
+def test_depth_gates_null_no_composition_no_unlock():
+    """Load-bearing null: innov_steps=0 -> the tree never grows -> depth stays 0 -> NOT A SINGLE locked tier
+    or axis ever unlocks, even at a huge cap. So the embodied climb is driven by the population's real
+    compositions, not by the cap or the gate being trivially open."""
+    w = GenesisWorld(_depth_gate_cfg(4000, innov_steps=0), seed=1)
+    for _ in range(120):
+        w.step()
+    assert w._tree.n == w.cfg.n_seed_tech                          # never composed -> only the seeds materialized
+    assert w.diet_capability_ceiling() == (0, 0)
+    assert w._tier_eat_count[1:].sum() == 0
