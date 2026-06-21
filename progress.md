@@ -1,5 +1,41 @@
 # alife — progress
 
+## Current state (Round 167 — 2026-06-21) — GENESIS TECH DEPTH: cumulative culture is a CONNECTED dependency DAG, not a broad scatter. The R160-R166 arc measured culture by BREADTH/RATE; R167 measures its STRUCTURE and finds breadth/nominal-depth MISLEAD (red-teamed CONFIRMED-WITH-CAVEAT, 3 fresh seeds + saturation control destroyed)
+
+**R167 changes the AXIS, not the increment.** Six rounds (R160-R166) measured the cumulative-culture repertoire
+by BREADTH (`pop_distinct`) and RATE (`dN/dt`). But breadth is not what makes culture *cumulative* — a pile of
+independent tricks is broad and shallow. The structural signature of cumulative culture is that technology STANDS
+ON technology: each thing known because the things it depends on are also known. New `alife/genesis/techdepth.py`
+measures that on the LIVE combinatorial GenesisWorld:
+- **`closure_fraction`** — of the known non-seed techniques, the fraction whose BOTH prerequisites are also known
+  (the local "standing on known shoulders" rate).
+- **`connected_depth`** — the longest chain of consecutive MUTUALLY-KNOWN prerequisites (the realized cumulative
+  ladder), contrast the NOMINAL `max_level` (deepest tree level of any known technique, chain held or not).
+- **`realized_edges`** / **`society_repertoire`** / **`depth_trajectory`** — the DAG + read-only live driver.
+
+**HEADLINE — the STRUCTURE inverts the breadth/nominal verdict (combinatorial vs the additive null, `combo_prereqs`
+the ONLY change, same tree).** REAL-VERIFY (`scripts/run_genesis_techdepth.py 500` → `runs/r167_techdepth/panel.png`
+EYE-VERIFIED, 102s, max_techniques=20000 so the additive scatter stays a sparse SUBSET): the ADDITIVE NULL is
+~12× BROADER (breadth ~7700 vs ~650) and reaches a ~3× HIGHER nominal tree level (max_level ~32 vs ~11) — by those
+metrics it looks far more advanced. But its realized DAG is DISCONNECTED: closure collapses to ~0.13-0.15 (87% of
+its known techniques lack their foundations) and connected_depth collapses to ~5-6. The COMBINATORIAL repertoire is
+a prereq-CLOSED, deep CONNECTED ladder: closure ~1.0, connected_depth == nominal max_level. So cumulative culture is
+structurally deep-and-CONNECTED, not broad — and breadth / nominal max_level actively MISLEAD.
+
+**RED-TEAM (mandatory; refutation-first; verdict CONFIRMED-WITH-CAVEAT — independent agent).** (1) FRESH seeds 2,3,4:
+combo closure=1.0 & connected==max_level every seed; additive 8-20× broader, 3× higher nominal level, yet closure
+0.10-0.16 & connected collapsed — inversion holds 3/3. (2) SATURATION CONFOUND DESTROYED (the key attack): additive
+breadth is only 32-38% of the 20k tree (not near saturation); DOUBLING the tree to 40000 drops additive closure
+FURTHER (0.03-0.04) and connected_depth to 2-3 — the opposite of a saturation artifact; and at MATCHED breadth
+(additive's closure when its breadth first reaches combo's final ~650) closure is ~0.000. The gap is not a breadth or
+tree-size artifact. (3) METRIC CORRECTNESS: an independent numpy recompute matches techdepth bit-for-bit (closure
+1.000/0.135, connected 11/6). **HONEST CAVEAT (baked into the docstring): combinatorial UNION closure ~1.0 is
+effectively guaranteed BY CONSTRUCTION at this population scale — any of 2000 agents holding a prereq counts as known,
+so the union is pinned at 1.0; the genuinely sub-1 measured quantity is the PER-AGENT closure (falls to ~0.51 at
+fidelity 0.70). The load-bearing contrast is the ADDITIVE null's ~0.1, which holds regardless.** A genuine result: the
+first STRUCTURAL / dependency-graph view of the living civilization's technology, dissociating cumulative depth from
+mere breadth. 196 genesis tests (+4).
+
 ## Current state (Round 166 — 2026-06-21) — GENESIS LIVE PHYLORATE: the innovation RATE law EMERGES from the live economy. R165's autocatalytic effort E(N)∝N was POSITED; here it is shown to emerge endogenously in the real evolved-neural GenesisWorld (robust POSITIVE, red-teamed CONFIRMED 4 fresh seeds)
 
 **R166 RECONNECTS the abstract analysis arc (R160-R165) back to the LIVE GenesisWorld — the CEO's actual
@@ -1712,6 +1748,26 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
   coexistence is easy; sustained cycles needed the R15 refuge-floor mechanism.
 
 ## Frontier / next
+
+**Current ceiling (post-R167): the cumulative-culture repertoire is now characterised on FOUR axes — BREADTH
+(R160-R166), RATE (R165-R166, emergent from the live economy), and now STRUCTURE: connected DEPTH + prereq CLOSURE
+(R167). The R167 lesson is sharp and reusable: breadth and nominal max_level MISLEAD — the additive null beats
+combinatorial on both yet is a disconnected scatter; the cumulative ladder is the CONNECTED, prereq-closed DAG.
+Durable instruments: `techdepth.py` (closure_fraction, connected_depth, realized_edges, depth_trajectory) — a
+saturation-proof structural validator for any future cumulative-descent claim.** The analysis-arc has now mapped
+cumulative culture thoroughly (breadth/rate/structure/temporal-order/phylogeny). REMAINING GAPS / candidate R168+
+frontiers, ranked ambition × feasibility:
+(1) **BREAK OUT OF THE ANALYSIS ARC — make open-endedness CAUSAL in the embodied world (TOP AMBITION, the CEO
+integration).** Wire `unbounded.TechSpace` into `GenesisWorld` so the OPEN repertoire GATES physical actions and is
+SELECTED in the living sim — open-endedness driving behaviour, not just measured. Lift requires the fixed-width `rep`
+matrices → sparse repertoire (spike-then-migrate, `vr-lead` architectural gate). The R160-R167 instruments now exist
+to validate it once built. (2) **A SINGLE PERSISTENT LONG RUN, rendered + watchable** — the CEO deliverable is a
+world that "just by running develops toward civilization"; produce one long integrated run with a spatial render
+(GIF) of settlements forming / tech spreading / roles differentiating + the climbing complexity metrics overlaid.
+Risk: the GL/GIF path is more fragile than the matplotlib panels (commit-early, shrink frames). (3) **Stage-2
+SIGNALLING redesign (the one parked rung)** — synchronous, sharply lethal predation rounds (Floreano/Mitri arena);
+believe emergence only if it beats frozen AND deaf AND causal, ≥3 seeds, red-team. **Bias: the analysis arc is now
+deep enough; R168 should be a LEAP IN KIND — (1) or (2) — not another structural metric on the same world.**
 
 **Current ceiling (post-R166): open-endedness is OPENED (R164), its RATE law characterised (R165), and that
 rate law is now shown to EMERGE FROM THE LIVE ECONOMY (R166) — closing R165's "E(N)∝N is posited" caveat. In the

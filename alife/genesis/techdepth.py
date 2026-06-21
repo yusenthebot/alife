@@ -24,9 +24,13 @@ instruments cannot see:
 
 The decisive contrast is `combo_prereqs` (the same single switch that defines combinatorial vs additive).
   * combinatorial (`combo_prereqs=True`): an agent can only DISCOVER k when both prereqs are already in its
-    repertoire, so the known set is prereq-closed BY CONSTRUCTION and grows a deep CONNECTED DAG — modulo the
-    imperfect social transmission (`culture_fidelity<1`) that can drop a prerequisite from an inherited
-    repertoire, so closure is high but not exactly 1 (a real, non-tautological number).
+    repertoire, so the known set is prereq-closed BY CONSTRUCTION and grows a deep CONNECTED DAG. (HONEST
+    CAVEAT, red-team R167: imperfect transmission `culture_fidelity<1` genuinely drops prerequisites — the
+    PER-AGENT closure falls with fidelity (~0.93/0.70/0.51 at fidelity 0.97/0.85/0.70) — but the metric here
+    is on the SOCIETY UNION of all living agents, and with a large population any prerequisite held by ANY
+    agent counts as known, so the union closure is pinned at ~1.0 and is effectively guaranteed by
+    construction at this population scale, NOT a delicate sub-1 measurement. The genuinely sub-1 measured
+    quantity is the per-agent closure; the load-bearing contrast below is the ADDITIVE null's ~0.1.)
   * additive null (`combo_prereqs=False`): discovery is uniform over ALL unknown techniques regardless of
     prerequisites, so the society can "know" a deep technique whose supporting chain it has never acquired.
     The result reaches a comparable BREADTH and even a comparable NOMINAL `max_level`, but the realized DAG is
