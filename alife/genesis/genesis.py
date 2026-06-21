@@ -152,6 +152,22 @@ class GenesisConfig:
     # urns, no extra RNG draws, the R178 brain-output emission/decode path untouched).
     signal_learn: bool = False
     signal_lr: float = 0.3             # Roth-Erev reinforcement increment on a correct decode; 0 = no learning (control)
+    # FUNCTIONAL signalling — division of cognitive labour over a NON-STATIONARY world (R180 — Stage 2->3
+    # bridge). R179 proved a learned Lewis convention EMERGES, but over a PRIVATE RANDOM referent bit: there
+    # is no shared world-state, no role asymmetry, and "decode the bit" has no consequence beyond the abstract
+    # reward. signal_task=True makes the channel do real WORK: (a) the referent is a SHARED environmental
+    # "good-type" g_t in {0,1} that FLIPS with prob task_flip each step — because it CHANGES, no constant
+    # policy can win, so communication is load-bearing every step; (b) a stable DIVISION OF LABOUR — each
+    # slot is a SCOUT (observes g_t -> its referent input = g_t) or a FORAGER (BLIND to g_t -> referent input
+    # masked to 0); a forager can only learn the current good-type by DECODING a scout's signal; (c) a correct
+    # forager decode of a scout's symbol pays the foraging reward (real energy -> birth/death), so a blind
+    # sub-population tracks a changing world and EARNS only through others' signals = functional cooperation.
+    # Headline metric task_success = fraction of forager-listeners (heard a scout) whose decode matches the
+    # symbol's referent. One-knob control signal_lr=0 (urns frozen) -> foragers can't track the flips -> chance.
+    # Requires signal_learn=True. signal_task=False is byte-identical (no flip draw, no role mask, R179 path).
+    signal_task: bool = False
+    task_flip: float = 0.03            # per-step probability the shared good-type g_t flips (non-stationarity)
+    scout_frac: float = 0.5            # fraction of slots that are SCOUTS (observe g_t); the rest are blind foragers
     # division of labour (R146 — Stage 3): processing=True makes food spawn RAW (inedible); an agent
     # ripens nearby raw food into edible food via an evolved PROCESS output (an extra brain output), paying
     # process_cost. Ripe food is a LOCAL PUBLIC GOOD — any neighbour can harvest it — and decays back to raw
@@ -621,6 +637,9 @@ class GenesisWorld:
         if self.cfg.signal_learn and not self.signal_game:
             raise ValueError("signal_learn (R179 within-lifetime reinforcement) requires signal_game=True")
         self.signal_learn = self.cfg.signal_learn
+        if self.cfg.signal_task and not self.signal_learn:
+            raise ValueError("signal_task (R180 functional division of labour) requires signal_learn=True")
+        self.signal_task = self.cfg.signal_task
         prey_in = (N_IN + (4 if self.has_predators else 0)   # +nearest-predator sense channel (R143)
                    + (1 if self.signalling else 0)           # +heard-neighbour-utterance channel (R144)
                    + (1 if self.signal_game else 0)          # +own private referent bit (R178)
@@ -640,6 +659,13 @@ class GenesisWorld:
             cap = self.cfg.capacity                      # send[i,r,s]=propensity emit symbol s for referent r;
             self._urn_send = np.ones((cap, 2, 2))        # recv[i,s,g]=propensity guess g having heard symbol s.
             self._urn_recv = np.ones((cap, 2, 2))        # uniform start -> a random (chance) signalling policy
+        if self.signal_task:                             # R180: shared flipping good-type + a stable scout/forager split
+            self._good_type = 0                          # the environmental state the channel must convey
+            cap = self.cfg.capacity                      # role per slot via a golden-ratio low-discrepancy split
+            frac = (np.arange(cap) * 0.6180339887498949) % 1.0   # deterministic, well-spread, no RNG draw
+            self._is_scout = frac < self.cfg.scout_frac  # scouts observe g_t; the rest are blind foragers
+            self._last_task_success = float("nan")       # forager decode accuracy on scout->forager pairs (per step)
+            self._last_forager_decode = float("nan")     # mean forager decoded good-type (for the tracking overlay)
         self.step_count = 0
         self.lineage_first_step: dict[int, int] = {}
         self._seed_population()
@@ -934,6 +960,38 @@ class GenesisWorld:
         sym = (self.rng.random(act.size) >= sp[:, 0] / sp.sum(1)).astype(np.int8)
         return sym.astype(float)
 
+    def _signal_task_decode(self, act, ni, nprox):
+        """R180 functional division of labour. Same within-lifetime urn machinery as R179, but the game is
+        now load-bearing: a BLIND FORAGER (listener) decodes a SCOUT's (speaker) symbol about the shared
+        flipping good-type g_t. Only forager<-scout audible pairs count and are reinforced (the foragers are
+        the ones that need the info; scouts already see g_t). A correct decode pays the foraging reward to
+        BOTH (common interest) and reinforces both urns (Roth-Erev). Records _last_task_success (forager
+        decode accuracy) and _last_forager_decode (mean decoded good-type, for the tracking overlay)."""
+        n = act.size
+        rew = np.zeros(n)
+        if n < 2 or ni is None:
+            self._last_task_success = float("nan")
+            self._last_forager_decode = float("nan")
+            return rew
+        heard = np.clip(np.rint(self.pop.utterance[act][ni]), 0, 1).astype(np.int8)  # neighbour's prior symbol
+        spoken = self.pop.ref_emitted[act][ni].astype(np.int8)                         # bit that symbol encoded
+        gp = self._urn_recv[act, heard]                                                # (n,2) guess propensities
+        guess = (self.rng.random(n) >= gp[:, 0] / gp.sum(1)).astype(np.int8)           # sample guess ~ urn
+        listener_forager = ~self._is_scout[act]                                        # only blind foragers depend
+        speaker_scout = self._is_scout[act[ni]]                                        # only scouts carry real info
+        valid = (nprox > 0) & listener_forager & speaker_scout
+        correct = (guess == spoken) & valid
+        rew[correct] += self.cfg.signal_reward                    # forager earns the real foraging payoff
+        np.add.at(rew, ni[correct], self.cfg.signal_reward)       # scout earns it too (common interest)
+        lr = self.cfg.signal_lr
+        if lr > 0.0 and correct.any():                            # Roth-Erev: reinforce the winning urn cells
+            li, si = act[correct], act[ni[correct]]
+            np.add.at(self._urn_recv, (li, heard[correct], guess[correct]), lr)
+            np.add.at(self._urn_send, (si, spoken[correct], heard[correct]), lr)
+        self._last_task_success = float(correct[valid].mean()) if valid.any() else float("nan")
+        self._last_forager_decode = float(guess[valid].mean()) if valid.any() else float("nan")
+        return rew
+
     def _sense_food(self, pos, r, u, f, act):
         """Nearest food in the body frame. With resource types each agent senses only its own type."""
         cfg = self.cfg
@@ -978,7 +1036,14 @@ class GenesisWorld:
                 parts.append(self._sense_predators(pos, r, u, f))
             if self.signalling:                             # +heard-neighbour-utterance channel (R144)
                 parts.append(self._heard(act, ni, nprox))
-            if self.signal_game:                            # R178: each agent observes a private referent bit
+            if self.signal_task:                            # R180: shared flipping good-type + scout/forager roles
+                if self.rng.random() < cfg.task_flip:       # the world is NON-STATIONARY -> communication is load-bearing
+                    self._good_type ^= 1
+                scout = self._is_scout[act]
+                ref = np.where(scout, self._good_type, 0).astype(np.int8)  # scouts observe g_t; foragers are blind (masked 0)
+                p.referent[act] = ref
+                parts.append((2.0 * ref - 1.0).reshape(-1, 1))
+            elif self.signal_game:                          # R178: each agent observes a private referent bit
                 ref = self.rng.integers(0, 2, size=act.size).astype(np.int8)
                 p.referent[act] = ref
                 parts.append((2.0 * ref - 1.0).reshape(-1, 1))   # ±1-centred input the sender can encode
@@ -990,7 +1055,9 @@ class GenesisWorld:
             out = brain.forward(p.brains[act], self.spec, np.concatenate(parts, axis=1))
             # R178: reward a correct decode of the neighbour's LAST-step utterance (reads ref_emitted BEFORE
             # it is overwritten below) — the direct common-interest payoff that makes signalling evolve.
-            if self.signal_learn:                           # R179: within-lifetime urn-policy decode + reinforce
+            if self.signal_task:                            # R180: functional division-of-labour decode (scout->forager)
+                game_rew = self._signal_task_decode(act, ni, nprox)
+            elif self.signal_learn:                         # R179: within-lifetime urn-policy decode + reinforce
                 game_rew = self._signal_learn_decode(act, ni, nprox)
             elif self.signal_game:                          # R178: frozen brain-output decode
                 game_rew = self._signal_game_reward(act, out, ni, nprox)

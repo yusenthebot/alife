@@ -392,6 +392,51 @@ def test_signal_learn_bootstraps_a_convention_vs_no_learning_control():
     assert learn_mean > ctrl_mean + 0.15                   # decisive PAID-learning > control asymmetry
 
 
+def test_signal_task_off_is_byte_identical():
+    # R180: signal_task=False leaves the R179 signal_learn path bit-for-bit unchanged (no flip draw, no roles).
+    a = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True, signal_learn=True), seed=3)
+    b = GenesisWorld(replace(fast_cfg(n0=200), signalling=True, signal_game=True, signal_learn=True), seed=3)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a._urn_recv, b._urn_recv)
+    assert not hasattr(a, "_good_type") and not hasattr(a, "_is_scout")
+
+
+def test_signal_task_requires_signal_learn():
+    with pytest.raises(ValueError):
+        GenesisWorld(replace(fast_cfg(), signalling=True, signal_game=True, signal_task=True), seed=0)
+
+
+def test_signal_task_assigns_scout_forager_roles():
+    w = GenesisWorld(replace(fast_cfg(), signalling=True, signal_game=True, signal_learn=True,
+                             signal_task=True, scout_frac=0.5), seed=0)
+    frac = float(w._is_scout.mean())
+    assert 0.4 < frac < 0.6                                 # ~scout_frac of slots are scouts (well-spread split)
+    assert w._good_type in (0, 1)
+
+
+def test_signal_task_division_of_labour_tracks_flipping_world_vs_control():
+    # THE R180 HEADLINE — FUNCTIONAL signalling: blind FORAGERS track a SHARED, FLIPPING good-type ONLY by
+    # decoding SCOUTS' signals. With learning the convention forms and foragers succeed WELL above chance on a
+    # non-stationary world that a constant policy cannot solve; the one-knob control (signal_lr=0, urns frozen)
+    # cannot track the flips -> stuck at chance. Same machinery, same seed; only whether the urns learn differs.
+    base = dict(world=World3D(size=78.0), capacity=1000, n0=600, food_cap=200, food_regrow=9,
+                signalling=True, signal_game=True, signal_learn=True, signal_task=True, task_flip=0.03)
+    learn = GenesisWorld(replace(fast_cfg(**base), signal_lr=1.5), seed=0)
+    ctrl = GenesisWorld(replace(fast_cfg(**base), signal_lr=0.0), seed=0)
+    learn_acc, ctrl_acc = [], []
+    for t in range(1300):
+        learn.step(); ctrl.step()
+        if t >= 1000:                                      # average the tail (converged) accuracy
+            la, ca = learn._last_task_success, ctrl._last_task_success
+            if la == la: learn_acc.append(la)
+            if ca == ca: ctrl_acc.append(ca)
+    learn_mean, ctrl_mean = float(np.mean(learn_acc)), float(np.mean(ctrl_acc))
+    assert ctrl_mean < 0.6                                  # frozen urns can't track the flipping world -> chance
+    assert learn_mean > 0.7                                 # learned convention -> foragers track g_t functionally
+    assert learn_mean > ctrl_mean + 0.15                    # decisive learned > control asymmetry
+
+
 def test_heard_channel_reads_nearest_neighbour():
     # the heard signal equals the nearest neighbour's last-step utterance, gated to 0 out of range
     w = GenesisWorld(replace(fast_cfg(n0=30), n_predators0=4, signalling=True), seed=2)
