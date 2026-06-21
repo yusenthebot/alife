@@ -257,6 +257,23 @@ class GenesisConfig:
     n_seed_tech: int = 6               # number of seed primitives (level-0, no-prerequisite techniques).
     innov_steps: int = 1               # discoveries attempted per newborn (from its adjacent possible).
 
+    # --- R170: GENERATIVE (open-ended-by-construction) tech tree — open-endedness made CAUSAL in the live world ---
+    # build_tech_tree pre-enumerates a FIXED random tree of max_techniques nodes whose deepest level is a
+    # FROZEN ceiling: no matter how long the world runs the frontier cannot pass that pre-built max level.
+    # generative_tree=True replaces it with combinatorial.GrowingTree — the live-world analogue of R164's
+    # unbounded.TechSpace over the SAME dense rep: the tree starts with only the n_seed primitives and GROWS
+    # FROM the living population's real compositions (compose two known techniques -> materialize a brand-new
+    # deeper node on demand). The space is open-ended BY CONSTRUCTION; the only ceiling is the capacity
+    # max_techniques (the memory cap). Cap it small and the frontier FREEZES once full; raise it and depth/
+    # breadth keep climbing with run length — the decisive open-ended-vs-capped control, now causal in the
+    # living evolved-neural world, not an offline analytical model. Every agent is guaranteed to know the
+    # seed primitives (level-0 universals) so it can always compose. Requires combinatorial=True.
+    # generative_tree=False is byte-identical to the fixed-tree path (build_tech_tree untouched). NOTE: the
+    # generative tree has no PRE-BUILT deep nodes, so recipe/capability gates (tech_actions/tech_capabilities,
+    # which designate fixed deep nodes ahead of the run) are not yet wired onto it — dynamic recipe
+    # designation on the grown tree is the next frontier rung; combining them raises ValueError.
+    generative_tree: bool = False
+
     # --- R156: emergent divergent cultural TRADITIONS over the open-ended tree ---
     # The combinatorial tree is open-ended, but R150-R155 only ever measured ONE global frontier. A real
     # civilization is not one monoculture of knowledge — it is MANY divergent cultural traditions. R156 asks
@@ -440,12 +457,18 @@ class GenesisWorld:
         self.build_specialized = self.cfg.build_specialized
         self.culture = self.cfg.culture
         self.combinatorial = self.cfg.combinatorial
+        self.generative_tree = self.cfg.generative_tree
         self.tech_actions = self.cfg.tech_actions
         self.tech_capabilities = self.cfg.tech_capabilities
         self.cap_niches = self.cfg.cap_niches
         self.culture_decay = self.cfg.culture_decay
         if self.combinatorial and not self.culture:
             raise ValueError("combinatorial (R150 open-ended culture) requires culture=True")
+        if self.generative_tree and not self.combinatorial:
+            raise ValueError("generative_tree (R170 open-ended-by-construction tree) requires combinatorial=True")
+        if self.generative_tree and (self.tech_actions or self.tech_capabilities):
+            raise ValueError("generative_tree (R170) has no pre-built deep nodes, so tech_actions/"
+                             "tech_capabilities (fixed-deep-node recipe gates) are not yet wired onto it")
         if self.tech_actions and not self.combinatorial:
             raise ValueError("tech_actions (R153 culture unlocks world-actions) requires combinatorial=True")
         if self.tech_capabilities and not self.combinatorial:
@@ -501,15 +524,24 @@ class GenesisWorld:
             for slot in self.pop.active():                   # each founder is a distinct root lineage
                 self._gen_node[slot] = len(self._gen_parent)
                 self._gen_parent.append(-1)
-        if self.combinatorial:                               # R150: build the fixed tech tree + repertoire pools
+        if self.combinatorial:                               # R150: build the tech tree + repertoire pools
             from . import combinatorial as cb
             K, ns = self.cfg.max_techniques, self.cfg.n_seed_tech
-            self._tree_pa, self._tree_pb, self._tree_level = cb.build_tech_tree(K, ns)
+            if self.generative_tree:                          # R170: GENERATIVE open-ended tree, grown on demand
+                self._tree = cb.GrowingTree(K, ns)            # from the population's real compositions (no pre-build)
+                self._tree_pa, self._tree_pb, self._tree_level = self._tree.pa, self._tree.pb, self._tree.level
+            else:
+                self._tree = None
+                self._tree_pa, self._tree_pb, self._tree_level = cb.build_tech_tree(K, ns)
             self.rep = np.zeros((self.cfg.capacity, K), dtype=bool)       # per-agent repertoire (World-owned)
             act = self.pop.active()                                       # founders are culturally NAIVE: empty
             seed_rep = np.zeros((act.size, K), dtype=bool)                # repertoire, a few discoveries each
-            cb.discover_inplace(seed_rep, self._tree_pa, self._tree_pb, ns,
-                                self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
+            if self.generative_tree:
+                seed_rep[:, :ns] = True                       # everyone knows the level-0 primitives -> can compose
+                self._tree.discover_inplace(seed_rep, self.rng, self.cfg.innov_steps)
+            else:
+                cb.discover_inplace(seed_rep, self._tree_pa, self._tree_pb, ns,
+                                    self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
             self.rep[act] = seed_rep
             self.pop.tech[act] = cb.max_level_known(seed_rep, self._tree_level)
             if self.cfg.track_tech_history:                  # R163: passive first-appearance log (no RNG, no state)
@@ -1192,8 +1224,12 @@ class GenesisWorld:
             child = cb.copy_with_fidelity(source, cfg.culture_fidelity, self.rng)
         else:
             child = np.zeros((slots.size, K), dtype=bool)    # asocial: no copying, reinvent from scratch
-        cb.discover_inplace(child, self._tree_pa, self._tree_pb, cfg.n_seed_tech,
-                            cfg.combo_prereqs, self.rng, cfg.innov_steps)
+        if self.generative_tree:                             # R170: grow the open-ended tree from real compositions
+            child[:, :cfg.n_seed_tech] = True                # the level-0 primitives are universal -> can compose
+            self._tree.discover_inplace(child, self.rng, cfg.innov_steps)
+        else:
+            cb.discover_inplace(child, self._tree_pa, self._tree_pb, cfg.n_seed_tech,
+                                cfg.combo_prereqs, self.rng, cfg.innov_steps)
         if self.cap_niches:                                  # R155: bound the capability keys to the somatic budget
             child = self._enforce_cap_budget(child, parents)
         if self.tech_actions and cfg.recipe_budget > 0:      # R157: bound carried recipe BRANCHES -> specialists

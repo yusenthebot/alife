@@ -1161,6 +1161,74 @@ def test_checkpoint_roundtrip_combinatorial(tmp_path):
     assert np.array_equal(w.pop.tech, w2.pop.tech)
 
 
+# ---------- R170: GENERATIVE open-ended tree (open-endedness made causal in the live world) ----------
+def test_growing_tree_materializes_on_demand_and_caps():
+    from alife.genesis import combinatorial as cb
+    t = cb.GrowingTree(capacity=10, n_seed=3)
+    assert t.n == 3 and (t.level[:3] == 0).all() and (t.pa[:3] == -1).all()   # seeds: level 0, no parents
+    a = t.combine(0, 1)
+    assert a == 3 and t.level[3] == 1 and t.n == 4                            # first product: a fresh deeper node
+    assert t.combine(1, 0) == 3                                               # canonical pair -> same id, no growth
+    assert t.n == 4
+    b = t.combine(3, 2)
+    assert b == 4 and t.level[4] == 2                                         # composing a product deepens the tree
+    while t.n < t.capacity:                                                   # fill the registry to the cap
+        lo = t.n
+        assert t.combine(0, lo - 1) == lo
+    full = t.n
+    assert t.combine(1, 2) == -1 and t.n == full                             # full: no new node can be born (freeze)
+    with pytest.raises(ValueError):
+        t.combine(5, 5)                                                       # cannot compose a technique with itself
+
+
+def test_growing_tree_discover_inplace_grows_depth_only_when_uncapped():
+    from alife.genesis import combinatorial as cb
+    rng = np.random.default_rng(0)
+    big = cb.GrowingTree(capacity=4000, n_seed=6)
+    small = cb.GrowingTree(capacity=12, n_seed=6)                             # capped at 12 nodes (6 products)
+    rb = np.zeros((40, 4000), dtype=bool); rb[:, :6] = True
+    rs = np.zeros((40, 12), dtype=bool); rs[:, :6] = True
+    for _ in range(60):                                                       # repeated composition rounds
+        big.discover_inplace(rb, rng, steps=2)
+        small.discover_inplace(rs, np.random.default_rng(0), steps=2)
+    assert big.n > small.n and small.n == 12                                  # capped tree freezes at capacity
+    assert int(big.level.max()) > int(small.level.max())                     # uncapped frontier climbs deeper
+
+
+def test_generative_tree_requires_combinatorial_and_excludes_fixed_node_gates():
+    with pytest.raises(ValueError):
+        GenesisWorld(_bcfg(generative_tree=True), seed=0)                     # generative_tree without combinatorial
+    with pytest.raises(ValueError):
+        GenesisWorld(_kcfg(generative_tree=True, tech_actions=True), seed=0)  # no pre-built deep recipe nodes
+
+
+def test_generative_tree_off_is_byte_identical():
+    a = GenesisWorld(_kcfg(n0=200), seed=4)                                   # default fixed tree
+    b = GenesisWorld(_kcfg(n0=200, generative_tree=False), seed=4)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                               # the flag draws no extra RNG when off
+    assert np.array_equal(a.rep, b.rep) and np.array_equal(a.pop.tech, b.pop.tech)
+    assert a._tree is None                                                    # fixed-tree path: no GrowingTree built
+
+
+def test_generative_tree_open_ended_climb_vs_capped_in_the_live_world():
+    """The R170 headline: open-endedness is CAUSAL in the living world. With a generative tree the living
+    population's cultural frontier (breadth + depth) keeps climbing, bounded ONLY by the capacity cap — raise
+    the cap and it climbs higher; cap it small and it FREEZES. Same machinery, the only difference is the cap."""
+    gen = dict(combinatorial=True, generative_tree=True, n_seed_tech=6, n0=250, innov_steps=3)
+    big = GenesisWorld(_ccfg(max_techniques=4000, **gen), seed=1)
+    cap = GenesisWorld(_ccfg(max_techniques=30, **gen), seed=1)
+    for _ in range(300):
+        big.step(); cap.step()
+    b, c = big.combinatorial_test(), cap.combinatorial_test()
+    assert b and c
+    assert b["pop_distinct"] > 3 * c["pop_distinct"]                          # uncapped breadth climbs; capped freezes
+    assert c["pop_distinct"] <= 30                                            # the capped tree cannot exceed its cap
+    assert b["max_level"] > c["max_level"]                                    # and the uncapped frontier reaches deeper
+    assert big._tree.n > 30 >= cap._tree.n                                    # the live tree GREW past the small cap
+
+
 # ---------- R163: TEMPORAL phylogeny / open-ended cumulative descent ----------
 def test_temporal_ladder_recovers_a_perfect_ladder():
     from alife.genesis import combinatorial as cb, phylogeny as ph

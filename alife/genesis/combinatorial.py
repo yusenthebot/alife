@@ -154,3 +154,74 @@ def max_level_known(rep: np.ndarray, level: np.ndarray) -> np.ndarray:
         return np.zeros(0)
     masked = np.where(rep, level[None, :], 0)
     return masked.max(axis=1).astype(float)
+
+
+class GrowingTree:
+    """A GENERATIVE, open-ended tech tree (R170) — the LIVE-WORLD analogue of unbounded.TechSpace, but
+    over the World's DENSE boolean repertoire so it drops into the existing combinatorial culture with no
+    representation rewrite.
+
+    `build_tech_tree` pre-enumerates a FIXED random tree of K nodes whose deepest level is a frozen ceiling:
+    no matter how long the world runs, the frontier cannot pass that pre-built max level (raise K and it
+    climbs a little, then stops again). GrowingTree instead starts with ONLY the n_seed primitives
+    materialized and grows the tree FROM the population's real compositions: the first time two KNOWN
+    techniques a,b are composed, a brand-new node is materialized (id = next free column, level =
+    1+max(level[a],level[b]), parents = the pair) and appended into pre-allocated capacity-K arrays — so the
+    dense rep width stays K while the realized tree is built by the living culture. The space is open-ended
+    BY CONSTRUCTION: the only ceiling is the capacity K (the memory cap, == unbounded.TechSpace's `cap`).
+    Cap it small and the frontier FREEZES once full; raise it and depth/breadth keep climbing with run
+    length — the decisive open-ended-vs-capped control, now causal in the live world. `pa/pb/level` are the
+    SAME arrays the World binds as `_tree_*`, mutated in place as nodes are born, so every downstream reader
+    (max_level_known, combinatorial_test, the phylogeny read-outs) works unchanged on the grown tree.
+    """
+
+    def __init__(self, capacity: int, n_seed: int):
+        if n_seed < 2:
+            raise ValueError("need n_seed >= 2 (a seed must be combinable)")
+        if capacity < n_seed:
+            raise ValueError("capacity must be >= n_seed")
+        self.capacity = int(capacity)
+        self.n_seed = int(n_seed)
+        self.pa = np.full(capacity, -1, dtype=np.int64)
+        self.pb = np.full(capacity, -1, dtype=np.int64)
+        self.level = np.zeros(capacity, dtype=np.int64)
+        self.n = int(n_seed)                       # number of materialized nodes (seeds 0..n_seed-1 + products)
+        self.registry: dict[tuple[int, int], int] = {}
+
+    def combine(self, a: int, b: int) -> int:
+        """Compose two DISTINCT known techniques. Returns the product id (materializing it the first time),
+        or -1 if the tree is full (capacity reached and the product does not already exist) — the cap."""
+        if a == b:
+            raise ValueError("cannot compose a technique with itself")
+        key = (a, b) if a < b else (b, a)
+        existing = self.registry.get(key)
+        if existing is not None:
+            return existing
+        if self.n >= self.capacity:
+            return -1                              # full: no new node can be born (the memory cap = freeze)
+        nid = self.n
+        self.registry[key] = nid
+        self.pa[nid] = key[0]
+        self.pb[nid] = key[1]
+        self.level[nid] = 1 + max(int(self.level[a]), int(self.level[b]))
+        self.n += 1
+        return nid
+
+    def discover_inplace(self, rep: np.ndarray, rng: np.random.Generator, steps: int) -> None:
+        """Each agent (row of `rep`) attempts `steps` compositions, each picking two DISTINCT KNOWN
+        techniques at random and adding their product (a possibly brand-new node) to its repertoire. Mutates
+        `rep` AND the shared tree in place. An agent that knows < 2 techniques composes nothing — so callers
+        must guarantee the seeds are known (set rep[:, :n_seed] = True) before the first discovery, exactly
+        as unbounded.run_population starts every agent knowing the primitives."""
+        n = rep.shape[0]
+        if n == 0:
+            return
+        for _ in range(max(0, steps)):
+            for i in range(n):
+                known = np.flatnonzero(rep[i])
+                if known.size < 2:
+                    continue
+                a, b = rng.choice(known, size=2, replace=False)
+                pid = self.combine(int(a), int(b))
+                if pid >= 0:
+                    rep[i, pid] = True
