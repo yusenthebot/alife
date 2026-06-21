@@ -417,6 +417,12 @@ class GenesisConfig:
     # the reconstructed cladogram recover the true birth genealogy. No RNG in the skipped oblique block, so
     # vertical_only=False is byte-identical to R150..R160.
     vertical_only: bool = False
+    # R163 TEMPORAL phylogeny / open-endedness: log the world step at which each technique FIRST appears in the
+    # living population — the time-ladder of cumulative descent. track_tech_history=True is a passive observer
+    # (reads self.rep, consumes NO RNG, mutates NO sim state -> byte-identical to off). temporal_phylogeny_test
+    # then asks whether that first-appearance order RECOVERS the generative tech tree (precedence: a technique
+    # appears after its prereqs; level<->time Spearman) vs a label-permutation null. Requires combinatorial=True.
+    track_tech_history: bool = False
     # metric
     persist_steps: int = 200
 
@@ -450,6 +456,8 @@ class GenesisWorld:
             raise ValueError("panmictic_culture (R156 traditions null) requires combinatorial=True")
         if self.culture_decay and not self.combinatorial:
             raise ValueError("culture_decay (R157 lossy cultural memory) requires combinatorial=True")
+        if self.cfg.track_tech_history and not self.combinatorial:
+            raise ValueError("track_tech_history (R163 temporal phylogeny) requires combinatorial=True")
         if self.cfg.spatial_tiers and not self.tech_actions:
             raise ValueError("spatial_tiers (R157 ecologically-selected traditions) requires tech_actions=True")
         if (self.cfg.recipe_budget > 0 or self.cfg.recipe_upkeep > 0.0) and not self.tech_actions:
@@ -504,6 +512,9 @@ class GenesisWorld:
                                 self.cfg.combo_prereqs, self.rng, self.cfg.innov_steps)
             self.rep[act] = seed_rep
             self.pop.tech[act] = cb.max_level_known(seed_rep, self._tree_level)
+            if self.cfg.track_tech_history:                  # R163: passive first-appearance log (no RNG, no state)
+                self._tech_first_step = np.full(K, -1, dtype=np.int64)
+                self._update_tech_history()                  # stamp the founders' seed repertoire at step 0
             if self.tech_actions:                            # R153: which deep node unlocks each locked food tier
                 self._recipe_tech = cb.recipe_techniques(
                     self._tree_level, ns, self.cfg.n_food_tiers, self.cfg.recipe_level_step)
@@ -792,6 +803,8 @@ class GenesisWorld:
         self._reproduce()
         self._regrow()
         self.step_count += 1
+        if self.cfg.track_tech_history:                      # R163: passive observer (after this step's births)
+            self._update_tech_history()
 
     def _keep_food(self, keep: np.ndarray) -> None:
         """Filter all per-mote food arrays by the same boolean mask (keeps ripeness state in sync)."""
@@ -1275,6 +1288,38 @@ class GenesisWorld:
             "mean_gen": float(p.generation[act].mean()),
             "n": int(act.size),
         }
+
+    def _update_tech_history(self) -> None:
+        """R163 passive observer: stamp the current step as the FIRST appearance of any technique now present
+        in the living population but never seen before. Reads self.rep only — no RNG, no state mutation, so
+        track_tech_history is byte-identical to off."""
+        act = self.pop.active()
+        if act.size == 0:
+            return
+        present = self.rep[act].any(axis=0)
+        newly = present & (self._tech_first_step < 0)
+        self._tech_first_step[newly] = self.step_count
+
+    def temporal_phylogeny_test(self, n_perm: int = 200) -> dict:
+        """R163 read-out: does the population's first-appearance TIME of each technique RECOVER the generative
+        tech tree (the time-ladder of cumulative descent)? Reuses the passive track_tech_history log. Returns
+        the temporal-ladder signal (precedence + level<->time Spearman vs a label-permutation null) plus the
+        open-ended complexity snapshot (max_level / pop_distinct). Requires track_tech_history; in situ."""
+        from . import phylogeny as ph
+        if not self.combinatorial or not self.cfg.track_tech_history:
+            return {}
+        first = self._tech_first_step
+        if int((first >= 0).sum()) < 4:
+            return {}
+        sig = ph.temporal_ladder_signal(first, self._tree_level, self._tree_pa, self._tree_pb,
+                                        self.cfg.n_seed_tech, n_perm)
+        act = self.pop.active()
+        pop_union = (self.rep[act].any(axis=0) if act.size
+                     else np.zeros(self.cfg.max_techniques, dtype=bool))
+        sig["max_level"] = int(self._tree_level[pop_union].max()) if pop_union.any() else 0
+        sig["pop_distinct"] = int(pop_union.sum())
+        sig["n"] = int(act.size)
+        return sig
 
     def tradition_test(self, grid: int = 2, min_deme: int = 15) -> dict:
         """R156 read-out: do distinct spatial groups climb distinct BRANCHES of the open-ended tree ->

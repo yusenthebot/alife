@@ -156,3 +156,84 @@ def column_shuffle_null(freqs: np.ndarray, n_shuffle: int, seed: int = 20250620)
         "treelikeness": float(np.mean(tl)) if tl else float("nan"),
         "coph_corr": float(np.mean(cc)) if cc else float("nan"),
     }
+
+
+# ---------- R163: TEMPORAL phylogeny (the time-ladder of cumulative descent) ----------
+# R160-R162 reconstruct a SPATIAL phylogeny — demes are taxa, the cladogram of traditions is validated
+# against the birth genealogy. R163 reconstructs the TEMPORAL phylogeny: the techniques themselves are the
+# taxa, ordered in TIME by when they first appear in the population. The generative tech tree (combinatorial)
+# imposes a partial order (a technique cannot be discovered before BOTH its prerequisites), so a genuine
+# cumulative-descent history must (1) place every product AFTER its prereqs in time (precedence) and (2) have
+# its first-appearance time track the tree DEPTH (deep techniques appear late). The ADDITIVE null (uniform
+# discovery, no prereq gate) scrambles both. Pure array functions; their own RNG for the permutation null.
+
+
+def _spearman(x: np.ndarray, y: np.ndarray) -> float:
+    """Spearman rank correlation (Pearson on average-ranks, ties handled). nan if < 3 points or no spread."""
+    from scipy.stats import rankdata
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if x.size < 3:
+        return float("nan")
+    rx, ry = rankdata(x), rankdata(y)
+    if rx.std() < 1e-12 or ry.std() < 1e-12:
+        return float("nan")
+    return float(np.corrcoef(rx, ry)[0, 1])
+
+
+def temporal_ladder_signal(first_step: np.ndarray, level: np.ndarray, pa: np.ndarray, pb: np.ndarray,
+                           n_seed: int, n_perm: int = 200, seed: int = 20250620) -> dict:
+    """Does the population's FIRST-APPEARANCE time of each technique RECOVER the generative tech tree —
+    the time-ladder of cumulative descent?
+
+    first_step[k] : world step at which technique k first appeared in the living population (-1 = never).
+    level[k]      : tree depth of technique k (0 for seeds).
+    pa, pb        : the two prerequisite ids of technique k (-1 for seeds).
+
+    Two signals, each vs a label-permutation null over the techniques that actually appeared:
+      precedence_frac : fraction of appeared non-seed techniques (whose BOTH prereqs also appeared) that
+                        appear at/after both prereqs (first_step[k] >= max(first_step[pa], first_step[pb])).
+                        The combinatorial mechanism forces this to 1.0; the additive null breaks it (~1/3).
+      level_time_corr : Spearman correlation of tree level vs first-appearance time. High positive = the
+                        history reconstructs the depth ladder (deep techniques appear late).
+    """
+    first = np.asarray(first_step)
+    lvl = np.asarray(level, dtype=float)
+    appeared = first >= 0
+    idx = np.where(appeared)[0]
+    out = {"n_appeared": int(idx.size)}
+    nan = float("nan")
+    if idx.size < 4:
+        return {**out, "level_time_corr": nan, "level_time_p": nan, "level_time_null": nan,
+                "precedence_frac": nan, "precedence_null": nan}
+    nonseed = idx[idx >= n_seed]                                  # appeared techniques that have prerequisites
+    pa, pb = np.asarray(pa), np.asarray(pb)
+
+    def precedence(times: np.ndarray) -> float:
+        ok = []
+        for k in nonseed:
+            a, b = int(pa[k]), int(pb[k])
+            if a >= 0 and b >= 0 and times[a] >= 0 and times[b] >= 0:
+                ok.append(times[k] >= max(times[a], times[b]))
+        return float(np.mean(ok)) if ok else nan
+
+    precedence_frac = precedence(first)
+    corr = _spearman(lvl[idx], first[idx].astype(float))
+    rng = np.random.default_rng(seed)
+    null_corr, null_pre = [], []
+    for _ in range(max(1, n_perm)):
+        fp = first.copy()
+        fp[idx] = first[rng.permutation(idx)]                    # permute appearance times among appeared taxa
+        nc = _spearman(lvl[idx], fp[idx].astype(float))
+        if not np.isnan(nc):
+            null_corr.append(nc)
+        np_ = precedence(fp)
+        if not np.isnan(np_):
+            null_pre.append(np_)
+    null_corr = np.array(null_corr)
+    level_time_null = float(null_corr.mean()) if null_corr.size else nan
+    level_time_p = (float((np.abs(null_corr) >= abs(corr)).mean())
+                    if (null_corr.size and not np.isnan(corr)) else nan)
+    return {**out, "level_time_corr": corr, "level_time_p": level_time_p,
+            "level_time_null": level_time_null, "precedence_frac": precedence_frac,
+            "precedence_null": float(np.mean(null_pre)) if null_pre else nan}

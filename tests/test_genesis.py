@@ -1161,6 +1161,67 @@ def test_checkpoint_roundtrip_combinatorial(tmp_path):
     assert np.array_equal(w.pop.tech, w2.pop.tech)
 
 
+# ---------- R163: TEMPORAL phylogeny / open-ended cumulative descent ----------
+def test_temporal_ladder_recovers_a_perfect_ladder():
+    from alife.genesis import combinatorial as cb, phylogeny as ph
+    pa, pb, level = cb.build_tech_tree(120, 6)
+    first = level.astype(np.int64).copy()                      # PERFECT ladder: each tech appears at its depth
+    sig = ph.temporal_ladder_signal(first, level, pa, pb, 6, n_perm=200)
+    assert sig["precedence_frac"] == 1.0                       # a product never precedes its prereqs
+    assert sig["level_time_corr"] > 0.99                       # time order == depth order
+    assert sig["level_time_p"] < 0.05                          # vs the label-permutation null
+    assert sig["precedence_null"] < 0.8                        # a shuffled ladder breaks precedence
+
+
+def test_temporal_ladder_scrambled_has_no_signal():
+    from alife.genesis import combinatorial as cb, phylogeny as ph
+    pa, pb, level = cb.build_tech_tree(120, 6)
+    first = np.random.default_rng(3).permutation(120).astype(np.int64)   # random times = the additive-null shape
+    sig = ph.temporal_ladder_signal(first, level, pa, pb, 6, n_perm=200)
+    assert abs(sig["level_time_corr"]) < 0.35                  # random times -> no depth recovery
+    assert sig["precedence_frac"] < 0.9                        # random order violates prereq precedence
+
+
+def _tcfg(**kw):
+    return _kcfg(track_tech_history=True, **kw)
+
+
+def test_track_tech_history_requires_combinatorial():
+    with pytest.raises(ValueError):
+        GenesisWorld(_ccfg(track_tech_history=True), seed=0)   # track_tech_history without combinatorial=True
+
+
+def test_track_tech_history_is_byte_identical_and_logs_appearances():
+    a = GenesisWorld(_kcfg(n0=250), seed=2)
+    b = GenesisWorld(_kcfg(n0=250, track_tech_history=True), seed=2)
+    for _ in range(80):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos)                # passive observer draws no RNG, perturbs nothing
+    assert np.array_equal(a.rep, b.rep)
+    first = b._tech_first_step
+    assert int((first >= 0).sum()) >= 6                        # at least the seed primitives appeared
+    assert first[first >= 0].max() <= b.step_count            # every stamp is a valid past step
+
+
+def test_temporal_phylogeny_recovers_under_combinatorial_not_additive():
+    """The R163 headline (smoke): combinatorial (prereq-gated) discovery makes the first-appearance time
+    ladder RECOVER tree depth + respect precedence; the additive null scrambles the ladder."""
+    combo = GenesisWorld(_tcfg(n0=250, combo_prereqs=True), seed=1)
+    add = GenesisWorld(_tcfg(n0=250, combo_prereqs=False), seed=1)
+    for _ in range(300):
+        combo.step(); add.step()
+    c, a = combo.temporal_phylogeny_test(n_perm=200), add.temporal_phylogeny_test(n_perm=200)
+    assert c and a
+    assert c["precedence_frac"] == 1.0                         # combinatorial: a technique never precedes its prereqs
+    assert a["precedence_frac"] < 1.0                          # additive: uniform discovery breaks precedence
+    assert c["level_time_corr"] > a["level_time_corr"]         # the depth ladder is recovered in time only under combo
+    assert c["level_time_corr"] > 0.3
+
+
+def test_temporal_phylogeny_test_off_empty():
+    assert GenesisWorld(_kcfg(n0=200), seed=0).temporal_phylogeny_test() == {}   # track off -> empty
+
+
 # ---------- R156: emergent divergent cultural TRADITIONS (cultural F_ST) ----------
 def test_panmictic_requires_combinatorial():
     with pytest.raises(ValueError):
