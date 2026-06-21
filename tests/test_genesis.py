@@ -1547,6 +1547,91 @@ def test_checkpoint_roundtrips_food_tier(tmp_path):
     assert np.array_equal(w._recipe_tech, w2._recipe_tech)    # recipe table is deterministic from the fixed tree
 
 
+# ---------- R158: TRADE between region-specialists -> an inter-group ECONOMY ----------
+def test_trade_requires_tech_actions():
+    with pytest.raises(ValueError):
+        GenesisWorld(_kcfg(trade=True), seed=0)                   # trade without tech_actions=True
+    with pytest.raises(ValueError):
+        GenesisWorld(_tacfg(trade_scramble=True), seed=0)         # scramble null without trade=True
+
+
+def test_trade_off_is_byte_identical():
+    """trade=False draws no extra RNG and transfers no energy -> byte-identical to R157."""
+    a = GenesisWorld(_ecocfg(n0=220, spatial_tiers=True), seed=3)
+    b = GenesisWorld(_ecocfg(n0=220, spatial_tiers=True, trade=False), seed=3)
+    for _ in range(120):
+        a.step(); b.step()
+    assert np.array_equal(a.pop.pos, b.pop.pos) and np.array_equal(a.pop.energy, b.pop.energy)
+    assert np.array_equal(a.rep, b.rep)
+
+
+def test_trade_transfers_only_to_complementary_partner():
+    """A giver shares ONLY with a hungry agent that LACKS the traded tier's recipe (a complementary specialist
+    who could not have eaten this food): a same-branch neighbour is never a recipient. Hand-built two agents."""
+    w = GenesisWorld(_ecocfg(n0=50, spatial_tiers=True, trade=True, trade_radius=50.0), seed=0)
+    p = w.pop
+    act = p.active()
+    giver, partner = int(act[0]), int(act[1])
+    rt = int(w._recipe_tech[1])                                   # tier-1 branch
+    w.rep[giver, rt] = True                                       # giver holds branch 1
+    p.pos[partner] = p.pos[giver]                                 # co-located
+    p.energy[partner] = 10.0                                      # hungry
+    # partner HOLDS the same branch -> NOT complementary -> no transfer
+    w.rep[partner, rt] = True
+    before = p.energy[partner]
+    w._do_trade(np.array([giver]), np.array([w.cfg.food_value]), 1)
+    assert p.energy[partner] == before                           # same-branch neighbour is never fed
+    # partner LACKS the branch -> complementary -> gets the surplus
+    w.rep[partner, rt] = False
+    w._do_trade(np.array([giver]), np.array([w.cfg.food_value]), 1)
+    assert p.energy[partner] > before                            # complementary hungry neighbour is fed
+
+
+def _satcfg(**kw):
+    """The R158 saturated regime: the eco world tuned so the population robustly fills its ceiling across seeds
+    (a high free-tier lifeline + ample food), so trade reliably fires and its effect is measured against a
+    STABLE pop rather than the bimodal collapse-or-cap noise. This is the regime the R158 verify uses."""
+    base = dict(spatial_tiers=True, recipe_budget=2, tier0_frac=0.72, tier_value_bonus=3.0,
+                food_cap=1100, food_regrow=55)
+    base.update(kw)
+    return _ecocfg(**base)
+
+
+def test_trade_test_fields_and_real_is_local_and_complementary():
+    """Over a real run the trade economy is LOCAL (partners within trade_radius) and fully COMPLEMENTARY (every
+    receiver lacks the traded recipe), with substantial volume — and the scramble null is dispersed (partners
+    arbitrarily far) and MORE cross-region, isolating the local economic structure from matched energy injection.
+    Real trade is mostly WITHIN-region (it feeds nearby off-branch minorities, not a cross-border economy).
+    Read-out empty when trade off."""
+    real = GenesisWorld(_satcfg(n0=600, trade=True), seed=1)
+    scr = GenesisWorld(_satcfg(n0=600, trade=True, trade_scramble=True), seed=1)
+    for _ in range(250):
+        real.step(); scr.step()
+    ro, so = real.trade_test(), scr.trade_test()
+    assert {"trade_count", "trade_volume", "mean_partner_dist", "complementary_frac",
+            "cross_region_frac"} <= set(ro)
+    assert ro["trade_count"] > 0 and so["trade_count"] > 0
+    assert ro["trade_volume"] > 0.0
+    assert ro["complementary_frac"] == 1.0                       # real: every receiver lacks the recipe
+    assert ro["mean_partner_dist"] < real.cfg.trade_radius       # real: a local market (within radius)
+    assert ro["mean_partner_dist"] < so["mean_partner_dist"]     # scramble partners are arbitrarily far
+    assert ro["cross_region_frac"] < so["cross_region_frac"]     # real trade is LOCAL (within-region); scramble disperses
+    assert GenesisWorld(_satcfg(n0=80), seed=0).trade_test() == {}  # off -> empty
+
+
+def test_trade_is_causally_inert_on_population():
+    """HONEST NEGATIVE (the R158 finding, pinned as a regression): the trade economy is real but causally INERT
+    on the saturated substrate — the population is hard-constrained, so redistributing harvested energy (here even
+    at a super-unit trade_gain that INJECTS energy) does not raise the carrying capacity vs no-trade. Trade does
+    not relax the limiting constraint, so an inter-agent economy alone does not drive a population transition."""
+    for seed in (0, 1):
+        on = GenesisWorld(_satcfg(n0=600, trade=True, trade_gain=2.0), seed=seed)
+        off = GenesisWorld(_satcfg(n0=600, trade=False), seed=seed)
+        for _ in range(300):
+            on.step(); off.step()
+        assert abs(on.pop.active().size - off.pop.active().size) <= 5  # energy injection does not lift the ceiling
+
+
 # ---------- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape movement + reach) ----------
 def _tccfg(**kw):
     """The R154 regime: the R153 tech-actions world plus tech_capabilities — deep tech-tree nodes ALSO unlock

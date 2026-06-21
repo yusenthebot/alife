@@ -329,6 +329,28 @@ class GenesisConfig:
     # lineage). recipe_budget=0 = unlimited (no-op, byte-identical to R153/R156). Requires tech_actions.
     recipe_budget: int = 0
 
+    # --- R158: TRADE between region-specialists -> an inter-group ECONOMY (the civilization leap) ---
+    # R157 locked each region to its own branch by SELECTION but the traditions stayed MODEST, and the SHARP
+    # regime (recipe_budget=1) CRASHED: a pure specialist that holds only branch q starves wherever its OWN
+    # tier is absent (the wrong region, or before its branch has sorted in) — a bootstrap chicken-and-egg.
+    # The missing mechanism is EXCHANGE. When trade=True, the SURPLUS of a locked-tier (t>=1) harvest flows to
+    # the nearest HUNGRY agent within trade_radius that LACKS this tier's recipe (a COMPLEMENTARY specialist
+    # who physically could not have eaten this food). Because every region's specialists do the same, two
+    # complementary specialists meeting at a region BORDER feed each other -> reciprocal exchange of surplus
+    # = an inter-group economy that rescues pure specialists and lets the SHARP recipe_budget=1 regime live.
+    # The surplus is modeled as otherwise-spoiled (the giver keeps its full harvest), so trade is positive-sum
+    # and unconditionally beneficial — like food ripening (R148) it is a WORLD MECHANIC, not faked behaviour;
+    # what is EMERGENT is the spatially-structured economy it produces over the evolved specialists.
+    trade: bool = False               # requires tech_actions. off = byte-identical (no extra RNG, no transfer).
+    trade_radius: float = 12.0        # a surplus share reaches a partner within this distance (a local market)
+    trade_share: float = 0.5          # fraction of a locked-tier harvest offered to a complementary partner
+    trade_gain: float = 1.0           # gains-from-trade multiplier on the delivered share (>=1 = positive-sum)
+    trade_need_frac: float = 1.0      # a partner is HUNGRY (eligible to receive) if energy < e_repro*this
+    # The causal NULL: deliver each share to a UNIFORMLY-RANDOM hungry agent (any branch, any location) instead
+    # of the nearest complementary neighbour. Same energy injected; only WHO receives changes (locality +
+    # complementarity destroyed). If trade's benefit were mere energy, the scramble would match real trade.
+    trade_scramble: bool = False      # requires trade=True.
+
     # --- R154: MULTI-AXIS culture-gated PHYSICAL capabilities (techniques reshape MOVEMENT + harvest REACH) ---
     # R153 made culture gate ONE physical action (what an agent can EAT). R154 generalises that to a
     # multi-dimensional capability VECTOR: deep tech-tree nodes also unlock LOCOMOTION (a higher max speed)
@@ -404,6 +426,11 @@ class GenesisWorld:
             raise ValueError("spatial_tiers (R157 ecologically-selected traditions) requires tech_actions=True")
         if (self.cfg.recipe_budget > 0 or self.cfg.recipe_upkeep > 0.0) and not self.tech_actions:
             raise ValueError("recipe_budget/recipe_upkeep (R157) require tech_actions=True")
+        self.trade = self.cfg.trade
+        if self.trade and not self.tech_actions:
+            raise ValueError("trade (R158 inter-group economy) requires tech_actions=True")
+        if self.cfg.trade_scramble and not self.trade:
+            raise ValueError("trade_scramble is the R158 trade null; requires trade=True")
         if self.processing and self.cfg.n_food_types > 1:
             raise ValueError("processing (R146 division of labour) assumes a single food type")
         if self.specialize and not self.processing:
@@ -442,6 +469,11 @@ class GenesisWorld:
                 self._recipe_tech = cb.recipe_techniques(
                     self._tree_level, ns, self.cfg.n_food_tiers, self.cfg.recipe_level_step)
                 self._tier_eat_count = np.zeros(self.cfg.n_food_tiers, dtype=np.int64)
+                self._trade_count = 0          # R158 diagnostics (lifetime; never feeds selection)
+                self._trade_volume = 0.0
+                self._trade_dist_sum = 0.0
+                self._trade_compl = 0
+                self._trade_cross = 0
             if self.tech_capabilities:                       # R154: which deep node unlocks each PHYSICAL axis
                 self._cap_tech = cb.capability_techniques(
                     self._tree_level, ns, self.cfg.n_capabilities, self.cfg.cap_level_step)
@@ -841,7 +873,10 @@ class GenesisWorld:
                 continue
             eaters = act[elig[winners]]
             base = np.full(eaters.size, cfg.food_value * (1.0 + cfg.tier_value_bonus * t))
-            p.energy[eaters] += self._harvest_gain(eaters, base=base)
+            gain = self._harvest_gain(eaters, base=base)
+            p.energy[eaters] += gain
+            if self.trade and t >= 1:                        # R158: share locked-tier surplus to a complementary partner
+                self._do_trade(eaters, gain, t)
             if self.specialize:                              # wage to whoever ripened each eaten mote (trade)
                 self._pay_processors(fm[eaten])
             keep[fm[eaten]] = False
@@ -849,6 +884,50 @@ class GenesisWorld:
             self._tier_eat_count[t] += int(eaten.size)
         if not keep.all():
             self._keep_food(keep)
+
+    def _do_trade(self, givers: np.ndarray, gain: np.ndarray, t: int) -> None:
+        """R158 trade: each giver (just harvested a tier-t>=1 mote it alone could eat) offers trade_share of its
+        gain to the nearest HUNGRY COMPLEMENTARY agent (lacks tier t's recipe -> physically could not eat this
+        food) within trade_radius. Complementary specialists at a region BORDER thus feed each other -> a local
+        inter-group economy that rescues pure specialists. The giver keeps its full harvest (surplus modeled as
+        otherwise-spoiled), so the transfer is positive-sum. trade_scramble is the NULL: same shares delivered to
+        UNIFORMLY-RANDOM hungry agents (locality + complementarity cut), isolating the economic content of WHO
+        trades with whom from raw energy injection. Diagnostics only; never feeds selection."""
+        cfg, p = self.cfg, self.pop
+        if givers.size == 0:
+            return
+        act = p.active()
+        recipe_t = self._recipe_tech[t]                          # this tier's branch (givers all hold it)
+        hungry = p.energy[act] < cfg.e_repro * cfg.trade_need_frac
+        share = cfg.trade_share * np.asarray(gain, dtype=float)  # per-giver surplus
+        if cfg.trade_scramble:                                   # NULL: random hungry recipient, any branch/place
+            cand = np.where(hungry)[0]
+            if cand.size == 0:
+                return
+            pick = self.rng.integers(0, cand.size, size=givers.size)
+            recv = act[cand[pick]]
+            dist = np.linalg.norm(p.pos[givers] - p.pos[recv], axis=1)
+        else:                                                    # REAL: nearest hungry COMPLEMENTARY neighbour
+            compl = np.where(hungry & ~self.rep[act, recipe_t])[0]
+            if compl.size == 0:
+                return
+            dist, idx = cKDTree(p.pos[act[compl]]).query(p.pos[givers], k=1)
+            ok = dist < cfg.trade_radius
+            if not ok.any():
+                return
+            givers, share, dist = givers[ok], share[ok], dist[ok]
+            recv = act[compl[idx[ok]]]
+        deliver = share * cfg.trade_gain
+        np.add.at(p.energy, recv, deliver)                       # a recipient may be fed by several givers
+        self._trade_count += int(recv.size)
+        self._trade_volume += float(deliver.sum())
+        self._trade_dist_sum += float(dist.sum())
+        self._trade_compl += int((~self.rep[recv, recipe_t]).sum())  # recipients lacking tier t's recipe
+        R = self.cfg.n_food_tiers - 1                            # cross-region (inter-group): giver vs receiver x-slab
+        size = self.cfg.world.size
+        gx = np.clip((p.pos[givers][:, 0] / size * R).astype(int), 0, R - 1)
+        rx = np.clip((p.pos[recv][:, 0] / size * R).astype(int), 0, R - 1)
+        self._trade_cross += int((gx != rx).sum())
 
     def _eat_cap_niches(self) -> None:
         """R155 eat: ripe food in a KEYED niche is harvestable ONLY by an agent holding that niche's capability
@@ -1163,6 +1242,32 @@ class GenesisWorld:
         return {
             "n_regions": int(n_reg), "n_branches": int(R), "own_frac": own_m, "other_frac": other_m,
             "alignment": own_m - other_m, "aligned_regions": int(modal_own), "n": int(act.size),
+        }
+
+    def trade_test(self) -> dict:
+        """R158 read-out: the inter-group ECONOMY's structure (in situ; never feeds selection). Cumulative over
+        the run; diff across windows for a rate. The discriminators between a real economy and the scrambled
+        null are SPATIAL (real trades are local) and ECONOMIC (real partners are complementary):
+          - trade_count        : number of surplus transfers executed.
+          - trade_volume       : total energy delivered via trade.
+          - mean_partner_dist  : mean giver<->receiver distance (small = a LOCAL market; large = scrambled).
+          - complementary_frac : fraction of transfers whose receiver LACKS the traded tier's recipe (1.0 by
+                                 construction for real trade; ~random for the scramble) = genuine exchange of
+                                 a good the receiver could not have produced itself.
+          - cross_region_frac  : fraction of transfers connecting agents in DIFFERENT x-regions. NOT enforced by
+                                 the trade rule (which never reads region) -> it EMERGES from R157's spatial
+                                 sorting (complementary branches sit in different regions): segregated groups
+                                 coupled by exchange across their borders = the inter-group economy signature.
+        """
+        if not self.trade:
+            return {}
+        n = self._trade_count
+        return {
+            "trade_count": int(n),
+            "trade_volume": float(self._trade_volume),
+            "mean_partner_dist": float(self._trade_dist_sum / n) if n else 0.0,
+            "complementary_frac": float(self._trade_compl / n) if n else 0.0,
+            "cross_region_frac": float(self._trade_cross / n) if n else 0.0,
         }
 
     def tech_actions_test(self) -> dict:
