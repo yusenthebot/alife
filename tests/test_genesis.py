@@ -2117,3 +2117,20 @@ def test_genealogy_phylogeny_test_fields_and_gating():
     for _ in range(20):
         w2.step()
     assert w2.genealogy_phylogeny_test() == {}
+
+
+def test_vertical_only_off_is_deterministic_default_on_changes_world():
+    """vertical_only=False uses the exact default oblique-transmission code path (deterministic: two runs
+    match). vertical_only=True disables nearest-hearth copying so newborns inherit only the parent's
+    repertoire + innovation; that changed culture feeds harvest/energy, so the realized population genuinely
+    diverges from the horizontal-transmission run (a real regime change, NOT a passive observer)."""
+    base = dict(n0=400, spatial_tiers=True, track_genealogy=True)
+    off = GenesisWorld(_ecocfg(**base, vertical_only=False), seed=0)
+    ref = GenesisWorld(_ecocfg(**base, vertical_only=False), seed=0)
+    on = GenesisWorld(_ecocfg(**base, vertical_only=True), seed=0)
+    for _ in range(150):
+        off.step(); ref.step(); on.step()
+    a, r = off.pop.active(), ref.pop.active()
+    assert np.array_equal(a, r) and np.array_equal(off.rep[a], ref.rep[r])   # default path is deterministic
+    # vertical-only diverges (culture -> survival feedback); at minimum its mean repertoire differs
+    assert not np.allclose(off.rep[off.pop.active()].mean(0), on.rep[on.pop.active()].mean(0))

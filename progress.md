@@ -1,5 +1,47 @@
 # alife — progress
 
+## Current state (Round 161 — 2026-06-20) — GENESIS GROUND-TRUTH cultural cladistics: the R160 cladogram does NOT recover the true line of descent under default (horizontal) transmission (HONEST NEGATIVE); vertical-only raises recovery but not robustly
+
+**R161 answered R160's #1 honest caveat: "tree-like vs flat" is not "the RIGHT tree" — R160 reconstructed a
+cladogram and showed it beats a flat column-shuffle, but there was no GROUND-TRUTH line of descent to validate
+against. R161 builds the ground truth and runs the validation every phylogenetic method must pass: does
+cultural-trait cladistics RECOVER the real genealogy?**
+
+**The contribution.**
+- **`alife/genesis/genealogy.py`** (new, pure/unit-tested): logs the actual BIRTH genealogy as a parent-pointer
+  FOREST and computes the TRUE patristic (tree) distance between individuals (`patristic_distance_matrix`;
+  cross-founder pairs join at a virtual super-root), plus a **Mantel test** (`mantel_test`) — correlation of
+  two distance matrices against a label-permutation null (the right exchangeable unit: taxa, not pairs).
+  Unit-validated: a perfect tree → corr 1.0; a label-shuffle → ~0; cross-founder uses the virtual root.
+- **`World.genealogy_phylogeny_test`**: partitions the living pop into a grid³ of spatial demes, builds the
+  RECONSTRUCTED inter-deme CULTURAL distance (mean-L1 over informative techniques — the R160 character distance)
+  and the TRUE inter-deme GENEALOGICAL distance (mean pairwise patristic distance among sampled deme members in
+  the logged forest), and Mantel-correlates them vs the label-permutation null. `track_genealogy` is a PASSIVE
+  observer — consumes NO RNG, changes NO sim state → byte-identical to off (verified by test).
+- **`vertical_only` flag**: gates OFF oblique (nearest-hearth) transmission so newborns inherit ONLY the parent's
+  repertoire + innovation = pure VERTICAL descent (a real regime change — culture feeds survival — not an
+  observer; default off = byte-identical to R150..R160).
+
+**HEADLINE (HONEST NEGATIVE, robust). Under the default OBLIQUE/horizontal transmission the R160 tree-shaped
+cladogram does NOT recover the true line of descent: Mantel(cultural, genealogical) significant on 0/4 seeds,
+mean 0.06 — indistinguishable from the label-permutation null (≈0).** Cultural similarity tracks shared
+ENVIRONMENT (spatial ecological selection + horizontal copying drive convergent cultural evolution = homoplasy),
+NOT shared ANCESTRY. This RIGOROUSLY confirms R160's own panmictic-null caveat (the tree was "descent broadly"
+— spatial lineage + heritable repertoire — NOT the literal genealogy).
+
+**CAUSAL CONTRAST (suggestive, NOT robust). Gating to VERTICAL-only transmission RAISES recovery in the
+predicted direction — mean Mantel 0.47 vs 0.06 (per seed 0.16 / 0.67 / 0.11 / 0.94), significant on 2/4 — but
+NOT robustly:** removing oblique transmission shrinks viable demes (seed 3: corr 0.94 but only 5 demes = low
+statistical power) and ecological convergence still competes with vertical drift. So the clean per-seed contrast
+is NOT established; only the mean trend + the robust horizontal negative are believed. **禁止造假 — stated as a
+negative, not dressed up as a positive.**
+
+**REAL-VERIFY:** `scripts/run_genesis_genealogy.py 450` → `runs/r161_genealogy/panel.png` EYE-VERIFIED (TRUE vs
+reconstructed distance heatmaps; weak horizontal recovery scatter; contrast bars vertical(green) > horizontal
+(red) on 2/4 seeds with null≈0; 3D deme-coloured world). 166 genesis tests (+7). The genealogy instrument +
+the diagnosed mechanism (horizontal transmission/ecological convergence erases the genealogical signal) ARE the
+deliverable; both flags committed default-off byte-identical. Next: see `## Frontier / next` + `## Decisions pending`.
+
 ## Current state (Round 160 — 2026-06-20) — GENESIS cultural PHYLOGENETICS: the cultural divergence is hierarchically TREE-structured (a reconstructable cladogram of traditions), robust 3/3
 
 **R160 PIVOTED off the twice-inert Stage-4 economy (R158/R159) to the genuine next civilization rung: cultural
@@ -1211,6 +1253,14 @@ order to keep going until told to stop; each round commits + pushes). Each round
 distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Decisions pending
+- **(R161) GROUND-TRUTH cladistics — RESOLVED as an HONEST NEGATIVE (robust for horizontal), no CEO action.** The
+  ground-truth instrument (`genealogy.py` + `genealogy_phylogeny_test` + `vertical_only`) is built, unit-validated,
+  and committed default-off. Finding: under default horizontal transmission the R160 cladogram does NOT recover the
+  true genealogy (0/4 sig, ≈null) — cultural similarity is environmental convergence (homoplasy), not ancestry.
+  Vertical-only raises recovery (mean 0.47, up to 0.94) but only 2/4 sig (deme-shrinkage low-power). Per the
+  anti-thrash rule the loop does NOT keep re-running this verify; R162 either makes vertical recovery robust (one
+  bounded attempt: neutral-drift substrate or seeded founders) OR PIVOTS to a new rung (temporal phylogeny /
+  generative tech space). The instruments are reusable for any future descent-recovery claim. 禁止造假.
 - **(R160) GENESIS cultural CLADISTICS — RESOLVED, POSITIVE (robust 3/3).** The pivot off the inert economy
   landed: the cultural divergence is hierarchically TREE-structured (treelike > column-shuffle 3/3, subsample-
   stable, red-teamed). Honest caveats kept (modest magnitude; panmictic-secondary null; asocial can't floor).
@@ -1417,23 +1467,30 @@ distinct ALife phenomenon, real-run + eye-verified, never faked.
 
 ## Frontier / next
 
-**Current ceiling (post-R160): cultural CLADISTICS works — the divergence R156/R157 grew is hierarchically
-TREE-structured (a reconstructable cladogram of traditions; treelike 0.63-0.68 > column-shuffle 0.51, 3/3 seeds,
-subsample-stable, red-teamed). This is the first measurement of the STRUCTURE of cultural descent, not just its
-presence. HONEST: the tree is MODEST (substantial homoplasy, ~0.65 not 1.0), and the signal is descent BROADLY
-(spatial lineage + heritable repertoire), NOT specifically the nearest-hearth cultural channel (panmictic null).**
-Candidate R161 frontiers, ranked ambition × feasibility:
-(1) **GROUND-TRUTH the descent tree** (TOP PICK) — track an actual cultural GENEALOGY (parent→child lineage labels
-propagated through `_acquire_repertoire`) and test whether the trait-reconstructed cladogram RECOVERS the true
-descent tree (cophenetic correlation / Robinson-Foulds vs the tracked genealogy). This upgrades "the data is
-tree-like" to "we recover the REAL phylogeny" — the gold-standard cladistics claim — and lets us SHARPEN the tree
-(lower homoplasy) by gating horizontal transmission / isolating lineages, driving treelikeness toward a clean 1.0.
-(2) **TEMPORAL phylogeny / open-ended complexity** — snapshot the population's repertoire over a LONG run,
-reconstruct the time-ladder of cumulative descent, and define an open-ended complexity metric that keeps CLIMBING
-(vs an asocial/no-transmission null) — the Stage-5 open-endedness rung, independent of the spatial demes.
-(3) **Punctuated equilibria / innovation bursts** — measure the RATE of cultural change along the tree (bursts vs
-stasis) — a dynamics claim on top of the static cladogram. Lean (1): ground-truth makes the phylogeny claim
-unassailable and opens the homoplasy-reduction lever. The R160 phylogeny module + metrics are committed and reusable.
+**Current ceiling (post-R161): cultural cladistics is now GROUND-TRUTHED, and the honest verdict is sharp. R160's
+reconstructed cladogram is tree-SHAPED but does NOT recover the true line of descent under the default
+(horizontal/oblique) transmission regime — Mantel(cultural, genealogical) significant on 0/4 seeds, ≈ the
+label-permutation null. Cultural similarity here is driven by shared ENVIRONMENT (spatial ecological selection +
+horizontal copying = convergent cultural evolution / HOMOPLASY), not by shared ANCESTRY. This rigorously confirms
+R160's panmictic-null caveat: the tree was "descent broadly", not the literal genealogy. Vertical-only
+transmission RAISES recovery (mean Mantel 0.47, up to 0.94) but only 2/4 sig — not yet robust (vertical-only
+shrinks viable demes → low-power Mantel; ecological convergence still competes). The ground-truth INSTRUMENT
+(`genealogy.py`, `genealogy_phylogeny_test`, `vertical_only`) is the durable deliverable; it validates any future
+descent-recovery claim.** Candidate R162 frontiers, ranked ambition × feasibility:
+(1) **Make VERTICAL recovery ROBUST → a CLEAN ground-truthed phylogeny** (one bounded attempt, then move on) —
+the cleanest descent recovery is NEUTRAL vertical drift: turn OFF spatial ecological selection (so cultural
+divergence accumulates by lineage drift, not convergence) AND stabilise vertical-only viability (seed founders
+with a starter repertoire / gentler bootstrap so demes don't shrink). Predict Mantel → high and 4/4. If it lands,
+that is the gold-standard "we recover the REAL phylogeny" claim. If it does NOT land robustly in one attempt,
+do NOT thrash — bank the honest result and PIVOT.
+(2) **TEMPORAL phylogeny / open-ended complexity** (PIVOT target) — snapshot the population's repertoire over a
+LONG run, reconstruct the time-ladder of cumulative descent against the LOGGED genealogy (now available), and
+define an open-ended complexity metric that keeps CLIMBING (vs an asocial/no-transmission null) — the Stage-5
+open-endedness rung, and it leverages the R161 genealogy log directly.
+(3) **GENUINELY UNBOUNDED / generative tech space** — lift the `max_techniques` cap; a new technique IS the pair
+of its parents (combinations of combinations), bounded memory via a hashed id pool + a max-depth complexity
+metric that provably climbs. Lean (1) for ONE bounded attempt, then (2). The R160 phylogeny + R161 genealogy
+modules/metrics are committed and reusable.
 
 ### PARKED (post-R159): the Stage-4 ECONOMY is twice-confirmed CAUSALLY INERT on this substrate's population.
 **The decisive lesson is a hard substrate FACT, not a design hint:

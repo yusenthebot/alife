@@ -411,6 +411,12 @@ class GenesisConfig:
     # is byte-identical to off (the log just grows append-only). Analysis-only instrumentation — for bounded
     # verification runs, not multi-day persistent worlds (the log is unbounded by design, like a tracer).
     track_genealogy: bool = False
+    # R161 causal contrast for the ground-truth test: vertical_only=True disables OBLIQUE (nearest-hearth)
+    # transmission so a newborn inherits ONLY its parent's repertoire (+ innovation) — pure VERTICAL descent.
+    # The default (horizontal/oblique copying ON) decouples culture from ancestry; vertical-only should let
+    # the reconstructed cladogram recover the true birth genealogy. No RNG in the skipped oblique block, so
+    # vertical_only=False is byte-identical to R150..R160.
+    vertical_only: bool = False
     # metric
     persist_steps: int = 200
 
@@ -1135,7 +1141,7 @@ class GenesisWorld:
         if cfg.learn:
             source = p.tech[parents].copy()                  # vertical transmission baseline (the parent's tech)
             strong = self._strong_hearths()
-            if strong.size:                                  # oblique transmission via the built world (hearths)
+            if strong.size and not cfg.vertical_only:         # oblique transmission via the built world (hearths)
                 d, idx = cKDTree(self.struct_pos[strong]).query(p.pos[slots], k=1)
                 in_range = d < cfg.hearth_radius
                 hearth_tech = np.where(in_range, self.struct_tech[strong][idx], 0.0)
@@ -1160,7 +1166,7 @@ class GenesisWorld:
         if cfg.learn:
             source = self.rep[parents].copy()                # vertical transmission: the parent's repertoire
             strong = self._strong_hearths()
-            if strong.size:                                  # oblique transmission via the built world (hearths)
+            if strong.size and not cfg.vertical_only:         # oblique transmission via the built world (hearths)
                 d, idx = cKDTree(self.struct_pos[strong]).query(self.pop.pos[slots], k=1)
                 in_range = d < cfg.hearth_radius
                 if in_range.any():

@@ -1,30 +1,33 @@
 # STATUS — main
-updated: 2026-06-20T36:30 · loop 160
+updated: 2026-06-20T39:00 · loop 161
 goal:     CEO DIRECTION (R140): build GENESIS — a persistent, real 3D world that, just by running (local/cloud), freely develops toward a CIVILIZATION via genuinely autonomous EVOLVED-NEURAL creatures (not scripts). Staged: 3D embodied agents → emergent language → cooperation/division-of-labour → building/economy → cumulative culture. Visually-checkable, genuine emergence, NEVER faked.
-phase:    review — R160 verified: cultural divergence is hierarchically TREE-structured (phylogenetic signal), robust.
-doing:    R160 DONE (PIVOT off the twice-inert economy to cultural cladistics). New alife/genesis/phylogeny.py
-          (Holland delta-Q treelikeness, UPGMA cophenetic corr, column-shuffle null) + World.phylogeny_test:
-          reconstruct a CLADOGRAM of spatial-deme traditions on the R157 substrate, measure whether the
-          divergence is hierarchically TREE-like (descent-with-modification) vs flat. Read-only; never feeds
-          selection. POSITIVE+ROBUST (3/3 seeds + subsample-stable): local treelike 0.63-0.68 > column-shuffle
-          0.51 (3/3); coph 0.68-0.79 > 0.60-0.63 (3/3). The shuffle preserves marginal freqs + prereq-DAG
-          structure but breaks clade covariance -> the signal is genuinely PHYLOGENETIC, not flat/artifact.
-          HONEST caveats: (1) magnitude MODEST (~0.65, substantial homoplasy; not a clean tree); (2) the
-          PANMICTIC secondary is NULL (local 0.675 vs panmictic 0.709, 1/2) -> tree structure is descent
-          BROADLY (spatial lineage + heritable repertoire), NOT specifically the nearest-hearth cultural
-          channel; (3) asocial can't form a floor (pop collapses to 74 w/o culture on this substrate). 禁止造假.
+phase:    review — R161 GROUND-TRUTHED R160's cladogram: it does NOT recover the true descent under default
+          (horizontal) transmission (honest negative); vertical-only raises recovery but not robustly.
+doing:    R161 DONE (ground-truth the cladistics). New alife/genesis/genealogy.py (patristic birth-forest
+          distance + Mantel test) + World.genealogy_phylogeny_test (Mantel: reconstructed CULTURAL distance vs
+          TRUE GENEALOGICAL distance from a logged birth forest, vs a label-permutation null) + vertical_only
+          flag (gate oblique transmission). track_genealogy = PASSIVE observer (no RNG, byte-identical off,
+          verified). HEADLINE = HONEST NEGATIVE: under default OBLIQUE transmission the R160 tree-shaped
+          cladogram does NOT recover the true line of descent (Mantel 0/4 seeds, mean 0.06 ≈ null) — cultural
+          similarity tracks shared ENVIRONMENT (ecological convergence/homoplasy), not ANCESTRY. Rigorously
+          confirms R160's own panmictic-null caveat. CAUSAL CONTRAST: gating to VERTICAL-only transmission
+          RAISES recovery in the predicted direction (mean Mantel 0.47 vs 0.06, up to 0.94, sig 2/4) — but NOT
+          robustly (vertical-only shrinks viable demes → small-D Mantel noise; ecological convergence competes).
+          So: robust negative for horizontal, suggestive-but-noisy positive for vertical. 禁止造假.
 owns:     all of ~/alife (single session)
-verify:   scripts/run_genesis_phylogeny.py 450 (runs/r160_phylogeny/panel.png EYE-VERIFIED: nested cladogram of
-          27 demes; treelike green>grey 2/2; coph green>grey 2/2; deme-coloured 3D world; frontier depth climbs).
-          159 genesis tests (+4). phylogeny_test read-only — no flag, byte-identical to R159 sim path.
-redteam:  ROBUST. 3/3 seeds (incl. headline render seed); subsample (random half/deme) keeps treelike 0.654 vs
-          shuffle 0.506 = NOT sampling noise; metric unit-tested (perfect tree->1.0, star->nan, shuffle drops it).
-          Honest: panmictic contrast null (signal not from local cultural transmission specifically); modest mag.
+verify:   scripts/run_genesis_genealogy.py 450 (runs/r161_genealogy/panel.png EYE-VERIFIED: TRUE vs reconstructed
+          distance heatmaps; recovery scatter weak under horizontal; contrast bars vertical(green) > horizontal
+          (red) on 2/4 seeds, null≈0; 3D deme-coloured world). 166 genesis tests (+7). genealogy unit-validated
+          (perfect tree→corr 1.0, label-null→0). track_genealogy/vertical_only default-off = R150..R160 path.
+redteam:  partial. ROBUST NEGATIVE: horizontal recovery 0/4 sig, mean 0.06 indistinguishable from label-null.
+          The vertical-only positive is SEED-DEPENDENT (2/4) and confounded by deme-count shrinkage (vertical
+          seed3 corr 0.94 but only 5 demes = low power). Honest: the clean per-seed contrast is NOT established;
+          only the mean trend + the robust horizontal negative are.
 blocked:  none
-docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool + bool repertoire (bounded, <100MB); close GL ctx (r.ctx.release()).
-next:     R161 frontier options (see progress.md ## Frontier): (a) SHARPEN the phylogeny — drive treelikeness
-          toward a clean tree (lower homoplasy) by gating horizontal transmission / stronger lineage isolation,
-          and recover the TRUE descent tree (cophenetic vs a tracked genealogy) for a ground-truthed cladistics
-          claim; (b) TEMPORAL phylogeny — snapshot the population over time, reconstruct the ladder of cumulative
-          descent + an open-ended complexity metric that keeps climbing; (c) cultural rate/innovation bursts
-          (punctuated equilibria) across the tree. Lean (a): ground-truth the descent claim. 禁止造假.
+docrule:  README = description+deploy+block diagram ONLY (CEO R91); per-round catalog → progress.md; layout → CODEBASE_GUIDE.md; runs/ GITIGNORED. run.sh ulimit -v 24GB (pure-numpy alife only, NOT torch/CUDA). MEMORY: ONE sim/pytest at a time; GENESIS is KD-tree + fixed-pool + bool repertoire (<100MB); genealogy log grows append-only (analysis-only, bounded runs); close GL ctx (r.ctx.release()).
+next:     R162 frontier (see progress.md ## Frontier + ## Decisions pending). Lead options: (a) make VERTICAL
+          recovery ROBUST — stabilise vertical-only viability (seed founders with recipes / gentler bootstrap so
+          demes don't shrink) for a clean 4/4 contrast, OR drop spatial ecological selection so cultural
+          divergence is NEUTRAL vertical drift (the cleanest descent recovery); (b) PIVOT — TEMPORAL phylogeny
+          (snapshot pop over time, reconstruct the ladder of cumulative descent + an open-ended complexity
+          metric that keeps climbing); (c) GENERATIVE/unbounded tech space. 禁止造假.
