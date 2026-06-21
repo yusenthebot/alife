@@ -2527,3 +2527,44 @@ def test_depth_trajectory_shape_and_determinism():
     assert np.all(o1["conn_depth"] <= o1["max_level"])              # connected depth never exceeds nominal
     o2 = td.depth_trajectory(GenesisWorld(_live_combinatorial_cfg(0.35), seed=1), 40)
     assert np.array_equal(o1["conn_depth"], o2["conn_depth"])
+
+
+def test_civ_config_is_full_stack_and_deterministic():
+    """civ_config builds the viable full civilization regime (building+culture+combinatorial+tech-actions+
+    capabilities) and the world is byte-identical per seed."""
+    from alife.genesis import civdev
+    cfg = civdev.civ_config()
+    assert cfg.building and cfg.culture and cfg.combinatorial and cfg.tech_actions and cfg.tech_capabilities
+    a = civdev.develop_trajectory(GenesisWorld(civdev.civ_config(), seed=3), 60)
+    b = civdev.develop_trajectory(GenesisWorld(civdev.civ_config(), seed=3), 60)
+    assert np.array_equal(a["conn_depth"], b["conn_depth"])
+    assert np.array_equal(a["breadth"], b["breadth"])
+
+
+def test_develop_trajectory_keys_and_capability_color():
+    """develop_trajectory emits the documented civilization signals; capability_color is a valid RGB per agent
+    within the locked->unlocked palette."""
+    from alife.genesis import civdev
+    o = civdev.develop_trajectory(GenesisWorld(civdev.civ_config(), seed=0), 50, every=10)
+    assert set(o) == {"step", "population", "conn_depth", "closure", "breadth",
+                      "realized_axes", "edible_tiers", "diversity", "max_gen"}
+    assert o["conn_depth"].size == 5
+    col = civdev.capability_color(GenesisWorld(civdev.civ_config(), seed=0))  # before any step: base phenotype
+    assert col.ndim == 2 and col.shape[1] == 3
+    assert col.min() >= 0.0 and col.max() <= 1.0
+
+
+def test_full_civilization_develops_only_with_social_learning():
+    """The R168 falsifiable HEADLINE as a fast deterministic check: same world, same physics, the ONLY change
+    is whether culture is transmitted. The full stack (social learning + evolution) DEVELOPS — a deep connected
+    tech ladder, unlocked physical capability axes, and a broadened edible diet — while the ASOCIAL control
+    (learn=False) cannot accumulate and stays at the seed floor. (The multi-seed render is the REAL-VERIFY.)"""
+    from alife.genesis import civdev
+    out = civdev.develop_vs_control(300, seed=0, every=25)
+    f, c = out["full"], out["control"]
+    # the civilization develops a CONNECTED cumulative tech ladder; the asocial control never climbs it.
+    assert f["conn_depth"][-1] >= 5
+    assert f["conn_depth"][-1] > c["conn_depth"][-1]
+    # culture unlocks EMBODIED capability: more physical axes and a wider edible diet than the control.
+    assert f["realized_axes"][-1] > c["realized_axes"][-1]
+    assert f["edible_tiers"][-1] > c["edible_tiers"][-1] + 0.5
